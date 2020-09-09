@@ -350,7 +350,6 @@ class VariablesManager:
             or parameters["coupling"]["coupling_level_type"].GetInt() > 1):
             self.coupling_fluid_vars += [Kratos.FLUID_FRACTION]
             self.coupling_fluid_vars += [Kratos.FLUID_FRACTION_OLD]
-            self.coupling_fluid_vars += [SDEM.SOLID_FRACTION_BED]
 
             if 'DISPERSE_FRACTION' in self.nodal_results:
                 self.coupling_fluid_vars += [Kratos.DISPERSE_FRACTION]

@@ -28,7 +28,6 @@ class ProjectionModule:
         self.shape_factor = self.backward_coupling_parameters["shape_factor"].GetDouble()
         self.do_impose_flow_from_field = project_parameters["custom_fluid"]["do_impose_flow_from_field_option"].GetBool()
         self.min_fluid_fraction_projected = project_parameters["coupling"]["min_fluid_fraction_projected"].GetDouble()
-        self.n_steady = project_parameters["coupling"]["n_steady"].GetInt()
         self.flow_field = flow_field
 
         # Create projector_parameters
@@ -39,8 +38,6 @@ class ProjectionModule:
         self.projector_parameters.AddValue("viscosity_modification_type", project_parameters["coupling"]["backward_coupling"]["viscosity_modification_type"])
         self.projector_parameters.AddValue("n_particles_per_depth_distance", project_parameters["n_particles_in_depth"])
         self.projector_parameters.AddValue("body_force_per_unit_mass_variable_name", project_parameters["body_force_per_unit_mass_variable_name"])
-        self.projector_parameters.AddValue("is_bed_option", project_parameters["coupling"]["is_bed_option"])
-        self.projector_parameters.AddValue("c_augmentation", project_parameters["coupling"]["c_augmentation"])
 
         if self.dimension == 3:
 
@@ -91,10 +88,6 @@ class ProjectionModule:
             if alpha == None:
                 alpha = 1.0
             self.ProjectFromFluid(alpha)
-    
-    def SetBedPropertiesToProcessInfo(self):
-        self.particles_model_part.ProcessInfo.SetValue(SDEM.MIN_FLUID_FRACTION_PROJECTED, self.min_fluid_fraction_projected)
-        self.particles_model_part.ProcessInfo.SetValue(SDEM.MAX_STEADY_STEPS, self.n_steady)
 
     def ApplyForwardCouplingOfVelocityToAuxVelocityOnly(self, alpha=None):
         if self.do_impose_flow_from_field:

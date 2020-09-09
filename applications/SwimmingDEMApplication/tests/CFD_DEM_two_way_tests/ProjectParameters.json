@@ -28,10 +28,7 @@
         "coupling_level_type"    : 3,
         "coupling_weighing_type" : 2,
         "interaction_start_time" : 0.0,
-        "is_bed_option"          : false,
-        "n_steady"               : 0,
         "min_fluid_fraction_projected" : 0.0,
-        "c_augmentation"         : 1.0,
         "forward_coupling"       : {
             "time_averaging_type" : 0
         },

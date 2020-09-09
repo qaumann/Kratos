@@ -557,62 +557,20 @@ void BinBasedDEMFluidCoupledMapping<TDim, TBaseTypeOfSwimmingParticle>::Interpol
         if (i_particle->GetGeometry()[0].Is(BLOCKED)) {
             continue;
         }
-        if(mBedOption){
-            Element::Pointer p_element;
-            BedParticleType& particle = dynamic_cast<BedParticleType&> (*i_particle);
-            // looking for the fluid element in which the DEM node falls
-            const bool element_located = bin_of_objects_fluid.FindPointOnMesh(i_particle->GetGeometry()[0].Coordinates(),
-                                                                          shape_function_values_at_point,
-                                                                          p_element,
-                                                                          results.begin(),
-                                                                          max_results);
-            if (i_particle->GetGeometry()[0].Is(TO_ERASE)) {
-                if (element_located) {
-                    DistributeDimensionalEraseContributionToFluidFraction(p_element, shape_function_values_at_point, particle);
-                    CalculateFluidFractionBed(p_element);
-                    Geometry<Node<3> >& geom =p_element->GetGeometry();
-                    ClearVariable(geom, FLUID_FRACTION);
-                }
-            }
-        }
-        else{
-            break;
-        }
-    }
-    
-    for (int i = 0; i < (int)r_dem_model_part.Elements().size(); ++i){
-        ElementIteratorType i_particle = r_dem_model_part.ElementsBegin() + i;
-        if (i_particle->GetGeometry()[0].Is(BLOCKED)) {
-            continue;
-        }
+        ParticleType& particle = dynamic_cast<ParticleType&> (*i_particle);
         Element::Pointer p_element;
-        if(mBedOption){
-            BedParticleType& particle = dynamic_cast<BedParticleType&> (*i_particle);
-            // looking for the fluid element in which the DEM node falls
-            const bool element_located = bin_of_objects_fluid.FindPointOnMesh(i_particle->GetGeometry()[0].Coordinates(),
+
+        // looking for the fluid element in which the DEM node falls
+        const bool element_located = bin_of_objects_fluid.FindPointOnMesh(particle.GetGeometry()[0].Coordinates(),
                                                                           shape_function_values_at_point,
                                                                           p_element,
                                                                           results.begin(),
                                                                           max_results);
-            if (i_particle->GetGeometry()[0].IsNot(TO_ERASE)) {
-                if (element_located) {
-                    DistributeDimensionalContributionToFluidFraction(p_element, shape_function_values_at_point, particle);
-                }
-            }
-        }
-        else{
-            ParticleType& particle = dynamic_cast<ParticleType&> (*i_particle);
-            // looking for the fluid element in which the DEM node falls
-            const bool element_located = bin_of_objects_fluid.FindPointOnMesh(i_particle->GetGeometry()[0].Coordinates(),
-                                                                          shape_function_values_at_point,
-                                                                          p_element,
-                                                                          results.begin(),
-                                                                          max_results);
-            if (i_particle->GetGeometry()[0].IsNot(TO_ERASE)) {
-                if (element_located) {
-                    DistributeDimensionalContributionToFluidFraction(p_element, shape_function_values_at_point, particle);
-                }
-            }
+
+        // interpolating variables
+
+        if (element_located) {
+            DistributeDimensionalContributionToFluidFraction(p_element, shape_function_values_at_point, particle);
         }
     }
 
@@ -994,42 +952,6 @@ void BinBasedDEMFluidCoupledMapping<TDim, TBaseTypeOfSwimmingParticle>::Project(
 //***************************************************************************************************************
 //***************************************************************************************************************
 template <std::size_t TDim, typename TBaseTypeOfSwimmingParticle>
-void BinBasedDEMFluidCoupledMapping<TDim, TBaseTypeOfSwimmingParticle>::DistributeDimensionalEraseContributionToFluidFraction(
-    Element::Pointer p_elem,
-    const Vector& N,
-    BedParticleType& particle)
-{
-    if (mCouplingType == 0 || mCouplingType == 1){
-        CalculateNodalFluidFractionWithConstantWeighing(p_elem, N, particle);
-    }
-
-    else if (mCouplingType == 2){
-        CalculateEraseNodalFluidFractionWithLinearWeighing(p_elem, N, particle);
-    }
-}
-//***************************************************************************************************************
-//***************************************************************************************************************
-template <std::size_t TDim, typename TBaseTypeOfSwimmingParticle>
-void BinBasedDEMFluidCoupledMapping<TDim, TBaseTypeOfSwimmingParticle>::DistributeDimensionalContributionToFluidFraction(
-    Element::Pointer p_elem,
-    const Vector& N,
-    BedParticleType& particle)
-{
-    if (mCouplingType == 0 || mCouplingType == 1){
-        CalculateNodalFluidFractionWithConstantWeighing(p_elem, N, particle);
-    }
-
-    else if (mCouplingType == 2){
-        CalculateNodalFluidFractionWithLinearWeighing(p_elem, N, particle);
-    }
-
-//    else if (mCouplingType == 4){
-//        CalculateNodalFluidFractionByLumpedL2Projection(p_elem, N, p_particle);
-//    }
-}
-//***************************************************************************************************************
-//***************************************************************************************************************
-template <std::size_t TDim, typename TBaseTypeOfSwimmingParticle>
 void BinBasedDEMFluidCoupledMapping<TDim, TBaseTypeOfSwimmingParticle>::DistributeDimensionalContributionToFluidFraction(
     Element::Pointer p_elem,
     const Vector& N,
@@ -1123,45 +1045,6 @@ void BinBasedDEMFluidCoupledMapping<TDim, TBaseTypeOfSwimmingParticle>::ComputeH
 //***************************************************************************************************************
 //***************************************************************************************************************
 template <std::size_t TDim, typename TBaseTypeOfSwimmingParticle>
-void BinBasedDEMFluidCoupledMapping<TDim, TBaseTypeOfSwimmingParticle>::CalculateFluidFractionBed(Element::Pointer p_elem)
-{
-    for (unsigned int i = 0; i < TDim + 1; ++i){
-        double& fluid_fraction = p_elem->GetGeometry()[i].FastGetSolutionStepValue(FLUID_FRACTION);
-        if (mCouplingType != 4){
-            double nodalFluidVolume = p_elem->GetGeometry()[i].FastGetSolutionStepValue(NODAL_AREA);
-            if (nodalFluidVolume < 1.0e-15){
-                fluid_fraction = fluid_fraction;
-            }
-            else {
-                fluid_fraction = fluid_fraction / nodalFluidVolume;
-            }
-        }
-        p_elem->GetGeometry()[i].FastGetSolutionStepValue(SOLID_FRACTION_BED) += fluid_fraction;
-    }
-}
-
-//***************************************************************************************************************
-//***************************************************************************************************************
-template <std::size_t TDim, typename TBaseTypeOfSwimmingParticle>
-void BinBasedDEMFluidCoupledMapping<TDim, TBaseTypeOfSwimmingParticle>::AddingBedToFluidFraction(ModelPart& r_fluid_model_part)
-{
-    OpenMPUtils::CreatePartition(OpenMPUtils::GetNumThreads(), r_fluid_model_part.Nodes().size(), mNodesPartition);
-
-    #pragma omp parallel for
-    for (int k = 0; k < OpenMPUtils::GetNumThreads(); ++k){
-        for (NodesArrayType::iterator i_node = this->GetNodePartitionBegin(r_fluid_model_part, k); i_node != this->GetNodePartitionEnd(r_fluid_model_part, k); ++i_node){
-            i_node->FastGetSolutionStepValue(FLUID_FRACTION) -= i_node->FastGetSolutionStepValue(SOLID_FRACTION_BED);
-            
-            if (i_node->FastGetSolutionStepValue(FLUID_FRACTION) < mMinFluidFraction){
-                i_node->FastGetSolutionStepValue(FLUID_FRACTION) = mMinFluidFraction;
-            }
-        }
-    }
-}
-
-//***************************************************************************************************************
-//***************************************************************************************************************
-template <std::size_t TDim, typename TBaseTypeOfSwimmingParticle>
 void BinBasedDEMFluidCoupledMapping<TDim, TBaseTypeOfSwimmingParticle>::CalculateFluidFraction(ModelPart& r_fluid_model_part)
 {
     OpenMPUtils::CreatePartition(OpenMPUtils::GetNumThreads(), r_fluid_model_part.Nodes().size(), mNodesPartition);
@@ -1171,6 +1054,7 @@ void BinBasedDEMFluidCoupledMapping<TDim, TBaseTypeOfSwimmingParticle>::Calculat
 
         for (NodesArrayType::iterator i_node = this->GetNodePartitionBegin(r_fluid_model_part, k); i_node != this->GetNodePartitionEnd(r_fluid_model_part, k); ++i_node){
             double& fluid_fraction = i_node->FastGetSolutionStepValue(FLUID_FRACTION);
+
             if (mCouplingType != 4){
                 double nodalFluidVolume = i_node->FastGetSolutionStepValue(NODAL_AREA);
                 if (nodalFluidVolume < 1.0e-15){
@@ -1178,7 +1062,7 @@ void BinBasedDEMFluidCoupledMapping<TDim, TBaseTypeOfSwimmingParticle>::Calculat
                 }
 
                 else {
-                    fluid_fraction = 1.0 - fluid_fraction / nodalFluidVolume - i_node->FastGetSolutionStepValue(SOLID_FRACTION_BED);
+                    fluid_fraction = 1.0 - fluid_fraction / nodalFluidVolume;
                 }
             }
             else {
@@ -1517,65 +1401,6 @@ void BinBasedDEMFluidCoupledMapping<TDim, TBaseTypeOfSwimmingParticle>::Calculat
     if (IsFluidVariable(PHASE_FRACTION)){
         const double particle_mass = particle.GetMass();
         p_elem->GetGeometry()[i_nearest_node].FastGetSolutionStepValue(PHASE_FRACTION) += particle_mass; // here we add the mass contribution. Later we devide by the total mass of the element
-    }
-}
-//***************************************************************************************************************
-//***************************************************************************************************************
-template <std::size_t TDim, typename TBaseTypeOfSwimmingParticle>
-void BinBasedDEMFluidCoupledMapping<TDim, TBaseTypeOfSwimmingParticle>::CalculateNodalFluidFractionWithConstantWeighing(
-    Element::Pointer p_elem,
-    const Vector& N,
-    BedParticleType& particle)
-{
-    unsigned int i_nearest_node = GetNearestNode(N);
-
-    // Geometry of the element of the destination model part
-    const double particle_volume = particle.CalculateVolume();
-    p_elem->GetGeometry()[i_nearest_node].FastGetSolutionStepValue(FLUID_FRACTION) += particle_volume;
-
-    if (IsFluidVariable(PHASE_FRACTION)){
-        const double particle_mass = particle.GetMass();
-        p_elem->GetGeometry()[i_nearest_node].FastGetSolutionStepValue(PHASE_FRACTION) += particle_mass; // here we add the mass contribution. Later we devide by the total mass of the element
-    }
-}
-//***************************************************************************************************************
-//***************************************************************************************************************
-template <std::size_t TDim, typename TBaseTypeOfSwimmingParticle>
-void BinBasedDEMFluidCoupledMapping<TDim, TBaseTypeOfSwimmingParticle>::CalculateEraseNodalFluidFractionWithLinearWeighing(
-    Element::Pointer p_elem,
-    const Vector& N,
-    BedParticleType& particle)
-{
-    const double particle_volume = particle.CalculateVolume();
-
-    for (unsigned int i = 0; i < TDim + 1; ++i){
-        p_elem->GetGeometry()[i].FastGetSolutionStepValue(FLUID_FRACTION) += N[i] * particle_volume * mCAugmentation;
-    }
-    if (IsFluidVariable(PHASE_FRACTION)){
-        const double particle_mass = particle.GetMass();
-        for (unsigned int i = 0; i < TDim + 1; ++i){
-            p_elem->GetGeometry()[i].FastGetSolutionStepValue(PHASE_FRACTION) += N[i] * particle_mass; // here we add the mass contribution. Later we devide by the total mass of the element
-        }
-    }
-}
-//***************************************************************************************************************
-//***************************************************************************************************************
-template <std::size_t TDim, typename TBaseTypeOfSwimmingParticle>
-void BinBasedDEMFluidCoupledMapping<TDim, TBaseTypeOfSwimmingParticle>::CalculateNodalFluidFractionWithLinearWeighing(
-    Element::Pointer p_elem,
-    const Vector& N,
-    BedParticleType& particle)
-{
-    const double particle_volume = particle.CalculateVolume();
-
-    for (unsigned int i = 0; i < TDim + 1; ++i){
-        p_elem->GetGeometry()[i].FastGetSolutionStepValue(FLUID_FRACTION) += N[i] * particle_volume; // no multiplying by element_volume since we devide by it to get the contributed volume fraction
-    }
-    if (IsFluidVariable(PHASE_FRACTION)){
-        const double particle_mass = particle.GetMass();
-        for (unsigned int i = 0; i < TDim + 1; ++i){
-            p_elem->GetGeometry()[i].FastGetSolutionStepValue(PHASE_FRACTION) += N[i] * particle_mass; // here we add the mass contribution. Later we devide by the total mass of the element
-        }
     }
 }
 //***************************************************************************************************************

@@ -71,7 +71,6 @@ class SwimmingDEMSolver(PythonSolver):
         self.next_time_to_solve_fluid = project_parameters['problem_data']['start_time'].GetDouble()
         self.coupling_level_type = project_parameters["coupling"]["coupling_level_type"].GetInt()
         self.interaction_start_time = project_parameters["coupling"]["interaction_start_time"].GetDouble()
-        self.bed_option = project_parameters["coupling"]["is_bed_option"].GetBool()
         self.integration_scheme = project_parameters["custom_dem"]["translational_integration_scheme"].GetString()
         self.fluid_dt = fluid_solver.settings["time_stepping"]["time_step"].GetDouble()
         self.do_solve_dem = project_parameters["custom_dem"]["do_solve_dem"].GetBool()
@@ -220,9 +219,6 @@ class SwimmingDEMSolver(PythonSolver):
     def ApplyForwardCoupling(self, alpha='None'):
         self._GetProjectionModule().ApplyForwardCoupling(alpha)
 
-    def SetBedPropertiesToProcessInfo(self):
-        self._GetProjectionModule().SetBedPropertiesToProcessInfo()
-
     def ApplyForwardCouplingOfVelocityToAuxVelocityOnly(self, alpha=None):
         self._GetProjectionModule().ApplyForwardCouplingOfVelocityToAuxVelocityOnly(alpha)
 
@@ -279,8 +275,6 @@ class SwimmingDEMSolver(PythonSolver):
         if (not self.move_mesh_flag
             and (it_is_time_to_forward_couple or self.first_DEM_iteration)):
                 self.ApplyForwardCoupling(alpha)
-                if (self.bed_option and self.first_DEM_iteration):
-                    self.SetBedPropertiesToProcessInfo()
 
         if self.quadrature_counter.Tick():
             self.AppendValuesForTheHistoryForce()

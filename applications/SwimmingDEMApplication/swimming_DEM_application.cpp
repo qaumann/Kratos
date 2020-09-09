@@ -41,9 +41,7 @@ KRATOS_CREATE_3D_VARIABLE_WITH_COMPONENTS(VECTORIAL_ERROR_1)
 KRATOS_CREATE_3D_VARIABLE_WITH_COMPONENTS(DISPLACEMENT_OLD)
 KRATOS_CREATE_3D_VARIABLE_WITH_COMPONENTS(AVERAGED_FLUID_VELOCITY)
 KRATOS_CREATE_3D_VARIABLE_WITH_COMPONENTS(RECOVERED_PRESSURE_GRADIENT)
-KRATOS_CREATE_VARIABLE(double, SOLID_FRACTION_BED)
 KRATOS_CREATE_VARIABLE(double, MIN_FLUID_FRACTION_PROJECTED)
-KRATOS_CREATE_VARIABLE(double, MAX_STEADY_STEPS)
 KRATOS_CREATE_VARIABLE(double, MASS_SOURCE)
 KRATOS_CREATE_VARIABLE(double, EXACT_PRESSURE)
 KRATOS_CREATE_VARIABLE(double, SCALAR_ERROR)
@@ -99,7 +97,6 @@ KratosSwimmingDEMApplication::KratosSwimmingDEMApplication():
   mComputeLaplacianSimplexCondition3D(0, Element::GeometryType::Pointer(new Triangle3D3<Node<3> >( Element::GeometryType::PointsArrayType(3)))),
   mRigidShellElement(0, Element::GeometryType::Pointer(new Triangle3D3<Node<3> >( Element::GeometryType::PointsArrayType( 3 ) ) ) ),
   mSphericSwimmingParticle3D(0, Element::GeometryType::Pointer(new Sphere3D1<Node<3> >(Element::GeometryType::PointsArrayType(1)))),
-  mBedSwimmingParticle3D(0, Element::GeometryType::Pointer(new Sphere3D1<Node<3> >(Element::GeometryType::PointsArrayType(1)))),
   mSwimmingNanoParticle3D(0, Element::GeometryType::Pointer(new Sphere3D1<Node<3> >(Element::GeometryType::PointsArrayType(1)))),
   mSwimmingAnalyticParticle3D(0, Element::GeometryType::Pointer(new Sphere3D1<Node<3> >(Element::GeometryType::PointsArrayType(1))))
 {}
@@ -114,9 +111,7 @@ void KratosSwimmingDEMApplication::Register()
   KRATOS_REGISTER_3D_VARIABLE_WITH_COMPONENTS(DISPLACEMENT_OLD)
   KRATOS_REGISTER_3D_VARIABLE_WITH_COMPONENTS(AVERAGED_FLUID_VELOCITY)
   KRATOS_REGISTER_3D_VARIABLE_WITH_COMPONENTS(RECOVERED_PRESSURE_GRADIENT)
-  KRATOS_REGISTER_VARIABLE(SOLID_FRACTION_BED)
   KRATOS_REGISTER_VARIABLE(MIN_FLUID_FRACTION_PROJECTED)
-  KRATOS_REGISTER_VARIABLE(MAX_STEADY_STEPS)
   KRATOS_REGISTER_VARIABLE(MASS_SOURCE)
   KRATOS_REGISTER_VARIABLE(EXACT_PRESSURE)
   KRATOS_REGISTER_VARIABLE(SCALAR_ERROR)
@@ -151,7 +146,6 @@ void KratosSwimmingDEMApplication::Register()
   KRATOS_REGISTER_ELEMENT("QSVMSDEMCoupled3D4N", mQSVMSDEMCoupled3D4N)
   KRATOS_REGISTER_ELEMENT("RigidShellElement", mRigidShellElement)
   KRATOS_REGISTER_ELEMENT("SphericSwimmingParticle3D", mSphericSwimmingParticle3D)
-  KRATOS_REGISTER_ELEMENT("BedSwimmingParticle3D", mBedSwimmingParticle3D)
   KRATOS_REGISTER_ELEMENT("SwimmingNanoParticle3D", mSwimmingNanoParticle3D)
   KRATOS_REGISTER_ELEMENT("SwimmingAnalyticParticle3D", mSwimmingAnalyticParticle3D)
   KRATOS_REGISTER_ELEMENT("ComputeLaplacianSimplex2D", mComputeLaplacianSimplex2D)
