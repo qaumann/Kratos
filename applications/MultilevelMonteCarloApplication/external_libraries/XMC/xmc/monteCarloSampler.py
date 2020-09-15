@@ -9,10 +9,7 @@ from collections import defaultdict
 from itertools import chain
 import warnings
 
-# Import PyCOMPSs
-# from exaqute.ExaquteTaskPyCOMPSs import *   # to execute with runcompss
-# from exaqute.ExaquteTaskHyperLoom import *  # to execute with the IT4 scheduler
-from exaqute.ExaquteTaskLocal import *      # to execute with python3
+from xmc.distributedEnvironmentFramework import *
 
 class MonteCarloSampler():
     """
@@ -100,7 +97,7 @@ class MonteCarloSampler():
             globalEstimations.append(ge)
 
         # Delete COMPSs objects
-        # Flatten list of depth 2 then unpack 
+        # Flatten list of depth 2 then unpack
         delete_object(*chain.from_iterable(hierarchy),
                       *chain.from_iterable(chain.from_iterable(estimations)))
 
@@ -316,6 +313,11 @@ class MonteCarloSampler():
 
 
     def asynchronousPrepareBatches(self,newHierarchy):
+        """
+        Method setting-up batches. If needed, the serialize method is called, to serialize Kratos Model and Kratos Parameters. Otherwise, serialized objects are passed to new batches, to avoid serializing multiple times.
+        For each batch, an index constructor dictionary is built. This way, local estimators may be computed in parallel and then update global estimators.
+        """
+
         newIndices,newSamples = splitOneListIntoTwo(newHierarchy)
         if self.batchIndices is None: # iterationCounter = 0
             # serialze Kratos object sinto monteCarloIndex indeces instances
@@ -344,7 +346,12 @@ class MonteCarloSampler():
                         self.asynchronousSerializeBatchIndices(batch,index,solver=1)
                     index = index + 1
 
+
     def asynchronousSerializeBatchIndices(self,batch,index,solver):
+        """
+        Method passing serialized Kratos Model and Kratos Parameters and other KratosSolverWrapper members to new batches. Passing them, we avoid serializing for each batch, and we do only once for the first batch.
+        """
+
         # model
         self.batchIndices[batch][index].sampler.solvers[solver].pickled_model = self.indices[0].sampler.solvers[0].pickled_model
         self.batchIndices[batch][index].sampler.solvers[solver].serialized_model = self.indices[0].sampler.solvers[0].serialized_model
@@ -361,7 +368,12 @@ class MonteCarloSampler():
         self.batchIndices[batch][index].sampler.solvers[solver].is_custom_settings_metric_refinement_pickled = True
         self.batchIndices[batch][index].sampler.solvers[solver].is_custom_settings_remesh_refinement_pickled = True
 
+
     def asynchronousUpdateBatches(self):
+        """
+        Method updating all relevant members when new batches are created.
+        """
+
         # set here number of batches to append
         # append only if not exceeding the maximum number of iterations
         if (self.numberBatches > self.maximumNumberIterations):
@@ -376,13 +388,23 @@ class MonteCarloSampler():
             self.batchesAnalysisFinished.append(False)
             self.batchesConvergenceFinished.append(False)
 
+
     def asynchronousInitialize(self,newHierarchy):
+        """
+        Method initializing new batches.
+        """
+
         # Add new indices and trim ones no longer required
         self.updateIndexSet(newHierarchy)
         # Prepare batches
         self.asynchronousPrepareBatches(newHierarchy)
 
+
     def asynchronousLaunchEpoch(self,newHierarchy):
+        """
+        Method spawning new batches. It first spawn high index batch realizations, since they have a larger computational cost and normally require a larger time-to-solution.
+        """
+
         # Run batch hierarchies
         for batch in range(self.numberBatches):
             if (self.batchesLaunched[batch] is not True):
@@ -392,7 +414,12 @@ class MonteCarloSampler():
                 self.batchesExecutionFinished[batch] = True
                 self.batchesAnalysisFinished[batch] = True
 
+
     def asynchronousFinalize(self,batch):
+        """
+        Method updating all global estimators with the contributions of the new batch.
+        """
+
         # Postprocess on finished batches
         for level in range (len(self.batchIndices[batch])):
             # update global estimators
@@ -410,5 +437,9 @@ class MonteCarloSampler():
 
 
     def asynchronousUpdate(self,newHierarchy):
+        """
+        Method called to initialize all new batches to launch, and to launch them.
+        """
+
         self.asynchronousInitialize(newHierarchy)
         self.asynchronousLaunchEpoch(newHierarchy)

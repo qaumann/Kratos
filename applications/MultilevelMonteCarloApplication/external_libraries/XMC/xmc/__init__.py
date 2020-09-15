@@ -9,6 +9,8 @@ from .estimationAssembler import EstimationAssembler
 
 from .hierarchyOptimiser import HierarchyOptimiser
 
+from .distributedEnvironmentFramework import *
+
 from .modelEstimator import ModelEstimator
 
 from .momentEstimator import MomentEstimator

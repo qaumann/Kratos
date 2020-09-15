@@ -253,7 +253,7 @@ namespace Kratos {
 
         /** Destructor.
          */
-        virtual ~ResidualBasedPredictorCorrectorVelocityBossakSchemeTurbulent() override {
+        ~ResidualBasedPredictorCorrectorVelocityBossakSchemeTurbulent() override {
         }
 
 
@@ -650,7 +650,7 @@ namespace Kratos {
             }
         }
 
-        virtual void FinalizeSolutionStep(ModelPart &rModelPart, TSystemMatrixType &A, TSystemVectorType &Dx, TSystemVectorType &b) override
+        void FinalizeSolutionStep(ModelPart &rModelPart, TSystemMatrixType &A, TSystemVectorType &Dx, TSystemVectorType &b) override
         {
             Element::EquationIdVectorType EquationId;
             LocalSystemVectorType RHS_Contribution;
@@ -685,8 +685,8 @@ namespace Kratos {
                 //basic operations for the element considered
                 (*itElem)->CalculateLocalSystem(LHS_Contribution, RHS_Contribution, CurrentProcessInfo);
 
+                //std::cout << rCurrentElement->Id() << " RHS = " << RHS_Contribution << std::endl;
                 (*itElem)->CalculateMassMatrix(mMass[thread_id], CurrentProcessInfo);
-
                 (*itElem)->CalculateLocalVelocityContribution(mDamp[thread_id], RHS_Contribution, CurrentProcessInfo);
 
                 (*itElem)->EquationIdVector(EquationId, CurrentProcessInfo);
