@@ -11,7 +11,7 @@
     "parallel_type" : "OpenMP",
     "echo_level" : 1,
     "start_time" : 0.0,
-    "end_time" : 0.3
+    "end_time" : 0.024
 },
 
 "do_print_results_option" : false,
@@ -101,7 +101,7 @@
         "parallel_type" : "OpenMP",
         "echo_level" : 0,
         "start_time" : 0.0,
-        "end_time" : 1.0
+        "end_time" : 0.012
     },
 
     "solver_settings" : {
@@ -122,7 +122,7 @@
         "linear_solver_settings" : {
             "solver_type" : "amgcl",
             "max_iteration" : 200,
-            "tolerance" : 1e-7,
+            "tolerance" : 0.1,
             "provide_coordinates" : false,
             "smoother_type" : "ilu0",
             "krylov_type" : "gmres",

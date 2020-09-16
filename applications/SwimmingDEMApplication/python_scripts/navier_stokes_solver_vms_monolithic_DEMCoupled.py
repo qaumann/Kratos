@@ -60,7 +60,7 @@ def CreateSolver(model, custom_settings):
 class NavierStokesSolverMonolithicDEM(FluidDEMSolver):
 
     @classmethod
-    def GetDefaultSettings(cls):
+    def GetDefaultParameters(cls):
 
         ##settings string in json format
         default_settings = KratosMultiphysics.Parameters("""
@@ -83,6 +83,7 @@ class NavierStokesSolverMonolithicDEM(FluidDEMSolver):
             "echo_level": 0,
             "consider_periodic_conditions": false,
             "compute_reactions": false,
+            "analysis_type": "non_linear",
             "reform_dofs_at_each_step": true,
             "relative_velocity_tolerance": 1e-3,
             "absolute_velocity_tolerance": 1e-5,
@@ -112,7 +113,7 @@ class NavierStokesSolverMonolithicDEM(FluidDEMSolver):
             "turbulence_model": "None"
         }""")
 
-        default_settings.AddMissingParameters(super(NavierStokesSolverMonolithicDEM, cls).GetDefaultSettings())
+        default_settings.AddMissingParameters(super(NavierStokesSolverMonolithicDEM, cls).GetDefaultParameters())
         return default_settings
 
     def _BackwardsCompatibilityHelper(self,settings):
@@ -222,97 +223,24 @@ class NavierStokesSolverMonolithicDEM(FluidDEMSolver):
 
     def Initialize(self):
 
-        self.computing_model_part = self.GetComputingModelPart()
+        # If the solver requires an instance of the stabilized formulation class, set the process info variables
+        if hasattr(self, 'formulation'):
+            self.formulation.SetProcessInfo(self.GetComputingModelPart())
 
-        # If needed, create the estimate time step utility
-        if (self.settings["time_stepping"]["automatic_time_step"].GetBool()):
-            self.EstimateDeltaTimeUtility = self._GetAutomaticTimeSteppingUtility()
-
-        # Creating the solution strategy
-        self.conv_criteria = KratosCFD.VelPrCriteria(self.settings["relative_velocity_tolerance"].GetDouble(),
-                                                    self.settings["absolute_velocity_tolerance"].GetDouble(),
-                                                    self.settings["relative_pressure_tolerance"].GetDouble(),
-                                                    self.settings["absolute_pressure_tolerance"].GetDouble())
-
-        (self.conv_criteria).SetEchoLevel(self.settings["echo_level"].GetInt())
-
-        # Creating the time integration scheme
-        if (self.element_integrates_in_time):
-            # "Fake" scheme for those cases in where the element manages the time integration
-            # It is required to perform the nodal update once the current time step is solved
-            self.time_scheme = KratosMultiphysics.ResidualBasedIncrementalUpdateStaticSchemeSlip(
-                self.computing_model_part.ProcessInfo[KratosMultiphysics.DOMAIN_SIZE],
-                self.computing_model_part.ProcessInfo[KratosMultiphysics.DOMAIN_SIZE]+1)
-            # In case the BDF2 scheme is used inside the element, the BDF process is required to update the BDF coefficients
-            if (self.settings["time_scheme"].GetString() == "bdf2"):
-                time_order = 2
-                self.bdf_process = KratosMultiphysics.ComputeBDFCoefficientsProcess(self.computing_model_part, time_order)
-            else:
-                err_msg = "Requested elemental time scheme " + self.settings["time_scheme"].GetString() + " is not available.\n"
-                err_msg += "Available options are: \"bdf2\""
-                raise Exception(err_msg)
-        else:
-            if self.settings["turbulence_model"].GetString() == "None":
-                # Bossak time integration scheme
-                if self.settings["time_scheme"].GetString() == "bossak":
-                    if self.settings["consider_periodic_conditions"].GetBool() == True:
-                        self.time_scheme = KratosSDEM.ResidualBasedPredictorCorrectorVelocityBossakSchemeTurbulentDEMCoupled(
-                            self.settings["alpha"].GetDouble(),
-                            self.computing_model_part.ProcessInfo[KratosMultiphysics.DOMAIN_SIZE],
-                            KratosCFD.PATCH_INDEX)
-                    else:
-                        self.time_scheme = KratosSDEM.ResidualBasedPredictorCorrectorVelocityBossakSchemeTurbulentDEMCoupled(
-                            self.settings["alpha"].GetDouble(),
-                            self.settings["move_mesh_strategy"].GetInt(),
-                            self.computing_model_part.ProcessInfo[KratosMultiphysics.DOMAIN_SIZE])
-                # BDF2 time integration scheme
-                elif self.settings["time_scheme"].GetString() == "bdf2":
-                    self.time_scheme = KratosCFD.GearScheme()
-                # Time scheme for steady state fluid solver
-                elif self.settings["time_scheme"].GetString() == "steady":
-                    self.time_scheme = KratosCFD.ResidualBasedSimpleSteadyScheme(
-                            self.settings["velocity_relaxation"].GetDouble(),
-                            self.settings["pressure_relaxation"].GetDouble(),
-                            self.computing_model_part.ProcessInfo[KratosMultiphysics.DOMAIN_SIZE])
-                else:
-                    err_msg = "Requested time scheme " + self.settings["time_scheme"].GetString() + " is not available.\n"
-                    err_msg += "Available options are: \"bossak\", \"bdf2\" and \"steady\""
-                    raise Exception(err_msg)
-            else:
-                raise Exception("Turbulence models are not added yet.")
-
-        if self.settings["consider_periodic_conditions"].GetBool() == True:
-            builder_and_solver = KratosCFD.ResidualBasedBlockBuilderAndSolverPeriodic(self.linear_solver,
-                                                                                KratosCFD.PATCH_INDEX)
-        else:
-            builder_and_solver = KratosMultiphysics.ResidualBasedBlockBuilderAndSolver(self.linear_solver)
-
-
-        self.solver = KratosMultiphysics.ResidualBasedNewtonRaphsonStrategy(self.computing_model_part,
-                                                                            self.time_scheme,
-                                                                            self.linear_solver,
-                                                                            self.conv_criteria,
-                                                                            builder_and_solver,
-                                                                            self.settings["maximum_iterations"].GetInt(),
-                                                                            self.settings["compute_reactions"].GetBool(),
-                                                                            self.settings["reform_dofs_at_each_step"].GetBool(),
-                                                                            self.settings["move_mesh_flag"].GetBool())
-
-        (self.solver).SetEchoLevel(self.settings["echo_level"].GetInt())
-
-        self.formulation.SetProcessInfo(self.computing_model_part)
-
-        (self.solver).Initialize()
+        # Construct and initialize the solution strategy
+        solution_strategy = self._GetSolutionStrategy()
+        solution_strategy.SetEchoLevel(self.settings["echo_level"].GetInt())
+        solution_strategy.Initialize()
 
         KratosMultiphysics.Logger.PrintInfo("NavierStokesSolverMonolithicDEM", "Solver initialization finished.")
 
     def InitializeSolutionStep(self):
         if self._TimeBufferIsInitialized():
             # If required, compute the BDF coefficients
-            if hasattr(self, 'bdf_process'):
-                (self.bdf_process).Execute()
+            if hasattr(self, 'time_discretization'):
+                (self.time_discretization).ComputeAndSaveBDFCoefficients(self.GetComputingModelPart().ProcessInfo)
             # Perform the solver InitializeSolutionStep
-            (self.solver).InitializeSolutionStep()
+            self._GetSolutionStrategy().InitializeSolutionStep()
 
     def _set_physical_properties(self):
         # Check if fluid properties are provided using a .json file

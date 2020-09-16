@@ -20,6 +20,11 @@ try:
 except ImportError:
      interpolation_imports_available = False
 
+try:
+     import FluidDEMTestFactory as FDEMTF
+     fluid_DEM_coupling_imports_available = True
+except ImportError:
+     fluid_DEM_coupling_imports_available = False     
 # List of tests that are available
 available_tests = []
 
@@ -57,27 +62,27 @@ if interpolation_imports_available:
           file_name = "interpolation_tests/cube"
           file_parameters = "interpolation_tests/ProjectParametersCubeLinear.json"
 
-class CFD_DEM_two_way_test(FDEMTF.TestFactory):
-     file_name = "CFD_DEM_two_way_tests/Two_way_testFluid"
-     file_parameters = "CFD_DEM_two_way_tests/ProjectParameters.json"
+     class interpolation_test_nonlinear_time_no_substepping(InterpolationTF.TestFactory):
+          file_name = "interpolation_tests/cube"
+          file_parameters = "interpolation_tests/ProjectParametersCubeNonlinearTimeNoSubstepping.json"
+
+     available_tests += [test_class for test_class in InterpolationTF.TestFactory.__subclasses__()]
+
+if fluid_DEM_coupling_imports_available:
+     class fluid_dem_coupling_one_way_test(FDEMTF.TestFactory):
+          file_name = "fluid_dem_tests/settling_cube"
+          file_parameters = "fluid_dem_tests/ProjectParameters.json"
+
+     class CFD_DEM_two_way_test(FDEMTF.TestFactory):
+          file_name = "CFD_DEM_two_way_tests/Two_way_testFluid"
+          file_parameters = "CFD_DEM_two_way_tests/ProjectParameters.json"
+     
+     available_tests += [test_class for test_class in FDEMTF.TestFactory.__subclasses__()]
 
 def SetTestSuite(suites):
     night_suite = suites['nightly']
 
-    night_suite.addTests(
-        KratosUnittest.TestLoader().loadTestsFromTestCases([
-          candelier_no_history_test,
-          candelier_no_history_with_lift_test,
-          candelier_no_history_non_inertial_test,
-          candelier_with_history_test,
-          candelier_with_history_hinsberg_test,
-          interpolation_test_linear,
-          interpolation_test_nonlinear_time_no_substepping,
-          fluid_dem_coupling_one_way_test,
-          CFD_DEM_two_way_test,
-          sdem_pfem_coupling_one_way_test
-          ])
-    )
+    night_suite.addTests(KratosUnittest.TestLoader().loadTestsFromTestCases(available_tests))
 
     return night_suite
 
@@ -89,5 +94,5 @@ def AssembleTestSuites():
     return suites
 
 if __name__ == '__main__':
-    KratosMultiphysics.Logger.GetDefaultOutput().SetSeverity(KratosMultiphysics.Logger.Severity.DETAIL)
+    KratosMultiphysics.Logger.GetDefaultOutput().SetSeverity(KratosMultiphysics.Logger.Severity.WARNING)
     KratosUnittest.runTests(AssembleTestSuites())

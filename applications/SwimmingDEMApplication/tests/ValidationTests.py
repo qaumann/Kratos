@@ -6,15 +6,10 @@ import KratosMultiphysics.DEMApplication
 import KratosMultiphysics.SwimmingDEMApplication
 
 # Import TestFactory
-import FluidDEMTestFactory as FDEMTF
 import SPFEMTestFactory as SPFEMTF
 
 # Import KratosUnittest
 import KratosMultiphysics.KratosUnittest as KratosUnittest
-
-class fluid_dem_coupling_one_way_test(FDEMTF.TestFactory):
-     file_name = "fluid_dem_tests/settling_cube"
-     file_parameters = "fluid_dem_tests/ProjectParameters.json"
 
 class sdem_pfem_coupling_one_way_test(SPFEMTF.TestFactory):
      file_name = "PFEM-DEM_tests/sdem_pfem_coupling_one_way_test"
@@ -26,7 +21,8 @@ def SetTestSuite(suites):
     validation_suite.addTests(
          KratosUnittest.TestLoader().loadTestsFromTestCases([
           fluid_dem_coupling_one_way_test,
-          sdem_pfem_coupling_one_way_test
+          sdem_pfem_coupling_one_way_test,
+          CFD_DEM_two_way_test
           ])
     )
 
