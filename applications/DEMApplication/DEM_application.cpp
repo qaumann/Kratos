@@ -506,7 +506,7 @@ void KratosDEMApplication::Register() {
                     << "            | | | |  _| | |\\/| | |_) / _` |/ __| |/ /      \n"
                     << "            | |_| | |___| |  | |  __/ (_| | (__|   <       \n"
                     << "            |____/|_____|_|  |_|_|   \\__,_|\\___|_|\\_\\      \n"
-                    << "Importing DEMApplication... ";                    
+                    << "Importing DEMApplication... ";
 
     KRATOS_REGISTER_VARIABLE(CONTINUUM_INI_NEIGHBOUR_ELEMENTS)
     KRATOS_REGISTER_VARIABLE(NODE_TO_NEIGH_ELEMENT_POINTER)
@@ -919,8 +919,6 @@ void KratosDEMApplication::Register() {
     KRATOS_REGISTER_CONDITION("RigidFace3D4N", mRigidFace3D4N)
     KRATOS_REGISTER_CONDITION("AnalyticRigidFace3D", mAnalyticRigidFace3D3N)
     KRATOS_REGISTER_CONDITION("AnalyticRigidFace3D3N", mAnalyticRigidFace3D3N)
-    KRATOS_REGISTER_CONDITION("RigidEdge3D", mRigidEdge3D2N)
-    KRATOS_REGISTER_CONDITION("RigidEdge3D2N", mRigidEdge3D2N)
     KRATOS_REGISTER_CONDITION("RigidEdge2D2N", mRigidEdge2D2N)
 
     // SERIALIZER
