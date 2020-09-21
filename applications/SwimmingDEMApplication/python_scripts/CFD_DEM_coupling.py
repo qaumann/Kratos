@@ -27,7 +27,6 @@ class ProjectionModule:
         self.meso_scale_length = self.backward_coupling_parameters["meso_scale_length"].GetDouble()
         self.shape_factor = self.backward_coupling_parameters["shape_factor"].GetDouble()
         self.do_impose_flow_from_field = project_parameters["custom_fluid"]["do_impose_flow_from_field_option"].GetBool()
-        self.min_fluid_fraction_projected = project_parameters["coupling"]["min_fluid_fraction_projected"].GetDouble()
         self.flow_field = flow_field
 
         # Create projector_parameters

@@ -1,17 +1,17 @@
 from __future__ import print_function, absolute_import, division #makes KratosMultiphysics backward compatible with python 2.6 and 2.7
 # Importing the Kratos Library
-import KratosMultiphysics
+import KratosMultiphysics as Kratos
 import KratosMultiphysics.SwimmingDEMApplication
 from importlib import import_module
 import math
 
 def Factory(settings, Model):
-    if not isinstance(settings, KratosMultiphysics.Parameters):
+    if not isinstance(settings, Kratos.Parameters):
         raise Exception("expected input shall be a Parameters object, encapsulating a json string")
     return AssignExactVariableToADOFProcess(Model, settings["Parameters"])
 
 ## All the processes python should be derived from "Process"
-class AssignExactVariableToADOFProcess(KratosMultiphysics.Process):
+class AssignExactVariableToADOFProcess(Kratos.Process):
     """This process sets the value of an unknown variable from another one already calculated. 
     It is useful for cases in which the boundary conditions are known but they change at each time step. 
     
@@ -30,9 +30,9 @@ class AssignExactVariableToADOFProcess(KratosMultiphysics.Process):
         Model -- the container of the different model parts.
         settings -- Kratos parameters containing solver settings.
         """
-        KratosMultiphysics.Process.__init__(self)
+        Kratos.Process.__init__(self)
 
-        default_settings = KratosMultiphysics.Parameters("""
+        default_settings = Kratos.Parameters("""
         {
             "help"                 : "This process sets a variable a certain scalar value in a given direction, for all the nodes belonging to a submodelpart. Uses assign_scalar_variable_to_conditions_process for each component",
             "mesh_id"              : 0,
@@ -57,18 +57,18 @@ class AssignExactVariableToADOFProcess(KratosMultiphysics.Process):
         self.aux_processes = []
 
         self.destination_variable_name = settings["variable_name"].GetString()
-        self.destination_variable = KratosMultiphysics.KratosGlobals.GetVariable(self.destination_variable_name)
+        self.destination_variable = Kratos.KratosGlobals.GetVariable(self.destination_variable_name)
         
         self.exact_variable_name = settings["exact_variable_name"].GetString()
-        self.exact_variable = KratosMultiphysics.KratosGlobals.GetVariable(self.exact_variable_name)
+        self.exact_variable = Kratos.KratosGlobals.GetVariable(self.exact_variable_name)
 
-        self.variable_type = KratosMultiphysics.KratosGlobals.GetVariableType(self.destination_variable_name)
+        self.variable_type = Kratos.KratosGlobals.GetVariableType(self.destination_variable_name)
         if self.variable_type == "Array":
             self.destination_variable_name_component = []
             self.exact_variable_name_component = []
             for i, string in enumerate(["_X", "_Y", "_Z"]):
-                self.destination_variable_name_component.append(KratosMultiphysics.KratosGlobals.GetVariable((self.destination_variable_name + string)))
-                self.exact_variable_name_component.append(KratosMultiphysics.KratosGlobals.GetVariable((self.exact_variable_name + string)))
+                self.destination_variable_name_component.append(Kratos.KratosGlobals.GetVariable((self.destination_variable_name + string)))
+                self.exact_variable_name_component.append(Kratos.KratosGlobals.GetVariable((self.exact_variable_name + string)))
 
     def ExecuteBeforeSolutionLoop(self):
         """ This method is executed in before initialize the solution loop
@@ -87,14 +87,15 @@ class AssignExactVariableToADOFProcess(KratosMultiphysics.Process):
         """
         
         if self.variable_type == "Array":
-            for i in range(len(self.destination_variable_name_component)):
-                KratosMultiphysics.VariableUtils().CopyComponentVar(self.exact_variable_name_component[i], self.destination_variable_name_component[i], self.model_part.Nodes)
+            #for i in range(len(self.destination_variable_name_component)):
+            Kratos.VariableUtils().CopyVectorVar(self.exact_variable, self.destination_variable, self.model_part.Nodes)
             for node in self.model_part.Nodes:
+                # node.Fix(self.destination_variable)
                 node.Fix(self.destination_variable_name_component[0])
                 node.Fix(self.destination_variable_name_component[1])
                 node.Fix(self.destination_variable_name_component[2])
         else:
-            KratosMultiphysics.VariableUtils().CopyScalarVar(self.exact_variable, self.destination_variable, self.model_part.Nodes)
+            Kratos.VariableUtils().CopyScalarVar(self.exact_variable, self.destination_variable, self.model_part.Nodes)
             for node in self.model_part.Nodes:
                 node.Fix(self.destination_variable)
 
