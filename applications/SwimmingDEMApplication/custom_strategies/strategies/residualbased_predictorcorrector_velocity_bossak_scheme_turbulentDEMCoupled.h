@@ -25,7 +25,6 @@
 #include "includes/define.h"
 #include "includes/model_part.h"
 #include "includes/deprecated_variables.h"
-//#include "solving_strategies/schemes/scheme.h"
 #include "includes/variables.h"
 #include "includes/cfd_variables.h"
 #include "containers/array_1d.h"
