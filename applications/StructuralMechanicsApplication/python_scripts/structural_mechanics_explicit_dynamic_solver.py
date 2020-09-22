@@ -34,9 +34,12 @@ class ExplicitMechanicalSolver(MechanicalSolver):
             "delta_time_refresh"         : 1000,
             "max_delta_time"             : 1.0e0,
             "fraction_delta_time"        : 0.333333333333333333333333333333333333,
-            "l2_tolerance"               : 1.0e-3,
             "rayleigh_alpha"             : 0.0,
-            "rayleigh_beta"              : 0.0
+            "rayleigh_beta"              : 0.0,
+            "rayleigh_beta_2"            : 0.0,
+            "diagonal_critical_damping"  : false,
+            "max_number_iterations"      : 1,
+            "l2_tolerance"               : 1.0e-3
         }""")
         this_defaults.AddMissingParameters(super().GetDefaultParameters())
         return this_defaults
@@ -103,8 +106,18 @@ class ExplicitMechanicalSolver(MechanicalSolver):
 
         # Setting the Rayleigh damping parameters
         process_info = self.main_model_part.ProcessInfo
-        process_info[StructuralMechanicsApplication.RAYLEIGH_ALPHA] = self.settings["rayleigh_alpha"].GetDouble()
-        process_info[StructuralMechanicsApplication.RAYLEIGH_BETA] = self.settings["rayleigh_beta"].GetDouble()
+        # process_info[StructuralMechanicsApplication.RAYLEIGH_ALPHA] = self.settings["rayleigh_alpha"].GetDouble()
+        # process_info[StructuralMechanicsApplication.RAYLEIGH_BETA] = self.settings["rayleigh_beta"].GetDouble()
+        process_info.SetValue(StructuralMechanicsApplication.RAYLEIGH_ALPHA, self.settings["rayleigh_alpha"].GetDouble())
+        process_info.SetValue(StructuralMechanicsApplication.RAYLEIGH_BETA, self.settings["rayleigh_beta"].GetDouble())
+        process_info.SetValue(StructuralMechanicsApplication.RAYLEIGH_BETA_2, self.settings["rayleigh_beta_2"].GetDouble())
+        use_rayleigh_damping = True
+        if self.settings["diagonal_critical_damping"].GetBool() == True:
+            use_rayleigh_damping = False
+            process_info.SetValue(StructuralMechanicsApplication.RAYLEIGH_BETA_2, 0.0)
+        process_info.SetValue(StructuralMechanicsApplication.USE_CONSISTENT_MASS_MATRIX, use_rayleigh_damping)
+        process_info.SetValue(StructuralMechanicsApplication.SERIAL_PARALLEL_EQUILIBRIUM_TOLERANCE, self.settings["l2_tolerance"].GetDouble())
+        process_info.SetValue(StructuralMechanicsApplication.MAX_NUMBER_NL_CL_ITERATIONS, self.settings["max_number_iterations"].GetInt())
 
         # Setting the time integration schemes
         if(scheme_type == "central_differences"):

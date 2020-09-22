@@ -240,6 +240,7 @@ public:
         // Initializing the variables
         VariableUtils().SetVariable(FORCE_RESIDUAL, zero_array,r_nodes);
         VariableUtils().SetVariable(NODAL_INERTIA, zero_array,r_nodes);
+        VariableUtils().SetVariable(NODAL_ROTATION_DAMPING, zero_array,r_nodes);
 
         KRATOS_CATCH("")
     }
@@ -268,14 +269,16 @@ public:
             auto it_node = (it_node_begin + i);
             it_node->SetValue(NODAL_MASS, 0.0);
             it_node->SetValue(NODAL_DISPLACEMENT_DAMPING, 0.0);
-            array_1d<double, 3>& r_current_aux_velocity = it_node->FastGetSolutionStepValue(NODAL_DISPLACEMENT_STIFFNESS);
-            array_1d<double, 3>& r_previous_aux_velocity = it_node->FastGetSolutionStepValue(NODAL_DISPLACEMENT_STIFFNESS,1);
+            array_1d<double, 3>& r_current_impulse = it_node->FastGetSolutionStepValue(NODAL_DISPLACEMENT_STIFFNESS);
+            array_1d<double, 3>& r_current_iterative_displacement = it_node->FastGetSolutionStepValue(NODAL_INITIAL_DISPLACEMENT);
             array_1d<double, 3>& r_current_residual = it_node->FastGetSolutionStepValue(FORCE_RESIDUAL);
-            array_1d<double, 3>& r_current_inertial_residual = it_node->FastGetSolutionStepValue(NODAL_INERTIA);
-            noalias(r_current_aux_velocity) = it_node->FastGetSolutionStepValue(VELOCITY);
-            noalias(r_previous_aux_velocity) = it_node->FastGetSolutionStepValue(VELOCITY,1);
+            array_1d<double, 3>& r_current_damping_residual = it_node->FastGetSolutionStepValue(NODAL_INERTIA);
+            array_1d<double, 3>& r_current_iterative_damping_residual = it_node->FastGetSolutionStepValue(NODAL_ROTATION_DAMPING);
+            noalias(r_current_impulse) = ZeroVector(3);
+            noalias(r_current_iterative_displacement) = ZeroVector(3);
             noalias(r_current_residual) = ZeroVector(3);
-            noalias(r_current_inertial_residual) = ZeroVector(3);
+            noalias(r_current_damping_residual) = ZeroVector(3);
+            noalias(r_current_iterative_damping_residual) = ZeroVector(3);
         }
 
         KRATOS_CATCH("")
@@ -329,48 +332,48 @@ public:
         } // for Node parallel
 
         // TODO: STOP CRITERION
-        this->CheckStopCriterion(rModelPart);
-        
+        // this->CheckStopCriterion(rModelPart);
+
         KRATOS_CATCH("")
     }
 
-    void CheckStopCriterion(ModelPart& rModelPart)
-    {
-        const ProcessInfo& r_current_process_info = rModelPart.GetProcessInfo();
-        NodesArrayType& r_nodes = rModelPart.Nodes();
-        const auto it_node_begin = rModelPart.NodesBegin();
+    // void CheckStopCriterion(ModelPart& rModelPart)
+    // {
+    //     const ProcessInfo& r_current_process_info = rModelPart.GetProcessInfo();
+    //     NodesArrayType& r_nodes = rModelPart.Nodes();
+    //     const auto it_node_begin = rModelPart.NodesBegin();
 
-        double l2_numerator = 0.0;
-        double l2_denominator = 0.0;
-        #pragma omp parallel for reduction(+:l2_numerator,l2_denominator)
-        for (int i = 0; i < static_cast<int>(r_nodes.size()); ++i) {
-            NodeIterator itCurrentNode = it_node_begin + i;
-            const array_1d<double, 3>& r_current_displacement = itCurrentNode->FastGetSolutionStepValue(DISPLACEMENT);
-            const array_1d<double, 3>& r_previous_displacement = itCurrentNode->FastGetSolutionStepValue(DISPLACEMENT,1);
-            array_1d<double, 3> delta_displacement;
-            noalias(delta_displacement) = r_current_displacement-r_previous_displacement;
-            const double norm_2_du = inner_prod(delta_displacement,delta_displacement);
-            const double norm_2_u_old = inner_prod(r_previous_displacement,r_previous_displacement);
+    //     double l2_numerator = 0.0;
+    //     double l2_denominator = 0.0;
+    //     #pragma omp parallel for reduction(+:l2_numerator,l2_denominator)
+    //     for (int i = 0; i < static_cast<int>(r_nodes.size()); ++i) {
+    //         NodeIterator itCurrentNode = it_node_begin + i;
+    //         const array_1d<double, 3>& r_current_displacement = itCurrentNode->FastGetSolutionStepValue(DISPLACEMENT);
+    //         const array_1d<double, 3>& r_previous_displacement = itCurrentNode->FastGetSolutionStepValue(DISPLACEMENT,1);
+    //         array_1d<double, 3> delta_displacement;
+    //         noalias(delta_displacement) = r_current_displacement-r_previous_displacement;
+    //         const double norm_2_du = inner_prod(delta_displacement,delta_displacement);
+    //         const double norm_2_u_old = inner_prod(r_previous_displacement,r_previous_displacement);
 
-            l2_numerator += norm_2_du;
-            l2_denominator += norm_2_u_old;
-        }
-        if (l2_denominator > 1.0e-12) {
-            double l2_error = std::sqrt(l2_numerator)/std::sqrt(l2_denominator);
+    //         l2_numerator += norm_2_du;
+    //         l2_denominator += norm_2_u_old;
+    //     }
+    //     if (l2_denominator > 1.0e-12) {
+    //         double l2_error = std::sqrt(l2_numerator)/std::sqrt(l2_denominator);
 
-            std::fstream l2_error_file;
-            l2_error_file.open ("l2_error_time.txt", std::fstream::out | std::fstream::app);
-            l2_error_file.precision(12);
-            l2_error_file << r_current_process_info[TIME] << " " << l2_error << std::endl;
-            l2_error_file.close();
+    //         std::fstream l2_error_file;
+    //         l2_error_file.open ("l2_error_time.txt", std::fstream::out | std::fstream::app);
+    //         l2_error_file.precision(12);
+    //         l2_error_file << r_current_process_info[TIME] << " " << l2_error << std::endl;
+    //         l2_error_file.close();
 
-            if (l2_error < mL2Tolerance) {
-                KRATOS_INFO("STOP CRITERION") << "L2 Error is: " << l2_error << " . The simulation is completed at step: " << r_current_process_info[STEP] << std::endl;
-                KRATOS_INFO("STOP CRITERION") << "L2 numerator is: " << std::sqrt(l2_numerator) << " . L2 denominator is: " << std::sqrt(l2_denominator) << std::endl;
-                // KRATOS_ERROR << "L2 Error is: " << l2_error << " . The simulation is completed at step: " << r_current_process_info[STEP] << std::endl;
-            }
-        }
-    }
+    //         if (l2_error < mL2Tolerance) {
+    //             KRATOS_INFO("STOP CRITERION") << "L2 Error is: " << l2_error << " . The simulation is completed at step: " << r_current_process_info[STEP] << std::endl;
+    //             KRATOS_INFO("STOP CRITERION") << "L2 numerator is: " << std::sqrt(l2_numerator) << " . L2 denominator is: " << std::sqrt(l2_denominator) << std::endl;
+    //             // KRATOS_ERROR << "L2 Error is: " << l2_error << " . The simulation is completed at step: " << r_current_process_info[STEP] << std::endl;
+    //         }
+    //     }
+    // }
 
     /**
      * @brief This method updates the translation DoF
@@ -384,24 +387,20 @@ public:
         const SizeType DomainSize = 3
         )
     {
-        array_1d<double, 3>& r_current_aux_velocity = itCurrentNode->FastGetSolutionStepValue(NODAL_DISPLACEMENT_STIFFNESS);
+        array_1d<double, 3>& r_current_impulse = itCurrentNode->FastGetSolutionStepValue(NODAL_DISPLACEMENT_STIFFNESS);
         const array_1d<double, 3>& r_current_residual = itCurrentNode->FastGetSolutionStepValue(FORCE_RESIDUAL);
-        const double nodal_mass = itCurrentNode->GetValue(NODAL_MASS);
-        const double nodal_damping = itCurrentNode->GetValue(NODAL_DISPLACEMENT_DAMPING);
-        // const array_1d<double, 3>& r_current_inertial_residual = itCurrentNode->FastGetSolutionStepValue(NODAL_INERTIA);
 
         // Solution of the explicit equation:
-        if (nodal_mass > numerical_limit){
-            // TODO: check algorithm
-            // noalias(r_current_aux_velocity) += mDeltaTime * r_current_residual / nodal_mass + mDeltaTime * nodal_damping * r_current_inertial_residual / (nodal_mass * nodal_mass);
-            noalias(r_current_aux_velocity) += mDeltaTime * r_current_residual / nodal_mass;
-        }
-        else{
-            noalias(r_current_aux_velocity) = ZeroVector(3);
-        }
+        noalias(r_current_impulse) += mDeltaTime * r_current_residual;
 
         array_1d<double, 3>& r_current_displacement = itCurrentNode->FastGetSolutionStepValue(DISPLACEMENT);
+        array_1d<double, 3>& r_current_iterative_displacement = it_node->FastGetSolutionStepValue(NODAL_INITIAL_DISPLACEMENT);
+        r_current_iterative_displacement = r_current_displacement;
         const array_1d<double, 3>& r_previous_displacement = itCurrentNode->FastGetSolutionStepValue(DISPLACEMENT,1);
+        const double nodal_mass = itCurrentNode->GetValue(NODAL_MASS);
+        const double nodal_damping = itCurrentNode->GetValue(NODAL_DISPLACEMENT_DAMPING);
+        const array_1d<double, 3>& r_current_damping_residual = itCurrentNode->FastGetSolutionStepValue(NODAL_INERTIA);
+        const array_1d<double, 3>& r_current_iterative_damping_residual = itCurrentNode->FastGetSolutionStepValue(NODAL_ROTATION_DAMPING);
 
         std::array<bool, 3> fix_displacements = {false, false, false};
         fix_displacements[0] = (itCurrentNode->GetDof(DISPLACEMENT_X, DisplacementPosition).IsFixed());
@@ -410,10 +409,15 @@ public:
             fix_displacements[2] = (itCurrentNode->GetDof(DISPLACEMENT_Z, DisplacementPosition + 2).IsFixed());
 
         // Solution of the explicit equation:
-        if (nodal_mass > numerical_limit){
+        if ( (nodal_mass + mDeltaTime * nodal_damping) > numerical_limit){
             for (IndexType j = 0; j < DomainSize; j++) {
                 if (fix_displacements[j] == false) {
-                    r_current_displacement[j] = (mDeltaTime * r_current_aux_velocity[j] + r_previous_displacement[j]) / (1.0 + mDeltaTime * nodal_damping/nodal_mass);
+                    if (r_current_process_info[MAX_NUMBER_NL_CL_ITERATIONS] <= 1) {
+                        r_current_displacement[j] = (mDeltaTime * r_current_impulse[j] + nodal_mas * r_previous_displacement[j] - mDeltaTime * r_current_damping_residual[j])
+                                                    / (nodal_mass + mDeltaTime * nodal_damping);
+                    } else {
+                        // TODO : seguir
+                    }
                 }
             }
         }
@@ -424,7 +428,7 @@ public:
                 }
             }
         }
-        
+
         const array_1d<double, 3>& r_previous_velocity = itCurrentNode->FastGetSolutionStepValue(VELOCITY,1);
         array_1d<double, 3>& r_current_velocity = itCurrentNode->FastGetSolutionStepValue(VELOCITY);
         array_1d<double, 3>& r_current_acceleration = itCurrentNode->FastGetSolutionStepValue(ACCELERATION);
