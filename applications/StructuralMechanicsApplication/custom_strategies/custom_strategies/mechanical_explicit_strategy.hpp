@@ -350,11 +350,12 @@ public:
 
         // TODO: iterative explicit strategy
         bool is_converged = false;
-        unsigned int iteration_number = 1;
-        const ProcessInfo& r_current_process_info = r_model_part.GetProcessInfo();
-        max_iteration_number = r_current_process_info[MAX_NUMBER_NL_CL_ITERATIONS];
+        unsigned int iteration_number = 0;
+        unsigned int max_iteration_number = r_model_part.GetProcessInfo()[MAX_NUMBER_NL_CL_ITERATIONS];
 
-        while (is_converged == false && iteration_number++ <= max_iteration_number) {
+        while (is_converged == false && iteration_number < max_iteration_number) {
+
+            iteration_number++;
 
             // Initialize the non linear iteration
             pScheme->InitializeNonLinIteration(BaseType::GetModelPart(), rA, rDx, rb);
@@ -379,7 +380,7 @@ public:
             pScheme->FinalizeNonLinIteration(BaseType::GetModelPart(), rA, rDx, rb);
 
             // STOP CRITERION
-            is_converged = this->CheckStopCriterion(r_model_part);
+            is_converged = CheckStopCriterion(r_model_part);
         }
 
         //plots a warning if the maximum number of iterations is exceeded
@@ -404,11 +405,12 @@ public:
 
     bool CheckStopCriterion(ModelPart& rModelPart)
     {
-        if (r_current_process_info[MAX_NUMBER_NL_CL_ITERATIONS] == 1) {
-            return true;
-        }
-
         const ProcessInfo& r_current_process_info = rModelPart.GetProcessInfo();
+
+        // if (r_current_process_info[MAX_NUMBER_NL_CL_ITERATIONS] <= 1) {
+        //     return true;
+        // }
+
         NodesArrayType& r_nodes = rModelPart.Nodes();
         const auto it_node_begin = rModelPart.NodesBegin();
 
@@ -416,9 +418,9 @@ public:
         double l2_denominator = 0.0;
         #pragma omp parallel for reduction(+:l2_numerator,l2_denominator)
         for (int i = 0; i < static_cast<int>(r_nodes.size()); ++i) {
-            NodeIterator itCurrentNode = it_node_begin + i;
+            auto itCurrentNode = it_node_begin + i;
             const array_1d<double, 3>& r_current_displacement = itCurrentNode->FastGetSolutionStepValue(DISPLACEMENT);
-            const array_1d<double, 3>& r_current_iterative_displacement = it_node->FastGetSolutionStepValue(NODAL_INITIAL_DISPLACEMENT);
+            const array_1d<double, 3>& r_current_iterative_displacement = itCurrentNode->FastGetSolutionStepValue(NODAL_INITIAL_DISPLACEMENT);
             // const array_1d<double, 3>& r_previous_displacement = itCurrentNode->FastGetSolutionStepValue(DISPLACEMENT,1);
             array_1d<double, 3> delta_displacement;
             noalias(delta_displacement) = r_current_displacement-r_current_iterative_displacement;

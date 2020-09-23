@@ -100,38 +100,51 @@ void TrussFICElementLinear3D2N::AddExplicitContribution(
 
     if (rRHSVariable == RESIDUAL_VECTOR && rDestinationVariable == FORCE_RESIDUAL) {
 
-        Matrix non_diagonal_damping_matrix;
         ProcessInfo temp_process_information = rCurrentProcessInfo; // cant pass const ProcessInfo
+
+        Matrix non_diagonal_damping_matrix;
         CalculateNoDiagonalDampingMatrix(non_diagonal_damping_matrix, temp_process_information);
-
-        Vector current_nodal_velocities = ZeroVector(msLocalSize);
-        GetFirstDerivativesVector(current_nodal_velocities);
-        BoundedVector<double, msLocalSize> damping_residual_contribution = ZeroVector(msLocalSize);
-        noalias(damping_residual_contribution) = prod(non_diagonal_damping_matrix, current_nodal_velocities);
-
-        // TODO: check algorithm
-        // Vector current_auxiliary_velocities = ZeroVector(msLocalSize);
-        // GetAuxiliaryVelocityVector(current_auxiliary_velocities,0);
-        // BoundedVector<double, msLocalSize> damping_residual_contribution = ZeroVector(msLocalSize);
-        // noalias(damping_residual_contribution) = prod(non_diagonal_damping_matrix, current_auxiliary_velocities);
-
         Vector current_nodal_displacements = ZeroVector(msLocalSize);
-        GetValuesVector(current_nodal_displacements);
-        BoundedVector<double, msLocalSize> damping_displacement_contribution = ZeroVector(msLocalSize);
-        noalias(damping_displacement_contribution) = prod(non_diagonal_damping_matrix, current_nodal_displacements);
+        GetValuesVector(current_nodal_displacements,0);
+        BoundedVector<double, msLocalSize> current_iterative_damping_residual = ZeroVector(msLocalSize);
+        noalias(current_iterative_damping_residual) = prod(non_diagonal_damping_matrix, current_nodal_displacements);
 
-        // TODO: seguir
+        Matrix damping_matrix;
+        CalculateDampingMatrix(damping_matrix, temp_process_information);
+        Vector previous_nodal_displacements = ZeroVector(msLocalSize);
+        GetValuesVector(previous_nodal_displacements,1);
+        BoundedVector<double, msLocalSize> previous_damping_residual = ZeroVector(msLocalSize);
+        noalias(previous_damping_residual) = prod(damping_matrix, previous_nodal_displacements);
 
-        for (size_t i = 0; i < msNumberOfNodes; ++i) {
-            size_t index = msDimension * i;
-            array_1d<double, 3>& r_force_residual = GetGeometry()[i].FastGetSolutionStepValue(FORCE_RESIDUAL);
-            array_1d<double, 3>& r_inertial_residual = GetGeometry()[i].FastGetSolutionStepValue(NODAL_INERTIA);
-            for (size_t j = 0; j < msDimension; ++j) {
-                #pragma omp atomic
-                r_force_residual[j] += rRHSVector[index + j];
+        if (rCurrentProcessInfo[MAX_NUMBER_NL_CL_ITERATIONS] <= 1) {
+            for (size_t i = 0; i < msNumberOfNodes; ++i) {
+                size_t index = msDimension * i;
+                array_1d<double, 3>& r_force_residual = GetGeometry()[i].FastGetSolutionStepValue(FORCE_RESIDUAL);
+                array_1d<double, 3>& r_damping_residual = GetGeometry()[i].FastGetSolutionStepValue(NODAL_INERTIA);
+                for (size_t j = 0; j < msDimension; ++j) {
+                    #pragma omp atomic
+                    r_force_residual[j] += rRHSVector[index + j];
 
-                #pragma omp atomic
-                r_inertial_residual[j] += damping_displacement_contribution[index + j];
+                    #pragma omp atomic
+                    r_damping_residual[j] += current_iterative_damping_residual[index + j];
+                }
+            }
+        } else {
+            for (size_t i = 0; i < msNumberOfNodes; ++i) {
+                size_t index = msDimension * i;
+                array_1d<double, 3>& r_force_residual = GetGeometry()[i].FastGetSolutionStepValue(FORCE_RESIDUAL);
+                array_1d<double, 3>& r_current_iterative_damping_residual = GetGeometry()[i].FastGetSolutionStepValue(NODAL_INERTIA);
+                array_1d<double, 3>& r_previous_damping_residual = GetGeometry()[i].FastGetSolutionStepValue(NODAL_ROTATION_DAMPING);
+                for (size_t j = 0; j < msDimension; ++j) {
+                    #pragma omp atomic
+                    r_force_residual[j] += rRHSVector[index + j];
+
+                    #pragma omp atomic
+                    r_current_iterative_damping_residual[j] += current_iterative_damping_residual[index + j];
+
+                    #pragma omp atomic
+                    r_previous_damping_residual[j] += previous_damping_residual[index + j];
+                }
             }
         }
     }
