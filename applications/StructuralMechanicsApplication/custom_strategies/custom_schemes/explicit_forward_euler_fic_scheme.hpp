@@ -344,7 +344,7 @@ public:
         }
 
         // TODO: STOP CRITERION
-        // this->CheckStopCriterion(rModelPart);
+        this->CheckStopCriterion(rModelPart);
 
         KRATOS_CATCH("")
     }

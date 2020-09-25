@@ -57,7 +57,7 @@ class ExplicitMechanicalSolver(MechanicalSolver):
             self.main_model_part.AddNodalSolutionStepVariable(StructuralMechanicsApplication.FRACTIONAL_ACCELERATION)
             if (self.settings["rotation_dofs"].GetBool()):
                 self.main_model_part.AddNodalSolutionStepVariable(StructuralMechanicsApplication.FRACTIONAL_ANGULAR_ACCELERATION)
-        if(scheme_type == "forward_euler_fic"):
+        if(scheme_type == "forward_euler_fic" or scheme_type == "symplectic_euler" or scheme_type == "velocity_verlet"):
             self.main_model_part.AddNodalSolutionStepVariable(StructuralMechanicsApplication.NODAL_DISPLACEMENT_STIFFNESS)
             self.main_model_part.AddNodalSolutionStepVariable(StructuralMechanicsApplication.NODAL_INERTIA)
             self.main_model_part.AddNodalSolutionStepVariable(StructuralMechanicsApplication.NODAL_INITIAL_DISPLACEMENT)

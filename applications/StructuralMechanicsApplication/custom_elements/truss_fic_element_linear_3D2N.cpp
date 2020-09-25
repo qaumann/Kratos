@@ -317,25 +317,25 @@ void TrussFICElementLinear3D2N::CalculateNoDiagonalDampingMatrix(MatrixType& rDa
     KRATOS_CATCH("")
 }
 
-void TrussFICElementLinear3D2N::GetAuxiliaryVelocityVector(Vector& rValues, int Step) const
-{
+// void TrussFICElementLinear3D2N::GetAuxiliaryVelocityVector(Vector& rValues, int Step) const
+// {
 
-    KRATOS_TRY
-    if (rValues.size() != msLocalSize) {
-        rValues.resize(msLocalSize, false);
-    }
+//     KRATOS_TRY
+//     if (rValues.size() != msLocalSize) {
+//         rValues.resize(msLocalSize, false);
+//     }
 
-    for (int i = 0; i < msNumberOfNodes; ++i) {
-        int index = i * msDimension;
-        const auto& aux_vel =
-            GetGeometry()[i].FastGetSolutionStepValue(NODAL_DISPLACEMENT_STIFFNESS, Step);
+//     for (int i = 0; i < msNumberOfNodes; ++i) {
+//         int index = i * msDimension;
+//         const auto& aux_vel =
+//             GetGeometry()[i].FastGetSolutionStepValue(NODAL_DISPLACEMENT_STIFFNESS, Step);
 
-        rValues[index] = aux_vel[0];
-        rValues[index + 1] = aux_vel[1];
-        rValues[index + 2] = aux_vel[2];
-    }
-    KRATOS_CATCH("")
-}
+//         rValues[index] = aux_vel[0];
+//         rValues[index + 1] = aux_vel[1];
+//         rValues[index + 2] = aux_vel[2];
+//     }
+//     KRATOS_CATCH("")
+// }
 
 void TrussFICElementLinear3D2N::save(Serializer& rSerializer) const
 {

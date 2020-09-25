@@ -407,9 +407,9 @@ public:
     {
         const ProcessInfo& r_current_process_info = rModelPart.GetProcessInfo();
 
-        // if (r_current_process_info[MAX_NUMBER_NL_CL_ITERATIONS] <= 1) {
-        //     return true;
-        // }
+        if (r_current_process_info[MAX_NUMBER_NL_CL_ITERATIONS] <= 1) {
+            return true;
+        }
 
         NodesArrayType& r_nodes = rModelPart.Nodes();
         const auto it_node_begin = rModelPart.NodesBegin();
