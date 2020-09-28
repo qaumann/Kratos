@@ -116,6 +116,12 @@ void TrussFICElementLinear3D2N::AddExplicitContribution(
         BoundedVector<double, msLocalSize> previous_damping_residual = ZeroVector(msLocalSize);
         noalias(previous_damping_residual) = prod(damping_matrix, previous_nodal_displacements);
 
+    // TODO: seguir
+    BoundedVector<double, msLocalSize> internal_forces = ZeroVector(msLocalSize);
+    UpdateInternalForces(internal_forces);
+
+    noalias(rRightHandSideVector) -= internal_forces;
+
         if (rCurrentProcessInfo[MAX_NUMBER_NL_CL_ITERATIONS] <= 1) {
             for (size_t i = 0; i < msNumberOfNodes; ++i) {
                 size_t index = msDimension * i;

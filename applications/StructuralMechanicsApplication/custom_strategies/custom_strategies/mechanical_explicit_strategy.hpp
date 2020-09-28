@@ -349,13 +349,13 @@ public:
 
 
         // TODO: iterative explicit strategy
-        bool is_converged = false;
-        unsigned int iteration_number = 0;
-        unsigned int max_iteration_number = r_model_part.GetProcessInfo()[MAX_NUMBER_NL_CL_ITERATIONS];
+        // bool is_converged = false;
+        // unsigned int iteration_number = 0;
+        // unsigned int max_iteration_number = r_model_part.GetProcessInfo()[MAX_NUMBER_NL_CL_ITERATIONS];
 
-        while (is_converged == false && iteration_number < max_iteration_number) {
+        // while (is_converged == false && iteration_number < max_iteration_number) {
 
-            iteration_number++;
+        //     iteration_number++;
 
             // Initialize the non linear iteration
             pScheme->InitializeNonLinIteration(BaseType::GetModelPart(), rA, rDx, rb);
@@ -379,16 +379,16 @@ public:
             // Finalize the non linear iteration
             pScheme->FinalizeNonLinIteration(BaseType::GetModelPart(), rA, rDx, rb);
 
-            // STOP CRITERION
-            is_converged = CheckStopCriterion(r_model_part);
-        }
+        //     // STOP CRITERION
+        //     is_converged = CheckStopCriterion(r_model_part);
+        // }
 
         //plots a warning if the maximum number of iterations is exceeded
-        if (iteration_number >= max_iteration_number) {
-            KRATOS_INFO("STOP CRITERION") << "ATTENTION: max iterations ( " << max_iteration_number << " ) exceeded!" << std::endl;
-        } else {
-            KRATOS_INFO("STOP CRITERION") << "Convergence achieved after " << iteration_number << " / " << max_iteration_number << " iterations" << std::endl;
-        }
+        // if (iteration_number >= max_iteration_number) {
+        //     KRATOS_INFO("STOP CRITERION") << "ATTENTION: max iterations ( " << max_iteration_number << " ) exceeded!" << std::endl;
+        // } else {
+        //     KRATOS_INFO("STOP CRITERION") << "Convergence achieved after " << iteration_number << " / " << max_iteration_number << " iterations" << std::endl;
+        // }
 
         // We compute the MPC contributions
         if(r_model_part.MasterSlaveConstraints().size() > 0) {
@@ -403,54 +403,54 @@ public:
         return true;
     }
 
-    bool CheckStopCriterion(ModelPart& rModelPart)
-    {
-        const ProcessInfo& r_current_process_info = rModelPart.GetProcessInfo();
+    // bool CheckStopCriterion(ModelPart& rModelPart)
+    // {
+    //     const ProcessInfo& r_current_process_info = rModelPart.GetProcessInfo();
 
-        if (r_current_process_info[MAX_NUMBER_NL_CL_ITERATIONS] <= 1) {
-            return true;
-        }
+    //     if (r_current_process_info[MAX_NUMBER_NL_CL_ITERATIONS] <= 1) {
+    //         return true;
+    //     }
 
-        NodesArrayType& r_nodes = rModelPart.Nodes();
-        const auto it_node_begin = rModelPart.NodesBegin();
+    //     NodesArrayType& r_nodes = rModelPart.Nodes();
+    //     const auto it_node_begin = rModelPart.NodesBegin();
 
-        double l2_numerator = 0.0;
-        double l2_denominator = 0.0;
-        #pragma omp parallel for reduction(+:l2_numerator,l2_denominator)
-        for (int i = 0; i < static_cast<int>(r_nodes.size()); ++i) {
-            auto itCurrentNode = it_node_begin + i;
-            const array_1d<double, 3>& r_current_displacement = itCurrentNode->FastGetSolutionStepValue(DISPLACEMENT);
-            const array_1d<double, 3>& r_current_iterative_displacement = itCurrentNode->FastGetSolutionStepValue(NODAL_INITIAL_DISPLACEMENT);
-            // const array_1d<double, 3>& r_previous_displacement = itCurrentNode->FastGetSolutionStepValue(DISPLACEMENT,1);
-            array_1d<double, 3> delta_displacement;
-            noalias(delta_displacement) = r_current_displacement-r_current_iterative_displacement;
-            const double norm_2_du = inner_prod(delta_displacement,delta_displacement);
-            const double norm_2_u_old = inner_prod(r_current_iterative_displacement,r_current_iterative_displacement);
+    //     double l2_numerator = 0.0;
+    //     double l2_denominator = 0.0;
+    //     #pragma omp parallel for reduction(+:l2_numerator,l2_denominator)
+    //     for (int i = 0; i < static_cast<int>(r_nodes.size()); ++i) {
+    //         auto itCurrentNode = it_node_begin + i;
+    //         const array_1d<double, 3>& r_current_displacement = itCurrentNode->FastGetSolutionStepValue(DISPLACEMENT);
+    //         const array_1d<double, 3>& r_current_iterative_displacement = itCurrentNode->FastGetSolutionStepValue(NODAL_INITIAL_DISPLACEMENT);
+    //         // const array_1d<double, 3>& r_previous_displacement = itCurrentNode->FastGetSolutionStepValue(DISPLACEMENT,1);
+    //         array_1d<double, 3> delta_displacement;
+    //         noalias(delta_displacement) = r_current_displacement-r_current_iterative_displacement;
+    //         const double norm_2_du = inner_prod(delta_displacement,delta_displacement);
+    //         const double norm_2_u_old = inner_prod(r_current_iterative_displacement,r_current_iterative_displacement);
 
-            l2_numerator += norm_2_du;
-            l2_denominator += norm_2_u_old;
-        }
-        if (l2_denominator > 1.0e-12) {
-            double l2_error = std::sqrt(l2_numerator)/std::sqrt(l2_denominator);
+    //         l2_numerator += norm_2_du;
+    //         l2_denominator += norm_2_u_old;
+    //     }
+    //     if (l2_denominator > 1.0e-12) {
+    //         double l2_error = std::sqrt(l2_numerator)/std::sqrt(l2_denominator);
 
-            // std::fstream l2_error_file;
-            // l2_error_file.open ("l2_error_time.txt", std::fstream::out | std::fstream::app);
-            // l2_error_file.precision(12);
-            // l2_error_file << r_current_process_info[TIME] << " " << l2_error << std::endl;
-            // l2_error_file.close();
+    //         // std::fstream l2_error_file;
+    //         // l2_error_file.open ("l2_error_time.txt", std::fstream::out | std::fstream::app);
+    //         // l2_error_file.precision(12);
+    //         // l2_error_file << r_current_process_info[TIME] << " " << l2_error << std::endl;
+    //         // l2_error_file.close();
 
-            if (l2_error < r_current_process_info[SERIAL_PARALLEL_EQUILIBRIUM_TOLERANCE]) {
-                return true;
-                // KRATOS_INFO("STOP CRITERION") << "L2 Error is: " << l2_error << " . The simulation is completed at step: " << r_current_process_info[STEP] << std::endl;
-                // KRATOS_INFO("STOP CRITERION") << "L2 numerator is: " << std::sqrt(l2_numerator) << " . L2 denominator is: " << std::sqrt(l2_denominator) << std::endl;
-                // KRATOS_ERROR << "L2 Error is: " << l2_error << " . The simulation is completed at step: " << r_current_process_info[STEP] << std::endl;
-            } else {
-                return false;
-            }
-        } else {
-            return false;
-        }
-    }
+    //         if (l2_error < r_current_process_info[SERIAL_PARALLEL_EQUILIBRIUM_TOLERANCE]) {
+    //             return true;
+    //             // KRATOS_INFO("STOP CRITERION") << "L2 Error is: " << l2_error << " . The simulation is completed at step: " << r_current_process_info[STEP] << std::endl;
+    //             // KRATOS_INFO("STOP CRITERION") << "L2 numerator is: " << std::sqrt(l2_numerator) << " . L2 denominator is: " << std::sqrt(l2_denominator) << std::endl;
+    //             // KRATOS_ERROR << "L2 Error is: " << l2_error << " . The simulation is completed at step: " << r_current_process_info[STEP] << std::endl;
+    //         } else {
+    //             return false;
+    //         }
+    //     } else {
+    //         return false;
+    //     }
+    // }
 
     /**
      * @brief Performs all the required operations that should be done (for each step) after solving the solution step.

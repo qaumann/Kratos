@@ -114,7 +114,6 @@ public:
     ///@name Operators
     ///@{
 
-
     /**
      * @brief This method initializes the residual in the nodes of the model part
      * @param rModelPart The model of the problem to solve
@@ -164,6 +163,21 @@ public:
         KRATOS_CATCH("")
     }
 
+     void Predict(
+        ModelPart& rModelPart,
+        DofsArrayType& rDofSet,
+        TSystemMatrixType& A,
+        TSystemVectorType& Dx,
+        TSystemVectorType& b
+    ) override
+    {
+        KRATOS_TRY;
+
+        this->CalculateAndAddRHS(rModelPart);
+
+        KRATOS_CATCH("")
+    }
+
     /**
      * @brief Performing the update of the solution
      * @param rModelPart The model of the problem to solve
@@ -209,7 +223,7 @@ public:
 
         // TODO: STOP CRITERION
         this->CheckStopCriterion(rModelPart);
-        
+
         KRATOS_CATCH("")
     }
 
