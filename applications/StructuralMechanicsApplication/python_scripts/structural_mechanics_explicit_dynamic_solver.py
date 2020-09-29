@@ -36,9 +36,10 @@ class ExplicitMechanicalSolver(MechanicalSolver):
             "fraction_delta_time"        : 0.333333333333333333333333333333333333,
             "rayleigh_alpha"             : 0.0,
             "rayleigh_beta"              : 0.0,
-            "rayleigh_beta_2"            : 0.0,
+            "theta_1"                    : 0.0,
+            "theta_2"                    : 0.0,
             "diagonal_critical_damping"  : false,
-            "max_number_iterations"      : 1,
+            "xi_damping"                 : 0.0,
             "l2_tolerance"               : 1.0e-3
         }""")
         this_defaults.AddMissingParameters(super().GetDefaultParameters())
@@ -112,14 +113,15 @@ class ExplicitMechanicalSolver(MechanicalSolver):
         # process_info[StructuralMechanicsApplication.RAYLEIGH_BETA] = self.settings["rayleigh_beta"].GetDouble()
         process_info.SetValue(StructuralMechanicsApplication.RAYLEIGH_ALPHA, self.settings["rayleigh_alpha"].GetDouble())
         process_info.SetValue(StructuralMechanicsApplication.RAYLEIGH_BETA, self.settings["rayleigh_beta"].GetDouble())
-        process_info.SetValue(StructuralMechanicsApplication.RAYLEIGH_BETA_2, self.settings["rayleigh_beta_2"].GetDouble())
+        process_info.SetValue(StructuralMechanicsApplication.THETA_1, self.settings["theta_1"].GetDouble())
+        process_info.SetValue(StructuralMechanicsApplication.THETA_2, self.settings["theta_2"].GetDouble())
         use_rayleigh_damping = True
         if self.settings["diagonal_critical_damping"].GetBool() == True:
             use_rayleigh_damping = False
-            process_info.SetValue(StructuralMechanicsApplication.RAYLEIGH_BETA_2, 0.0)
         process_info.SetValue(StructuralMechanicsApplication.USE_CONSISTENT_MASS_MATRIX, use_rayleigh_damping)
+        process_info.SetValue(StructuralMechanicsApplication.XI_DAMPING, self.settings["xi_damping"].GetDouble())
         process_info.SetValue(StructuralMechanicsApplication.SERIAL_PARALLEL_EQUILIBRIUM_TOLERANCE, self.settings["l2_tolerance"].GetDouble())
-        process_info.SetValue(StructuralMechanicsApplication.MAX_NUMBER_NL_CL_ITERATIONS, self.settings["max_number_iterations"].GetInt())
+        self.main_model_part.ProcessInfo[KratosMultiphysics.DELTA_TIME] = self.settings["time_stepping"]["time_step"].GetDouble()
 
         # Setting the time integration schemes
         if(scheme_type == "central_differences"):
@@ -129,15 +131,11 @@ class ExplicitMechanicalSolver(MechanicalSolver):
         elif(scheme_type == "multi_stage"):
             mechanical_scheme = StructuralMechanicsApplication.ExplicitMultiStageKimScheme(self.settings["fraction_delta_time"].GetDouble())
         elif(scheme_type == "forward_euler_fic"):
-            self.main_model_part.ProcessInfo[KratosMultiphysics.DELTA_TIME] = self.settings["time_stepping"]["time_step"].GetDouble()
-            mechanical_scheme = StructuralMechanicsApplication.ExplicitForwardEulerFICScheme(self.settings["l2_tolerance"].GetDouble())
+            mechanical_scheme = StructuralMechanicsApplication.ExplicitForwardEulerFICScheme()
         elif(scheme_type == "symplectic_euler"):
-            self.main_model_part.ProcessInfo[KratosMultiphysics.DELTA_TIME] = self.settings["time_stepping"]["time_step"].GetDouble()
-            mechanical_scheme = StructuralMechanicsApplication.ExplicitSymplecticEulerScheme(self.settings["l2_tolerance"].GetDouble())
+            mechanical_scheme = StructuralMechanicsApplication.ExplicitSymplecticEulerScheme()
         elif(scheme_type == "velocity_verlet"):
-            self.main_model_part.ProcessInfo[KratosMultiphysics.DELTA_TIME] = self.settings["time_stepping"]["time_step"].GetDouble()
-            mechanical_scheme = StructuralMechanicsApplication.ExplicitVelocityVerletScheme(self.settings["l2_tolerance"].GetDouble())
-
+            mechanical_scheme = StructuralMechanicsApplication.ExplicitVelocityVerletScheme()
         else:
             err_msg =  "The requested scheme type \"" + scheme_type + "\" is not available!\n"
             err_msg += "Available options are: \"central_differences\", \"multi_stage\", \"forward_euler_fic\""

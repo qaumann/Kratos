@@ -100,8 +100,8 @@ public:
      * @brief Default constructor.
      * @details The ExplicitSymplecticEulerScheme method
      */
-    ExplicitSymplecticEulerScheme(const double L2Tolerance)
-        : ExplicitForwardEulerFICScheme<TSparseSpace, TDenseSpace>(L2Tolerance)
+    ExplicitSymplecticEulerScheme()
+        : ExplicitForwardEulerFICScheme<TSparseSpace, TDenseSpace>()
     {
 
     }
