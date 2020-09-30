@@ -229,7 +229,7 @@ public:
      * @brief This method initializes the residual in the nodes of the model part
      * @param rModelPart The model of the problem to solve
      */
-    void InitializeResidual(ModelPart& rModelPart)
+    virtual void InitializeResidual(ModelPart& rModelPart)
     {
         KRATOS_TRY
 
@@ -251,7 +251,7 @@ public:
      * @param rModelPart The model of the problem to solve
      * @param DomainSize The current dimention of the problem
      */
-    void InitializeExplicitScheme(
+    virtual void InitializeExplicitScheme(
         ModelPart& rModelPart,
         const SizeType DomainSize = 3
         )
@@ -343,7 +343,7 @@ public:
      * @param DisplacementPosition The position of the displacement dof on the database
      * @param DomainSize The current dimention of the problem
      */
-    void PredictTranslationalDegreesOfFreedom(
+    virtual void PredictTranslationalDegreesOfFreedom(
         NodeIterator itCurrentNode,
         const IndexType DisplacementPosition,
         const SizeType DomainSize = 3
@@ -475,7 +475,7 @@ public:
      * @param DisplacementPosition The position of the displacement dof on the database
      * @param DomainSize The current dimention of the problem
      */
-    void UpdateTranslationalDegreesOfFreedom(
+    virtual void UpdateTranslationalDegreesOfFreedom(
         NodeIterator itCurrentNode,
         const IndexType DisplacementPosition,
         const SizeType DomainSize = 3
@@ -636,6 +636,24 @@ protected:
     ///@name Protected Operators
     ///@{
 
+    /**
+    * @brief Functions that calculates the RHS of a "TObjectType" object
+    * @param rCurrentEntity The TObjectType to compute
+    * @param RHS_Contribution The RHS vector contribution
+    * @param rCurrentProcessInfo The current process info instance
+    */
+    template <typename TObjectType>
+    void TCalculateRHSContribution(
+        TObjectType& rCurrentEntity,
+        LocalSystemVectorType& RHS_Contribution,
+        const ProcessInfo& rCurrentProcessInfo
+        )
+    {
+        rCurrentEntity.CalculateRightHandSide(RHS_Contribution, rCurrentProcessInfo);
+
+        rCurrentEntity.AddExplicitContribution(RHS_Contribution, RESIDUAL_VECTOR, FORCE_RESIDUAL, rCurrentProcessInfo);
+    }
+
     ///@}
     ///@name Protected Operations
     ///@{
@@ -669,24 +687,6 @@ private:
     ///@}
     ///@name Private Operations
     ///@{
-
-    /**
-    * @brief Functions that calculates the RHS of a "TObjectType" object
-    * @param rCurrentEntity The TObjectType to compute
-    * @param RHS_Contribution The RHS vector contribution
-    * @param rCurrentProcessInfo The current process info instance
-    */
-    template <typename TObjectType>
-    void TCalculateRHSContribution(
-        TObjectType& rCurrentEntity,
-        LocalSystemVectorType& RHS_Contribution,
-        const ProcessInfo& rCurrentProcessInfo
-        )
-    {
-        rCurrentEntity.CalculateRightHandSide(RHS_Contribution, rCurrentProcessInfo);
-
-        rCurrentEntity.AddExplicitContribution(RHS_Contribution, RESIDUAL_VECTOR, FORCE_RESIDUAL, rCurrentProcessInfo);
-    }
 
     ///@}
     ///@name Private  Access

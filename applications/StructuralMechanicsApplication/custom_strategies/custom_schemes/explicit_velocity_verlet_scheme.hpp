@@ -119,7 +119,7 @@ public:
      * @brief This method initializes the residual in the nodes of the model part
      * @param rModelPart The model of the problem to solve
      */
-    void InitializeResidual(ModelPart& rModelPart)
+    void InitializeResidual(ModelPart& rModelPart) override
     {
         KRATOS_TRY
 
@@ -142,7 +142,7 @@ public:
     void InitializeExplicitScheme(
         ModelPart& rModelPart,
         const SizeType DomainSize = 3
-        )
+        ) override
     {
         KRATOS_TRY
 
@@ -221,7 +221,7 @@ public:
         NodeIterator itCurrentNode,
         const IndexType DisplacementPosition,
         const SizeType DomainSize = 3
-        )
+        ) override
     {
         const double nodal_mass = itCurrentNode->GetValue(NODAL_MASS);
         const array_1d<double, 3>& r_current_residual = itCurrentNode->FastGetSolutionStepValue(FORCE_RESIDUAL);
@@ -308,7 +308,7 @@ public:
         NodeIterator itCurrentNode,
         const IndexType DisplacementPosition,
         const SizeType DomainSize = 3
-        )
+        ) override
     {
         const double nodal_mass = itCurrentNode->GetValue(NODAL_MASS);
         const array_1d<double, 3>& r_current_residual = itCurrentNode->FastGetSolutionStepValue(FORCE_RESIDUAL);
