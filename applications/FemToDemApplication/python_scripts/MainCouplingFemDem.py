@@ -22,11 +22,11 @@ def Wait():
 #============================================================================================================================
 class MainCoupledFemDem_Solution:
 #============================================================================================================================
-    def __init__(self, Model):
+    def __init__(self, Model, path = ""):
         self.model = Model
         # Initialize solutions
-        self.FEM_Solution = FEM.FEM_for_coupling_Solution(Model)
-        self.DEM_Solution = DEM.DEM_for_coupling_Solution(Model)
+        self.FEM_Solution = FEM.FEM_for_coupling_Solution(Model, path)
+        self.DEM_Solution = DEM.DEM_for_coupling_Solution(Model, path)
 
         # Initialize Remeshing files
         self.DoRemeshing = self.FEM_Solution.ProjectParameters["AMR_data"]["activate_AMR"].GetBool()
@@ -52,6 +52,7 @@ class MainCoupledFemDem_Solution:
         else: # 3D
             self.number_of_nodes_element = 4
             self.FEM_Solution.main_model_part.ProcessInfo[KratosFemDem.ERASED_VOLUME] = 0.0 # Sand Production Calculations
+            
         self.FEM_Solution.Initialize()
         self.DEM_Solution.Initialize()
 
