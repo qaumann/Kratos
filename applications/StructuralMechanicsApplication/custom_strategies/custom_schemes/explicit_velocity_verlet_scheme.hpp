@@ -163,7 +163,7 @@ public:
             if(it_node->Id()==2){
                 array_1d<double, 3>& r_current_velocity = it_node->FastGetSolutionStepValue(VELOCITY);
                 noalias(r_current_velocity) = ZeroVector(3);
-                r_current_velocity[0] = 30.0;
+                r_current_velocity[0] = 0.01;
             }
         }
 

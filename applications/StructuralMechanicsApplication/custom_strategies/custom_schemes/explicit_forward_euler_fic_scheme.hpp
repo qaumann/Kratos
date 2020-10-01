@@ -272,17 +272,18 @@ public:
             it_node->SetValue(NODAL_DISPLACEMENT_DAMPING, 0.0);
             array_1d<double, 3>& r_current_impulse = it_node->FastGetSolutionStepValue(NODAL_DISPLACEMENT_STIFFNESS);
             // array_1d<double, 3>& r_current_iterative_displacement = it_node->FastGetSolutionStepValue(NODAL_INITIAL_DISPLACEMENT);
-            array_1d<double, 3>& r_current_internal_force = it_node->FastGetSolutionStepValue(FORCE_RESIDUAL);
-            array_1d<double, 3>& r_external_forces = it_node->FastGetSolutionStepValue(NODAL_INERTIA);
+            array_1d<double, 3>& r_external_forces = it_node->FastGetSolutionStepValue(FORCE_RESIDUAL);
+            array_1d<double, 3>& r_current_internal_force = it_node->FastGetSolutionStepValue(NODAL_INERTIA);
             // array_1d<double, 3>& r_previous_damping_residual = it_node->FastGetSolutionStepValue(NODAL_ROTATION_DAMPING);
             noalias(r_current_impulse) = ZeroVector(3);
-            // TODO: initial impulse X = M*v0 = 2.27887e-5*30
+            // TODO: initial impulse
             if(it_node->Id()==2){
-                r_current_impulse[0] = 0.000683661;
+                // TODO: initial impulse X = M*v0 = 2.27887e-5*0.01
+                r_current_impulse[0] = 2.27887e-7;
             }
             // noalias(r_current_iterative_displacement) = ZeroVector(3);
-            noalias(r_current_internal_force) = ZeroVector(3);
             noalias(r_external_forces) = ZeroVector(3);
+            noalias(r_current_internal_force) = ZeroVector(3);
             // noalias(r_previous_damping_residual) = ZeroVector(3);
         }
 
@@ -482,9 +483,9 @@ public:
         )
     {
         array_1d<double, 3>& r_current_impulse = itCurrentNode->FastGetSolutionStepValue(NODAL_DISPLACEMENT_STIFFNESS);
-        const array_1d<double, 3>& r_current_internal_force = itCurrentNode->FastGetSolutionStepValue(FORCE_RESIDUAL);
-        const array_1d<double, 3>& r_previous_internal_force = itCurrentNode->FastGetSolutionStepValue(FORCE_RESIDUAL,1);
-        const array_1d<double, 3>& r_external_forces = itCurrentNode->FastGetSolutionStepValue(NODAL_INERTIA);
+        const array_1d<double, 3>& r_external_forces = itCurrentNode->FastGetSolutionStepValue(FORCE_RESIDUAL);
+        const array_1d<double, 3>& r_current_internal_force = itCurrentNode->FastGetSolutionStepValue(NODAL_INERTIA);
+        const array_1d<double, 3>& r_previous_internal_force = itCurrentNode->FastGetSolutionStepValue(NODAL_INERTIA,1);
         //TODO: check that residual,0 and residual,1 are different
 
         // Solution of the explicit equation:

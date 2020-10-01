@@ -122,15 +122,15 @@ void TrussFICElementLinear3D2N::AddExplicitContribution(
 
         for (size_t i = 0; i < msNumberOfNodes; ++i) {
             size_t index = msDimension * i;
-            array_1d<double, 3>& r_internal_forces = GetGeometry()[i].FastGetSolutionStepValue(FORCE_RESIDUAL);
-            array_1d<double, 3>& r_external_forces = GetGeometry()[i].FastGetSolutionStepValue(NODAL_INERTIA);
+            array_1d<double, 3>& r_external_forces = GetGeometry()[i].FastGetSolutionStepValue(FORCE_RESIDUAL);
+            array_1d<double, 3>& r_internal_forces = GetGeometry()[i].FastGetSolutionStepValue(NODAL_INERTIA);
             for (size_t j = 0; j < msDimension; ++j) {
-                #pragma omp atomic
-                r_internal_forces[j] += internal_forces[index + j];
-
                 // rRHSVector = f-Ka
                 #pragma omp atomic
                 r_external_forces[j] += rRHSVector[index + j] + internal_forces[index + j];
+
+                #pragma omp atomic
+                r_internal_forces[j] += internal_forces[index + j];
             }
         }
     }
