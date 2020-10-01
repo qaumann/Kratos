@@ -37,7 +37,7 @@ class MainPFEM_for_coupling_solution(PfemFluidDynamicsAnalysis.PfemFluidDynamics
         # Time control starts
         self.KratosPrintInfo(timer.ctime())
         # Measure process time
-        self.t0p = timer.clock()
+        self.t0p = timer.process_time()
         # Measure wall time
         self.t0w = timer.time()
         #### TIME MONITORING END ####
@@ -112,7 +112,7 @@ class MainPFEM_for_coupling_solution(PfemFluidDynamicsAnalysis.PfemFluidDynamics
         solver_module = import_module(full_module_name)
         solver = solver_module.CreateSolver(self.model, self.FEM_model_part, self.project_parameters["solver_settings"])
         return solver
-        
+
 #============================================================================================================================
 
     def FinalizeSolutionStep(self):
