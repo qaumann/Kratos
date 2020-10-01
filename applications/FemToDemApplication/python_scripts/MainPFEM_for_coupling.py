@@ -39,7 +39,7 @@ class MainPFEM_for_coupling_solution(PfemFluidDynamicsAnalysis.PfemFluidDynamics
         # Measure process time
         self.t0p = timer.process_time()
         # Measure wall time
-        self.t0w = timer.time()
+        self.t0w = timer.perf_counter()
         #### TIME MONITORING END ####
 
         #### PARSING THE PARAMETERS ####

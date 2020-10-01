@@ -19,7 +19,7 @@ class Solution(object):
         # Measure process time
         self.t0p = timer.process_time()
         # Measure wall time
-        self.t0w = timer.time()
+        self.t0w = timer.perf_counter()
         #### TIME MONITORING END ####
 
 
@@ -282,7 +282,7 @@ class Solution(object):
         # Measure process time
         tfp = timer.process_time()
         # Measure wall time
-        tfw = timer.time()
+        tfw = timer.perf_counter()
 
         print("::[KSM Simulation]:: [Elapsed Time = %.2f" % (tfw - self.t0w),"seconds] (%.2f" % (tfp - self.t0p),"seconds of cpu/s time)")
 
