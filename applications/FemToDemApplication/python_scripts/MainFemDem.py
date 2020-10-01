@@ -28,7 +28,7 @@ class FEM_Solution(MainSolidFEM.Solution):
         KratosMultiphysics.Logger.Print(message, label="")
         KratosMultiphysics.Logger.Flush()
 #============================================================================================================================
-    def __init__(self, Model):
+    def __init__(self, Model, path = ""):
 
         #### TIME MONITORING START ####
         # Time control starts
