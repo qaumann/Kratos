@@ -160,11 +160,11 @@ public:
             array_1d<double, 3>& r_current_residual = it_node->FastGetSolutionStepValue(FORCE_RESIDUAL);
             noalias(r_current_residual) = ZeroVector(3);
             // TODO: initial velocity X
-            if(it_node->Id()==2){
-                array_1d<double, 3>& r_current_velocity = it_node->FastGetSolutionStepValue(VELOCITY);
-                noalias(r_current_velocity) = ZeroVector(3);
-                r_current_velocity[0] = 0.01;
-            }
+            // if(it_node->Id()==2){
+            //     array_1d<double, 3>& r_current_velocity = it_node->FastGetSolutionStepValue(VELOCITY);
+            //     noalias(r_current_velocity) = ZeroVector(3);
+            //     r_current_velocity[0] = 0.01;
+            // }
         }
 
         KRATOS_CATCH("")

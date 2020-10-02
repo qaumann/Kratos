@@ -277,10 +277,10 @@ public:
             // array_1d<double, 3>& r_previous_damping_residual = it_node->FastGetSolutionStepValue(NODAL_ROTATION_DAMPING);
             noalias(r_current_impulse) = ZeroVector(3);
             // TODO: initial impulse
-            if(it_node->Id()==2){
-                // TODO: initial impulse X = M*v0 = 2.27887e-5*0.01
-                r_current_impulse[0] = 2.27887e-7;
-            }
+            // if(it_node->Id()==2){
+            //     // TODO: initial impulse X = M*v0 = 2.27887e-5*0.01
+            //     r_current_impulse[0] = 2.27887e-7;
+            // }
             // noalias(r_current_iterative_displacement) = ZeroVector(3);
             noalias(r_external_forces) = ZeroVector(3);
             noalias(r_current_internal_force) = ZeroVector(3);
