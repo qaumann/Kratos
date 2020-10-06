@@ -8,6 +8,6 @@ def AssignMaterial(Properties):
 
     prop_id = 1
     prop = Properties[prop_id]
-    mat = LinearPlaneStress()
+    mat = ElasticIsotropic3D()
     prop.SetValue(CONSTITUTIVE_LAW, mat.Clone())
 
