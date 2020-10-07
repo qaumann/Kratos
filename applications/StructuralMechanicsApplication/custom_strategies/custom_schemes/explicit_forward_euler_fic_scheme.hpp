@@ -353,6 +353,7 @@ public:
         array_1d<double, 3>& r_current_displacement = itCurrentNode->FastGetSolutionStepValue(DISPLACEMENT);
         const array_1d<double, 3>& r_current_impulse = itCurrentNode->FastGetSolutionStepValue(NODAL_DISPLACEMENT_STIFFNESS);
         const double nodal_mass = itCurrentNode->GetValue(NODAL_MASS);
+        // const double nodal_damping = itCurrentNode->GetValue(NODAL_DISPLACEMENT_DAMPING);
 
         std::array<bool, 3> fix_displacements = {false, false, false};
         fix_displacements[0] = (itCurrentNode->GetDof(DISPLACEMENT_X, DisplacementPosition).IsFixed());
@@ -367,6 +368,10 @@ public:
                         r_current_displacement[j] = (mDeltaTime*r_current_impulse[j] + (nodal_mass -
                                                      (1.0-mTheta2)*mAlpha*mDeltaTime*nodal_mass)*r_current_displacement[j]) /
                                                      (nodal_mass + mAlpha*mTheta2*mDeltaTime*nodal_mass);
+                        // TODO: to use Cdi=2*xi*sqrt(Ki*Mi)
+                        // r_current_displacement[j] = (mDeltaTime*r_current_impulse[j] + (nodal_mass -
+                        //                              (1.0-mTheta2)*mAlpha*mDeltaTime*nodal_damping)*r_current_displacement[j]) /
+                        //                              (nodal_mass + mAlpha*mTheta2*mDeltaTime*nodal_damping);
                 }
             }
         } else{
