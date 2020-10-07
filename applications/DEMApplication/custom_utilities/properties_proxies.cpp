@@ -196,9 +196,6 @@ namespace Kratos {
             aux_pointer = &(props_it->GetValue(K_TANGENTIAL));
             vector_of_proxies[properties_counter].SetParticleKTangentialFromProperties(aux_pointer);
 
-            aux_pointer = &(props_it->GetValue(KN_KT_FACTOR));
-            vector_of_proxies[properties_counter].SetParticleKTangentialFromProperties(aux_pointer);
-
             aux_pointer = &(props_it->GetValue(CONICAL_DAMAGE_CONTACT_RADIUS));
             vector_of_proxies[properties_counter].SetParticleConicalDamageContactRadiusFromProperties(aux_pointer);
 
