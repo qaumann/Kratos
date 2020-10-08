@@ -1971,8 +1971,8 @@ namespace Kratos
 				if (dimension == 3)
 					z = NewPositions[nn][2];
 
-				//Node<3>::Pointer pnode = mrModelPart.CreateNewNode(id, x, y, z);
-				pnode = Kratos::make_intrusive<Node<3>>(id, x, y, z);
+				Node<3>::Pointer pnode = mrModelPart.CreateNewNode(id, x, y, z);
+				//pnode = Kratos::make_intrusive<Node<3>>(id, x, y, z);
 
 				pnode->Set(NEW_ENTITY); //not boundary
 
@@ -2042,7 +2042,7 @@ namespace Kratos
 				(*it)->Set(ACTIVE);
 				(*it)->Reset(TO_ERASE);
 					
-				mrModelPart.Nodes().push_back(*(it));
+				//mrModelPart.Nodes().push_back(*(it));
 			}
 
 			KRATOS_CATCH("")
