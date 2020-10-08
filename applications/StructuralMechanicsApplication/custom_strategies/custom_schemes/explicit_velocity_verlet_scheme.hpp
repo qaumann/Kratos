@@ -160,10 +160,10 @@ public:
             array_1d<double, 3>& r_current_residual = it_node->FastGetSolutionStepValue(FORCE_RESIDUAL);
             noalias(r_current_residual) = ZeroVector(3);
             // TODO: initial velocity X
-            // if(it_node->Id()==2){
+            // if(it_node->Id()==4){
             //     array_1d<double, 3>& r_current_velocity = it_node->FastGetSolutionStepValue(VELOCITY);
             //     noalias(r_current_velocity) = ZeroVector(3);
-            //     r_current_velocity[0] = 0.01;
+            //     r_current_velocity[0] = 1.3145e-6;
             // }
         }
 
@@ -240,6 +240,10 @@ public:
                 if (fix_displacements[j] == false) {
                     r_current_displacement[j] += r_current_velocity[j]*mDeltaTime + 0.5 * r_current_residual[j]/nodal_mass * mDeltaTime * mDeltaTime;
                     r_current_velocity[j] += 0.5 * mDeltaTime * r_current_residual[j]/nodal_mass;
+                    // TODO: imposed velocity X
+                    // if(itCurrentNode->Id()==4){
+                    //     r_current_velocity[0] = 1.3145e-6;
+                    // }
                 }
             }
         }
@@ -325,6 +329,10 @@ public:
             for (IndexType j = 0; j < DomainSize; j++) {
                 if (fix_displacements[j] == false) {
                     r_current_velocity[j] += 0.5 * mDeltaTime * r_current_residual[j]/nodal_mass;
+                    // TODO: imposed velocity X
+                    // if(itCurrentNode->Id()==4){
+                    //     r_current_velocity[0] = 1.3145e-6;
+                    // }
                 }
             }
         }

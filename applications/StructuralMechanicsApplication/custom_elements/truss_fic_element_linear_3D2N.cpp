@@ -116,6 +116,16 @@ void TrussFICElementLinear3D2N::AddExplicitContribution(
         // BoundedVector<double, msLocalSize> previous_damping_residual = ZeroVector(msLocalSize);
         // noalias(previous_damping_residual) = prod(damping_matrix, previous_nodal_displacements);
 
+        // BoundedVector<double, msLocalSize> damping_residual_contribution = ZeroVector(msLocalSize);
+        // Vector current_nodal_velocities = ZeroVector(msLocalSize);
+        // GetFirstDerivativesVector(current_nodal_velocities);
+        // MatrixType stiffness_matrix( msLocalSize, msLocalSize );
+        // noalias(stiffness_matrix) = ZeroMatrix(msLocalSize,msLocalSize);
+        // ProcessInfo temp_process_information = rCurrentProcessInfo;
+        // noalias(stiffness_matrix) = CreateElementStiffnessMatrix(temp_process_information);
+        // // current residual contribution due to damping
+        // noalias(damping_residual_contribution) = prod(stiffness_matrix, current_nodal_velocities);
+
         // internal_forces = Ka
         BoundedVector<double, msLocalSize> internal_forces = ZeroVector(msLocalSize);
         UpdateInternalForces(internal_forces);
@@ -124,6 +134,7 @@ void TrussFICElementLinear3D2N::AddExplicitContribution(
             size_t index = msDimension * i;
             array_1d<double, 3>& r_external_forces = GetGeometry()[i].FastGetSolutionStepValue(FORCE_RESIDUAL);
             array_1d<double, 3>& r_internal_forces = GetGeometry()[i].FastGetSolutionStepValue(NODAL_INERTIA);
+            // array_1d<double, 3>& r_damping_residual = GetGeometry()[i].FastGetSolutionStepValue(NODAL_ROTATION_DAMPING);
             for (size_t j = 0; j < msDimension; ++j) {
                 // rRHSVector = f-Ka
                 #pragma omp atomic
@@ -131,6 +142,9 @@ void TrussFICElementLinear3D2N::AddExplicitContribution(
 
                 #pragma omp atomic
                 r_internal_forces[j] += internal_forces[index + j];
+
+                // #pragma omp atomic
+                // r_damping_residual[j] += damping_residual_contribution[index + j];
             }
         }
     }
