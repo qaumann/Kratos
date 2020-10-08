@@ -294,18 +294,22 @@ namespace Kratos {
     }
 
     void DEM_D_Hertz_viscous_Coulomb::CalculateViscoDampingForceWithFEM(double LocalRelVel[3],
-                                                                double ViscoDampingLocalContactForce[3],
-                                                                SphericParticle* const element,
-                                                                Condition* const wall) {
+                                                                        double ViscoDampingLocalContactForce[3],
+                                                                        SphericParticle* const element,
+                                                                        Condition* const wall) {
 
-        const double my_mass    = element->GetMass();
-        const double gamma = element->GetProperties()[DAMPING_GAMMA];
-        const double normal_damping_coefficient     = 2.0 * gamma * sqrt(my_mass * mKn);
-        const double tangential_damping_coefficient = 2.0 * gamma * sqrt(my_mass * mKt);
+        const double my_mass = element->GetMass();
 
-        ViscoDampingLocalContactForce[0] = - tangential_damping_coefficient * LocalRelVel[0];
-        ViscoDampingLocalContactForce[1] = - tangential_damping_coefficient * LocalRelVel[1];
-        ViscoDampingLocalContactForce[2] = - normal_damping_coefficient     * LocalRelVel[2];
+        const double my_gamma = element->GetProperties()[DAMPING_GAMMA];
+        const double wall_gamma = wall->GetProperties()[DAMPING_GAMMA];
+        const double equiv_gamma = 0.5 * (my_gamma + wall_gamma);
+
+        const double equiv_visco_damp_coeff_normal     = 2.0 * equiv_gamma * sqrt(my_mass * mKn);
+        const double equiv_visco_damp_coeff_tangential = 2.0 * equiv_gamma * sqrt(my_mass * mKt);
+
+        ViscoDampingLocalContactForce[0] = - equiv_visco_damp_coeff_tangential * LocalRelVel[0];
+        ViscoDampingLocalContactForce[1] = - equiv_visco_damp_coeff_tangential * LocalRelVel[1];
+        ViscoDampingLocalContactForce[2] = - equiv_visco_damp_coeff_normal * LocalRelVel[2];
 
     }
 
