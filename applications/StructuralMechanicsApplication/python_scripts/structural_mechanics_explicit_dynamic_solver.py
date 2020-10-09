@@ -35,6 +35,8 @@ class ExplicitMechanicalSolver(MechanicalSolver):
             "max_delta_time"             : 1.0e0,
             "fraction_delta_time"        : 0.333333333333333333333333333333333333,
             "l2_tolerance"               : 1.0e-3,
+            "diagonal_critical_damping"  : false,
+            "xi_damping"                 : 0.0,
             "rayleigh_alpha"             : 0.0,
             "rayleigh_beta"              : 0.0
         }""")
@@ -103,8 +105,17 @@ class ExplicitMechanicalSolver(MechanicalSolver):
 
         # Setting the Rayleigh damping parameters
         process_info = self.main_model_part.ProcessInfo
-        process_info[StructuralMechanicsApplication.RAYLEIGH_ALPHA] = self.settings["rayleigh_alpha"].GetDouble()
-        process_info[StructuralMechanicsApplication.RAYLEIGH_BETA] = self.settings["rayleigh_beta"].GetDouble()
+        # process_info[StructuralMechanicsApplication.RAYLEIGH_ALPHA] = self.settings["rayleigh_alpha"].GetDouble()
+        # process_info[StructuralMechanicsApplication.RAYLEIGH_BETA] = self.settings["rayleigh_beta"].GetDouble()
+        process_info.SetValue(StructuralMechanicsApplication.RAYLEIGH_ALPHA, self.settings["rayleigh_alpha"].GetDouble())
+        process_info.SetValue(StructuralMechanicsApplication.RAYLEIGH_BETA, self.settings["rayleigh_beta"].GetDouble())
+        use_rayleigh_damping = True
+        if self.settings["diagonal_critical_damping"].GetBool() == True:
+            use_rayleigh_damping = False
+        process_info.SetValue(StructuralMechanicsApplication.USE_CONSISTENT_MASS_MATRIX, use_rayleigh_damping)
+        process_info.SetValue(StructuralMechanicsApplication.XI_DAMPING, self.settings["xi_damping"].GetDouble())
+        process_info.SetValue(StructuralMechanicsApplication.SERIAL_PARALLEL_EQUILIBRIUM_TOLERANCE, self.settings["l2_tolerance"].GetDouble())
+        self.main_model_part.ProcessInfo[KratosMultiphysics.DELTA_TIME] = self.settings["time_stepping"]["time_step"].GetDouble()
 
         # Setting the time integration schemes
         if(scheme_type == "central_differences"):
@@ -114,14 +125,11 @@ class ExplicitMechanicalSolver(MechanicalSolver):
         elif(scheme_type == "multi_stage"):
             mechanical_scheme = StructuralMechanicsApplication.ExplicitMultiStageKimScheme(self.settings["fraction_delta_time"].GetDouble())
         elif(scheme_type == "forward_euler_fic"):
-            self.main_model_part.ProcessInfo[KratosMultiphysics.DELTA_TIME] = self.settings["time_stepping"]["time_step"].GetDouble()
-            mechanical_scheme = StructuralMechanicsApplication.ExplicitForwardEulerFICScheme(self.settings["l2_tolerance"].GetDouble())
+            mechanical_scheme = StructuralMechanicsApplication.ExplicitForwardEulerFICScheme()
         elif(scheme_type == "symplectic_euler"):
-            self.main_model_part.ProcessInfo[KratosMultiphysics.DELTA_TIME] = self.settings["time_stepping"]["time_step"].GetDouble()
-            mechanical_scheme = StructuralMechanicsApplication.ExplicitSymplecticEulerScheme(self.settings["l2_tolerance"].GetDouble())
+            mechanical_scheme = StructuralMechanicsApplication.ExplicitSymplecticEulerScheme()
         elif(scheme_type == "velocity_verlet"):
-            self.main_model_part.ProcessInfo[KratosMultiphysics.DELTA_TIME] = self.settings["time_stepping"]["time_step"].GetDouble()
-            mechanical_scheme = StructuralMechanicsApplication.ExplicitVelocityVerletScheme(self.settings["l2_tolerance"].GetDouble())
+            mechanical_scheme = StructuralMechanicsApplication.ExplicitVelocityVerletScheme()
 
         else:
             err_msg =  "The requested scheme type \"" + scheme_type + "\" is not available!\n"

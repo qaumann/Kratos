@@ -99,11 +99,8 @@ public:
      * @brief Default constructor.
      * @details The ExplicitForwardEulerFICScheme method
      */
-    ExplicitForwardEulerFICScheme(const double L2Tolerance)
-        : Scheme<TSparseSpace, TDenseSpace>()
-    {
-        mL2Tolerance = L2Tolerance;
-    }
+    ExplicitForwardEulerFICScheme()
+        : Scheme<TSparseSpace, TDenseSpace>() {}
 
     /** Destructor.
     */
@@ -228,7 +225,7 @@ public:
      * @brief This method initializes the residual in the nodes of the model part
      * @param rModelPart The model of the problem to solve
      */
-    void InitializeResidual(ModelPart& rModelPart)
+    virtual void InitializeResidual(ModelPart& rModelPart)
     {
         KRATOS_TRY
 
@@ -239,7 +236,7 @@ public:
         const array_1d<double, 3> zero_array = ZeroVector(3);
         // Initializing the variables
         VariableUtils().SetVariable(FORCE_RESIDUAL, zero_array,r_nodes);
-        VariableUtils().SetVariable(NODAL_INERTIA, zero_array,r_nodes);
+        // VariableUtils().SetVariable(NODAL_INERTIA, zero_array,r_nodes);
 
         KRATOS_CATCH("")
     }
@@ -249,7 +246,7 @@ public:
      * @param rModelPart The model of the problem to solve
      * @param DomainSize The current dimention of the problem
      */
-    void InitializeExplicitScheme(
+    virtual void InitializeExplicitScheme(
         ModelPart& rModelPart,
         const SizeType DomainSize = 3
         )
@@ -269,14 +266,30 @@ public:
             it_node->SetValue(NODAL_MASS, 0.0);
             it_node->SetValue(NODAL_DISPLACEMENT_DAMPING, 0.0);
             array_1d<double, 3>& r_current_aux_velocity = it_node->FastGetSolutionStepValue(NODAL_DISPLACEMENT_STIFFNESS);
-            array_1d<double, 3>& r_previous_aux_velocity = it_node->FastGetSolutionStepValue(NODAL_DISPLACEMENT_STIFFNESS,1);
+            // array_1d<double, 3>& r_previous_aux_velocity = it_node->FastGetSolutionStepValue(NODAL_DISPLACEMENT_STIFFNESS,1);
             array_1d<double, 3>& r_current_residual = it_node->FastGetSolutionStepValue(FORCE_RESIDUAL);
-            array_1d<double, 3>& r_current_inertial_residual = it_node->FastGetSolutionStepValue(NODAL_INERTIA);
+            // array_1d<double, 3>& r_current_inertial_residual = it_node->FastGetSolutionStepValue(NODAL_INERTIA);
             noalias(r_current_aux_velocity) = it_node->FastGetSolutionStepValue(VELOCITY);
-            noalias(r_previous_aux_velocity) = it_node->FastGetSolutionStepValue(VELOCITY,1);
+            // noalias(r_previous_aux_velocity) = it_node->FastGetSolutionStepValue(VELOCITY,1);
             noalias(r_current_residual) = ZeroVector(3);
-            noalias(r_current_inertial_residual) = ZeroVector(3);
+            // noalias(r_current_inertial_residual) = ZeroVector(3);
         }
+
+        KRATOS_CATCH("")
+    }
+
+
+     void Predict(
+        ModelPart& rModelPart,
+        DofsArrayType& rDofSet,
+        TSystemMatrixType& A,
+        TSystemVectorType& Dx,
+        TSystemVectorType& b
+    ) override
+    {
+        KRATOS_TRY;
+
+        this->CalculateAndAddRHS(rModelPart);
 
         KRATOS_CATCH("")
     }
@@ -330,7 +343,7 @@ public:
 
         // TODO: STOP CRITERION
         this->CheckStopCriterion(rModelPart);
-        
+
         KRATOS_CATCH("")
     }
 
@@ -347,6 +360,17 @@ public:
             NodeIterator itCurrentNode = it_node_begin + i;
             const array_1d<double, 3>& r_current_displacement = itCurrentNode->FastGetSolutionStepValue(DISPLACEMENT);
             const array_1d<double, 3>& r_previous_displacement = itCurrentNode->FastGetSolutionStepValue(DISPLACEMENT,1);
+            // array_1d<double, 3> r_exact_displacement;
+            // noalias(r_exact_displacement) = ZeroVector(3);
+            // if(itCurrentNode->Id()==1){
+            //     r_exact_displacement[0] = 0.0;
+            // } else if(itCurrentNode->Id()==2){
+            //     r_exact_displacement[0] = 4.388134e-5;
+            // } else if(itCurrentNode->Id()==3){
+            //     r_exact_displacement[0] = 8.776268e-5;
+            // } else if(itCurrentNode->Id()==4){
+            //     r_exact_displacement[0] = 0.000131644;
+            // }
             array_1d<double, 3> delta_displacement;
             noalias(delta_displacement) = r_current_displacement-r_previous_displacement;
             const double norm_2_du = inner_prod(delta_displacement,delta_displacement);
@@ -364,7 +388,7 @@ public:
             l2_error_file << r_current_process_info[TIME] << " " << l2_error << std::endl;
             l2_error_file.close();
 
-            if (l2_error < mL2Tolerance) {
+            if (l2_error < r_current_process_info[SERIAL_PARALLEL_EQUILIBRIUM_TOLERANCE]) {
                 KRATOS_INFO("STOP CRITERION") << "L2 Error is: " << l2_error << " . The simulation is completed at step: " << r_current_process_info[STEP] << std::endl;
                 KRATOS_INFO("STOP CRITERION") << "L2 numerator is: " << std::sqrt(l2_numerator) << " . L2 denominator is: " << std::sqrt(l2_denominator) << std::endl;
                 // KRATOS_ERROR << "L2 Error is: " << l2_error << " . The simulation is completed at step: " << r_current_process_info[STEP] << std::endl;
@@ -378,7 +402,7 @@ public:
      * @param DisplacementPosition The position of the displacement dof on the database
      * @param DomainSize The current dimention of the problem
      */
-    void UpdateTranslationalDegreesOfFreedom(
+    virtual void UpdateTranslationalDegreesOfFreedom(
         NodeIterator itCurrentNode,
         const IndexType DisplacementPosition,
         const SizeType DomainSize = 3
@@ -424,7 +448,7 @@ public:
                 }
             }
         }
-        
+
         const array_1d<double, 3>& r_previous_velocity = itCurrentNode->FastGetSolutionStepValue(VELOCITY,1);
         array_1d<double, 3>& r_current_velocity = itCurrentNode->FastGetSolutionStepValue(VELOCITY);
         array_1d<double, 3>& r_current_acceleration = itCurrentNode->FastGetSolutionStepValue(ACCELERATION);
@@ -517,18 +541,6 @@ public:
     }
 
 
-     void Predict(
-        ModelPart& rModelPart,
-        DofsArrayType& rDofSet,
-        TSystemMatrixType& A,
-        TSystemVectorType& Dx,
-        TSystemVectorType& b
-    ) override
-    {
-        KRATOS_TRY;
-        CalculateAndAddRHS(rModelPart);
-        KRATOS_CATCH("")
-    }
 
     ///@}
     ///@name Operations
@@ -557,19 +569,19 @@ protected:
     /**
      * @brief This struct contains the information related with the increment od time step
      */
-    struct DeltaTimeParameters {
-        double Maximum;         // Maximum delta time
-        double Fraction;        // Fraction of the delta time
-    };
+    // struct DeltaTimeParameters {
+    //     double Maximum;         // Maximum delta time
+    //     double Fraction;        // Fraction of the delta time
+    // };
 
     /**
      * @brief This struct contains the details of the time variables
      */
-    struct TimeVariables {
-        double Current;        // n+1
+    // struct TimeVariables {
+    //     double Current;        // n+1
 
-        double Delta;          // Time step
-    };
+    //     double Delta;          // Time step
+    // };
 
     ///@name Protected static Member Variables
     ///@{
@@ -577,7 +589,6 @@ protected:
     // TimeVariables mTime;            /// This struct contains the details of the time variables
     // DeltaTimeParameters mDeltaTime; /// This struct contains the information related with the increment od time step
     double mDeltaTime;
-    double mL2Tolerance;
 
     ///@}
     ///@name Protected member Variables
@@ -586,6 +597,24 @@ protected:
     ///@}
     ///@name Protected Operators
     ///@{
+
+    /**
+    * @brief Functions that calculates the RHS of a "TObjectType" object
+    * @param rCurrentEntity The TObjectType to compute
+    * @param RHS_Contribution The RHS vector contribution
+    * @param rCurrentProcessInfo The current process info instance
+    */
+    template <typename TObjectType>
+    void TCalculateRHSContribution(
+        TObjectType& rCurrentEntity,
+        LocalSystemVectorType& RHS_Contribution,
+        const ProcessInfo& rCurrentProcessInfo
+        )
+    {
+        rCurrentEntity.CalculateRightHandSide(RHS_Contribution, rCurrentProcessInfo);
+
+        rCurrentEntity.AddExplicitContribution(RHS_Contribution, RESIDUAL_VECTOR, FORCE_RESIDUAL, rCurrentProcessInfo);
+    }
 
     ///@}
     ///@name Protected Operations
@@ -620,24 +649,6 @@ private:
     ///@}
     ///@name Private Operations
     ///@{
-
-    /**
-    * @brief Functions that calculates the RHS of a "TObjectType" object
-    * @param rCurrentEntity The TObjectType to compute
-    * @param RHS_Contribution The RHS vector contribution
-    * @param rCurrentProcessInfo The current process info instance
-    */
-    template <typename TObjectType>
-    void TCalculateRHSContribution(
-        TObjectType& rCurrentEntity,
-        LocalSystemVectorType& RHS_Contribution,
-        const ProcessInfo& rCurrentProcessInfo
-        )
-    {
-        rCurrentEntity.CalculateRightHandSide(RHS_Contribution, rCurrentProcessInfo);
-
-        rCurrentEntity.AddExplicitContribution(RHS_Contribution, RESIDUAL_VECTOR, FORCE_RESIDUAL, rCurrentProcessInfo);
-    }
 
     ///@}
     ///@name Private  Access

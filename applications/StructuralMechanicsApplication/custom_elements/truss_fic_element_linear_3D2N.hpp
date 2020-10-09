@@ -126,7 +126,7 @@ protected:
 
     void CalculateNoDiagonalDampingMatrix(MatrixType& rDampingMatrix, const ProcessInfo& rCurrentProcessInfo);
 
-    void GetAuxiliaryVelocityVector(Vector& rValues, int Step) const;
+    // void GetAuxiliaryVelocityVector(Vector& rValues, int Step) const;
 
 
 private:

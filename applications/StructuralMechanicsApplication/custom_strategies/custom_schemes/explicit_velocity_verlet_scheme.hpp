@@ -20,7 +20,7 @@
 /* External includes */
 
 /* Project includes */
-#include "custom_strategies/custom_schemes/explicit_symplectic_euler_scheme.hpp"
+#include "custom_strategies/custom_schemes/explicit_forward_euler_fic_scheme.hpp"
 #include "utilities/variable_utils.h"
 #include "custom_utilities/explicit_integration_utilities.h"
 
@@ -56,7 +56,7 @@ template <class TSparseSpace,
           class TDenseSpace //= DenseSpace<double>
           >
 class ExplicitVelocityVerletScheme
-    : public ExplicitSymplecticEulerScheme<TSparseSpace, TDenseSpace> {
+    : public ExplicitForwardEulerFICScheme<TSparseSpace, TDenseSpace> {
 
 public:
     ///@name Type Definitions
@@ -100,8 +100,8 @@ public:
      * @brief Default constructor.
      * @details The ExplicitVelocityVerletScheme method
      */
-    ExplicitVelocityVerletScheme(const double L2Tolerance)
-        : ExplicitSymplecticEulerScheme<TSparseSpace, TDenseSpace>(L2Tolerance)
+    ExplicitVelocityVerletScheme()
+        : ExplicitForwardEulerFICScheme<TSparseSpace, TDenseSpace>()
     {
 
     }
@@ -114,6 +114,61 @@ public:
     ///@name Operators
     ///@{
 
+
+    /**
+     * @brief This method initializes the residual in the nodes of the model part
+     * @param rModelPart The model of the problem to solve
+     */
+    void InitializeResidual(ModelPart& rModelPart) override
+    {
+        KRATOS_TRY
+
+        // The array of nodes
+        NodesArrayType& r_nodes = rModelPart.Nodes();
+
+        // Auxiliar values
+        const array_1d<double, 3> zero_array = ZeroVector(3);
+        // Initializing the variables
+        VariableUtils().SetVariable(FORCE_RESIDUAL, zero_array,r_nodes);
+
+        KRATOS_CATCH("")
+    }
+
+    /**
+     * @brief This method initializes some rutines related with the explicit scheme
+     * @param rModelPart The model of the problem to solve
+     * @param DomainSize The current dimention of the problem
+     */
+    void InitializeExplicitScheme(
+        ModelPart& rModelPart,
+        const SizeType DomainSize = 3
+        ) override
+    {
+        KRATOS_TRY
+
+        /// The array of ndoes
+        NodesArrayType& r_nodes = rModelPart.Nodes();
+
+        // The first iterator of the array of nodes
+        const auto it_node_begin = rModelPart.NodesBegin();
+
+        /// Initialise the database of the nodes
+        #pragma omp parallel for schedule(guided,512)
+        for (int i = 0; i < static_cast<int>(r_nodes.size()); ++i) {
+            auto it_node = (it_node_begin + i);
+            it_node->SetValue(NODAL_MASS, 0.0);
+            array_1d<double, 3>& r_current_residual = it_node->FastGetSolutionStepValue(FORCE_RESIDUAL);
+            noalias(r_current_residual) = ZeroVector(3);
+            // TODO: initial velocity X
+            // if(it_node->Id()==4){
+            //     array_1d<double, 3>& r_current_velocity = it_node->FastGetSolutionStepValue(VELOCITY);
+            //     noalias(r_current_velocity) = ZeroVector(3);
+            //     r_current_velocity[0] = 1.3145e-6;
+            // }
+        }
+
+        KRATOS_CATCH("")
+    }
 
      void Predict(
         ModelPart& rModelPart,
@@ -254,7 +309,7 @@ public:
         NodeIterator itCurrentNode,
         const IndexType DisplacementPosition,
         const SizeType DomainSize = 3
-        )
+        ) override
     {
         const double nodal_mass = itCurrentNode->GetValue(NODAL_MASS);
         const array_1d<double, 3>& r_current_residual = itCurrentNode->FastGetSolutionStepValue(FORCE_RESIDUAL);
