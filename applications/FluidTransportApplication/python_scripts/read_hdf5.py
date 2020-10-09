@@ -24,25 +24,6 @@ class ReadHdf5(KratosMultiphysics.Process):
         self.f = h5py.File("data.hdf5", 'r')
         self.settings = settings
 
-    def DeleteDataSet(self, file_or_group, dset_name):
-        if dset_name in file_or_group:
-            file_or_group.__delitem__(dset_name)
-
-    def WriteDataToFile(self, file_or_group, names, data):
-        self.sub_group = self.CreateGroup(file_or_group, self.group_name)
-        for name, datum in zip(names, data):
-            self.DeleteDataSet(file_or_group, name)
-        for name, datum in zip(names, data):
-            self.sub_group.create_dataset(name = name, data = datum)
-
-    def CreateGroup(self, file_or_group, name, overwrite_previous = True):
-        if name in file_or_group:
-            if overwrite_previous:
-                file_or_group['/'].__delitem__(name)
-            else:
-                return file_or_group['/' + name]
-        return file_or_group.create_group(name)
-
     def ExecuteInitializeSolutionStep(self):
         time = self.model_part.ProcessInfo[KratosMultiphysics.TIME]
         self.group_name = str(time)
@@ -64,34 +45,8 @@ class ReadHdf5(KratosMultiphysics.Process):
                 node.SetSolutionStepValue(KratosMultiphysics.VELOCITY_Y,vel_y[i])
                 node.Fix(KratosMultiphysics.VELOCITY_Y)
 
-            if self.settings["active"][1].GetBool() == True:
+            if self.settings["active"][2].GetBool() == True:
                 node.SetSolutionStepValue(KratosMultiphysics.VELOCITY_Z,vel_z[i])
                 node.Fix(KratosMultiphysics.VELOCITY_Z)
 
             i += 1
-
-    # def ExecuteFinalizeSolutionStep(self):
-    #     time = self.model_part.ProcessInfo[KratosMultiphysics.TIME]
-    #     self.group_name = str(time)
-
-    #     temp = 0.0
-    #     i = 0
-    #     self.temp_list = []
-    #     self.vel_x_list = []
-    #     self.vel_y_list = []
-    #     self.vel_z_list = []
-    #     self.node_id_list = []
-
-    #     for node in self.model_part.Nodes:
-    #         node_id = node.Id
-    #         temp = node.GetSolutionStepValue(KratosMultiphysics.TEMPERATURE)
-    #         vel_x = node.GetSolutionStepValue(KratosMultiphysics.VELOCITY_X)
-    #         vel_y = node.GetSolutionStepValue(KratosMultiphysics.VELOCITY_Y)
-    #         vel_z = node.GetSolutionStepValue(KratosMultiphysics.VELOCITY_Z)
-
-    #         self.node_id_list.append (node_id)
-    #         self.temp_list.append (temp)
-    #         self.vel_x_list.append (vel_x)
-    #         self.vel_y_list.append (vel_y)
-    #         self.vel_z_list.append (vel_z)
-    #         i += 1
