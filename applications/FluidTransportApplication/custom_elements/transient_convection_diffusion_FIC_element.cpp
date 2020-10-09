@@ -169,7 +169,7 @@ void TransientConvectionDiffusionFICElement<TDim, TNumNodes>::CalculateFirstDeri
         array_1d <double, TNumNodes> AuxMVector2;
 
         noalias(AuxMVector1) = Variables.rho_dot_c * Variables.N;
-        noalias(AuxMVector2) = Variables.rho_dot_c * 0.5 * prod(Variables.GradNT,Variables.HVector);
+        noalias(AuxMVector2) = Variables.rho_dot_c * 0.5 * prod(Variables.GradNT,Variables.HvVector);
 
         //// M matrix
         BoundedMatrix<double,TNumNodes,TNumNodes> MMatrixAux1 = ZeroMatrix( TNumNodes, TNumNodes );
@@ -178,24 +178,24 @@ void TransientConvectionDiffusionFICElement<TDim, TNumNodes>::CalculateFirstDeri
         MMatrixAux1 = outer_prod(AuxMVector1,Variables.N) * Variables.IntegrationCoefficient;
         MMatrixAux2 = outer_prod(AuxMVector2,Variables.N) * Variables.IntegrationCoefficient;
 
-        // We are not considering MMatrixAux2, which is the h term
+        // We are not considering MMatrixAux2, which is the hv term
         MMatrixAux += MMatrixAux1 ;
 
         /////////////////////////////////////////////////////////////////////////
         // To make the M matrix consistent uncomment the next 2 lines and comment the for loop next
 
-        // noalias(AuxMVector) = AuxMVector1 + AuxMVector2;
-        // noalias(rLeftHandSideMatrix) += outer_prod(AuxMVector,Variables.N) * Variables.IntegrationCoefficient;
+        noalias(AuxMVector) = AuxMVector1; // + AuxMVector2;
+        noalias(rLeftHandSideMatrix) += outer_prod(AuxMVector,Variables.N) * Variables.IntegrationCoefficient;
     }
 
-    for (unsigned int i = 0 ; i < TNumNodes ; i++ )
-    {
-        for (unsigned int j = 0 ; j < TNumNodes ; j ++ )
-        {
-            // LHS = Md lumped
-            rLeftHandSideMatrix (i,i) += MMatrixAux(i,j);
-        }
-    }
+    // for (unsigned int i = 0 ; i < TNumNodes ; i++ )
+    // {
+    //    for (unsigned int j = 0 ; j < TNumNodes ; j ++ )
+    //    {
+    //        // LHS = Md lumped
+    //        rLeftHandSideMatrix (i,i) += MMatrixAux(i,j);
+    //    }
+    // }
 
     // We are using a lumped M matrix for the cases in which we reach a stationary. In the case of fully transient
     // problems we use a consistent matrix with the temporal stabilization term AuxMVector2
@@ -763,7 +763,7 @@ KRATOS_TRY
         else
         {
             // TODO
-            AuxMatrix3 = (2.0 * (rVariables.TransientResidual / std::abs(rVariables.TransientResidual)) / rVariables.Residual ) * (rVariables.DifMatrixS
+            AuxMatrix3 = (2.0 * (rVariables.TransientResidual / std::abs(rVariables.TransientResidual)) / rVariables.TransientResidual ) * (rVariables.DifMatrixS
                             + rVariables.AlphaR * rVariables.AuxDiffusion * outer_prod(rVariables.VelInterHat, rVariables.VelInterHat));
 
             // AuxMatrix3 = (2.0 / rVariables.Residual ) * (rVariables.DifMatrixS

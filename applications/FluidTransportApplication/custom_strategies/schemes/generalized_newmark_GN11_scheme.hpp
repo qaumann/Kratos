@@ -220,10 +220,10 @@ public:
             const double& velocity_y = itNode->FastGetSolutionStepValue(VELOCITY_Y);
             const double& velocity_z = itNode->FastGetSolutionStepValue(VELOCITY_Z);
 
-            rNodalAnalyticSolution = M /(4.0 * Globals::Pi * Time * D * L)
-                                    * std::exp(-(itNode->X()-(2.0 + velocity_x * Time))*(itNode->X()-(2.0 + velocity_x * Time)) / (4 * D * Time)
-                                               -(itNode->Y()-(5.0 + velocity_y * Time))*(itNode->Y()-(5.0 + velocity_y * Time)) / (4 * D * Time)
-                                               -(itNode->Z()-(0.0 + velocity_z * Time))*(itNode->Z()-(0.0 + velocity_z * Time)) / (4 * D * Time));
+            // rNodalAnalyticSolution = M /(4.0 * Globals::Pi * Time * D * L)
+                                    // * std::exp(-(itNode->X()-(2.0 + velocity_x * Time))*(itNode->X()-(2.0 + velocity_x * Time)) / (4 * D * Time)
+                                    //            -(itNode->Y()-(5.0 + velocity_y * Time))*(itNode->Y()-(5.0 + velocity_y * Time)) / (4 * D * Time)
+                                    //            -(itNode->Z()-(0.0 + velocity_z * Time))*(itNode->Z()-(0.0 + velocity_z * Time)) / (4 * D * Time));
 
         }
 

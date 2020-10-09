@@ -516,6 +516,9 @@ KRATOS_TRY
     BoundedMatrix<double,TDim,TDim> AuxMatrix2;
     BoundedMatrix<double,TDim,TDim> AuxMatrix3;
     BoundedMatrix<double,TDim,TDim> AuxMatrix4;
+    BoundedMatrix<double,TDim,TDim> AuxMatrix5;
+
+    BoundedVector<double,TDim> AuxVector5;
 
     if (std::abs(rVariables.Residual) < rVariables.LowTolerance)
     {
@@ -528,72 +531,35 @@ KRATOS_TRY
     {
         if(std::abs(rVariables.TransientResidual) < rVariables.LowTolerance)
         {
-            AuxMatrix3 = (2.0 / rVariables.Residual ) * (rVariables.DifMatrixS
-                            + rVariables.AlphaR * rVariables.AuxDiffusion * outer_prod(rVariables.VelInterHat, rVariables.VelInterHat));
+            // AuxMatrix3 = (2.0 / rVariables.Residual ) * (rVariables.DifMatrixS
+            //                 + rVariables.AlphaR * rVariables.AuxDiffusion * outer_prod(rVariables.VelInterHat, rVariables.VelInterHat));
+            AuxMatrix3 = (2.0 / rVariables.TransientResidual) * (rVariables.DifMatrixS);
         }
         else
         {
             // TODO
-            AuxMatrix3 = (2.0 * (rVariables.TransientResidual / std::abs(rVariables.TransientResidual)) / rVariables.Residual ) * (rVariables.DifMatrixS
-                            + rVariables.AlphaR * rVariables.AuxDiffusion * outer_prod(rVariables.VelInterHat, rVariables.VelInterHat));
-
+            // AuxMatrix3 = (2.0 * (rVariables.TransientResidual / std::abs(rVariables.TransientResidual)) / rVariables.Residual ) * (rVariables.DifMatrixS
+            //                 + rVariables.AlphaR * rVariables.AuxDiffusion * outer_prod(rVariables.VelInterHat, rVariables.VelInterHat));
+            AuxMatrix3 = (2.0 / rVariables.TransientResidual) * (rVariables.DifMatrixS);
             // AuxMatrix3 = (2.0 / rVariables.Residual ) * (rVariables.DifMatrixS
             //                 + rVariables.AlphaR * rVariables.AuxDiffusion * outer_prod(rVariables.VelInterHat, rVariables.VelInterHat));
         }
 
         rVariables.HrVector = prod(AuxMatrix3, rVariables.GradPhi);
-
-    }
-
-    // Compute HscVector
-    if (std::abs(rVariables.NormGradPhi) < rVariables.LowTolerance)
-    {
-        for (unsigned int i = 0 ; i < TDim ; i++ )
-        {
-            rVariables.HscVector [i] = 0.0;
-        }
-    }
-    else
-    {
-        noalias(AuxMatrix2) = outer_prod(rVariables.VelInterHat , rVariables.VelInterHat);
-
-        for (unsigned int i = 0 ; i < TDim ; i++ )
-        {
-            for (unsigned int j = 0 ; j < TDim ; j++ )
-            {
-                AuxMatrix(i,j) = rVariables.IdentityMatrix(i,j) - AuxMatrix2(i,j);
-            }
-        }
-
-        // Double dot product
-        AuxMatrix4 = prod((rVariables.DifMatrixK + rVariables.DifMatrixS), AuxMatrix);
-        double DoubleDotScalar = 0.0;
-
-        for (unsigned int i = 0 ; i < TDim ; i++ )
-        {
-            DoubleDotScalar += AuxMatrix4 (i,i);
-        }
-
-
-        double AuxScalar = (rVariables.lsc * (rVariables.Residual / std::abs(rVariables.Residual)) - 2.0 * rVariables.NormGradPhi / rVariables.Residual
-                            * DoubleDotScalar) * (1.0 - rVariables.Beta * rVariables.Beta);
-
-        if (std::abs(rVariables.Residual) < rVariables.LowTolerance)
-        {
-            AuxScalar = 0.0;
-        }
-
-        // On the first iteration, SC can't be used
-        if (rVariables.IterationNumber == 1)
-        {
-            AuxScalar = 0.0;
-        }
-
-        rVariables.HscVector = AuxScalar * rVariables.GradPhi / rVariables.NormGradPhi;
     }
 
     // Compute HVector
-    rVariables.HVector = rVariables.HrVector + rVariables.HscVector;
+    rVariables.HVector = rVariables.HrVector;
+
+    // double norma = AuxVector5[0]*AuxVector5[0];
+    // for (unsigned int d = 1; d < TDim; d++)
+    //     norma += AuxVector5[d]*AuxVector5[d];
+    // norma = std::sqrt(norma);
+
+    // if (norma > rVariables.HighTolerance)
+    // {
+    //     KRATOS_WATCH(norma)
+    // }
 
     KRATOS_CATCH("")
 }

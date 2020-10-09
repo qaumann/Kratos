@@ -531,10 +531,10 @@ void SteadyConvectionDiffusionFICElement<TDim,TNumNodes>::CalculateAll( MatrixTy
 
         // Compute DifMatrixK
         noalias(Variables.DifMatrix) = Variables.DifMatrixK
-                                        + Variables.DifMatrixV
-                                        + Variables.DifMatrixS
-                                        + Variables.DifMatrixR
-                                        + Variables.DifMatrixSC;
+                                       // + Variables.DifMatrixV
+                                        + Variables.DifMatrixS;
+                                        //+ Variables.DifMatrixR;
+                                        //+ Variables.DifMatrixSC;
 
         //Compute weighting coefficient for integration
         this->CalculateIntegrationCoefficient(Variables.IntegrationCoefficient, detJContainer[GPoint], integration_points[GPoint].Weight() );
@@ -600,10 +600,10 @@ void SteadyConvectionDiffusionFICElement<TDim,TNumNodes>::CalculateRHS( VectorTy
 
         // Compute DifMatrixK
         noalias(Variables.DifMatrix) = Variables.DifMatrixK
-                                        + Variables.DifMatrixV
-                                        + Variables.DifMatrixS
-                                        + Variables.DifMatrixR
-                                        + Variables.DifMatrixSC;
+                                        //+ Variables.DifMatrixV
+                                        + Variables.DifMatrixS;
+                                        //+ Variables.DifMatrixR;
+                                        //+ Variables.DifMatrixSC;
 
         //Compute weighting coefficient for integration
         this->CalculateIntegrationCoefficient(Variables.IntegrationCoefficient, detJContainer[GPoint], integration_points[GPoint].Weight() );
@@ -1635,13 +1635,13 @@ template< unsigned int TDim, unsigned int TNumNodes >
 void SteadyConvectionDiffusionFICElement<TDim,TNumNodes>::CalculateAndAddLHS(MatrixType& rLeftHandSideMatrix, ElementVariables& rVariables)
 {
 
-    this->CalculateAndAddAdvectionMatrix(rLeftHandSideMatrix,rVariables);
+    //this->CalculateAndAddAdvectionMatrix(rLeftHandSideMatrix,rVariables);
 
     this->CalculateAndAddDiffusiveMatrix(rLeftHandSideMatrix,rVariables);
 
     this->CalculateAndAddAbsorptionMatrix(rLeftHandSideMatrix, rVariables);
 
-    this->CalculateAndAddFICMatrix(rLeftHandSideMatrix,rVariables);
+    // this->CalculateAndAddFICMatrix(rLeftHandSideMatrix,rVariables);
 
 }
 
@@ -1700,13 +1700,13 @@ void SteadyConvectionDiffusionFICElement<TDim,TNumNodes>::CalculateAndAddRHS(Vec
     //Calculates -r = -K*phi+f
 
     //-K*Phi
-    this->CalculateAndAddRHSAdvection(rRightHandSideVector, rVariables);
+    //this->CalculateAndAddRHSAdvection(rRightHandSideVector, rVariables);
 
     this->CalculateAndAddRHSDiffusive(rRightHandSideVector, rVariables);
 
     this->CalculateAndAddRHSAbsorption(rRightHandSideVector, rVariables);
 
-    this->CalculateAndAddRHSFIC(rRightHandSideVector, rVariables);
+    // this->CalculateAndAddRHSFIC(rRightHandSideVector, rVariables);
 
     //+f
     this->CalculateAndAddSourceForce(rRightHandSideVector, rVariables);
@@ -1768,7 +1768,8 @@ template< unsigned int TDim, unsigned int TNumNodes >
 void SteadyConvectionDiffusionFICElement<TDim,TNumNodes>::CalculateAndAddSourceForce(VectorType& rRightHandSideVector, ElementVariables& rVariables)
 {
 
-    noalias(rRightHandSideVector) += (rVariables.N + 0.5 * prod(rVariables.GradNT,rVariables.HVector))*rVariables.QSource*rVariables.IntegrationCoefficient;
+    // noalias(rRightHandSideVector) += (rVariables.N + 0.5 * prod(rVariables.GradNT,rVariables.HvVector))*rVariables.QSource*rVariables.IntegrationCoefficient;
+    noalias(rRightHandSideVector) += (rVariables.N )*rVariables.QSource*rVariables.IntegrationCoefficient;
 
 }
 

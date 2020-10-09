@@ -130,7 +130,7 @@ void TransientConvectionDiffusionFICExplicitElement<TDim, TNumNodes>::CalculateF
         array_1d <double, TNumNodes> AuxMVector2;
 
         noalias(AuxMVector1) = Variables.rho_dot_c * Variables.N;
-        noalias(AuxMVector2) = Variables.rho_dot_c * 0.5 * prod(Variables.GradNT,Variables.HVector);
+        noalias(AuxMVector2) = Variables.rho_dot_c * 0.5 * prod(Variables.GradNT,Variables.HvVector);
 
         //// M matrix
         BoundedMatrix<double,TNumNodes,TNumNodes> MMatrixAux1 = ZeroMatrix( TNumNodes, TNumNodes );
