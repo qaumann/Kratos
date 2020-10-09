@@ -2,14 +2,13 @@ import KratosMultiphysics
 import KratosMultiphysics.FluidTransportApplication as KratosFluidTransport
 
 from math import pi
-from sympy import Symbol, diff, lambdify, sin, cos, atan, exp
-from sympy.vector import CoordSys3D, gradient, divergence #, laplacian
+from numpy import sin, cos, arctan, exp
 import numpy as np
 
 def Factory(settings, Model):
     if(type(settings) != KratosMultiphysics.Parameters):
         raise Exception("expected input shall be a Parameters object, encapsulating a json string")
-    return ApplyScalarManufacturedConstraintFunctionProcess
+    return ApplyScalarManufacturedConstraintFunctionProcess(Model, settings["Parameters"])
 
 
 class ApplyScalarManufacturedConstraintFunctionProcess(KratosMultiphysics.Process):
@@ -20,29 +19,35 @@ class ApplyScalarManufacturedConstraintFunctionProcess(KratosMultiphysics.Proces
 
         # self.a1 = 2
         # self.a2 = 3
-        k = 0.000001
-        s = 20
-
-        time = self.model_part.ProcessInfo[KratosMultiphysics.TIME]
-        for node in self.model_part.Nodes:
-            f = 4.0*node.X*node.Y*k**(-0.5)*(1.0 - 2*node.X)*(1 - node.Y)*(16 - 16*node.X)*sin(pi*time)/(pi*(4*k**(-1.0)*(-(node.X - 0.5)**2 - (node.Y - 0.5)**2 + 0.0625)**2 + 1)) + 6.0*node.X*node.Y*k**(-0.5)*(1.0 - 2*node.Y)*(1 - node.Y)*(16 - 16*node.X)*sin(pi*time)/(pi*(4*k**(-1.0)*(-(node.X - 0.5)**2 - (node.Y - 0.5)**2 + 0.0625)**2 + 1)) + 16*node.X*node.Y*s*(1 - node.X)*(1 - node.Y)*(atan(2*k**(-0.5)*(-(node.X - 0.5)**2 - (node.Y - 0.5)**2 + 0.0625))/pi + 0.5)*sin(pi*time) + node.X*node.Y*pi*(1 - node.Y)*(16 - 16*node.X)*(atan(2*k**(-0.5)*(-(node.X - 0.5)**2 - (node.Y - 0.5)**2 + 0.0625))/pi + 0.5)*cos(pi*time) + 3.0*node.X*node.Y*(16*node.X - 16)*(atan(2*k**(-0.5)*(-(node.X - 0.5)**2 - (node.Y - 0.5)**2 + 0.0625))/pi + 0.5)*sin(pi*time) + 2.0*node.X*node.Y*(16*node.Y - 16)*(atan(2*k**(-0.5)*(-(node.X - 0.5)**2 - (node.Y - 0.5)**2 + 0.0625))/pi + 0.5)*sin(pi*time) + 3.0*node.X*(1 - node.Y)*(16 - 16*node.X)*(atan(2*k**(-0.5)*(-(node.X - 0.5)**2 - (node.Y - 0.5)**2 + 0.0625))/pi + 0.5)*sin(pi*time) + 2.0*node.Y*(1 - node.Y)*(16 - 16*node.X)*(atan(2*k**(-0.5)*(-(node.X - 0.5)**2 - (node.Y - 0.5)**2 + 0.0625))/pi + 0.5)*sin(pi*time) - k*(-8*node.X*node.Y*k**(-1.5)*(1.0 - 2*node.X)*(1 - node.Y)*(2.0 - 4*node.X)*(16 - 16*node.X)*(-(node.X - 0.5)**2 - (node.Y - 0.5)**2 + 0.0625)*sin(pi*time)/(pi*(4*k**(-1.0)*(-(node.X - 0.5)**2 - (node.Y - 0.5)**2 + 0.0625)**2 + 1)**2) - 8*node.X*node.Y*k**(-1.5)*(1.0 - 2*node.Y)*(1 - node.Y)*(2.0 - 4*node.Y)*(16 - 16*node.X)*(-(node.X - 0.5)**2 - (node.Y - 0.5)**2 + 0.0625)*sin(pi*time)/(pi*(4*k**(-1.0)*(-(node.X - 0.5)**2 - (node.Y - 0.5)**2 + 0.0625)**2 + 1)**2) - 32*node.X*node.Y*k**(-0.5)*(1.0 - 2*node.X)*(1 - node.Y)*sin(pi*time)/(pi*(4*k**(-1.0)*(-(node.X - 0.5)**2 - (node.Y - 0.5)**2 + 0.0625)**2 + 1)) + 2*node.X*node.Y*k**(-0.5)*(1.0 - 2*node.X)*(16*node.Y - 16)*sin(pi*time)/(pi*(4*k**(-1.0)*(-(node.X - 0.5)**2 - (node.Y - 0.5)**2 + 0.0625)**2 + 1)) - 2*node.X*node.Y*k**(-0.5)*(1.0 - 2*node.Y)*(16 - 16*node.X)*sin(pi*time)/(pi*(4*k**(-1.0)*(-(node.X - 0.5)**2 - (node.Y - 0.5)**2 + 0.0625)**2 + 1)) + 2*node.X*node.Y*k**(-0.5)*(1.0 - 2*node.Y)*(16*node.X - 16)*sin(pi*time)/(pi*(4*k**(-1.0)*(-(node.X - 0.5)**2 - (node.Y - 0.5)**2 + 0.0625)**2 + 1)) - 8*node.X*node.Y*k**(-0.5)*(1 - node.Y)*(16 - 16*node.X)*sin(pi*time)/(pi*(4*k**(-1.0)*(-(node.X - 0.5)**2 - (node.Y - 0.5)**2 + 0.0625)**2 + 1)) + 4*node.X*k**(-0.5)*(1.0 - 2*node.Y)*(1 - node.Y)*(16 - 16*node.X)*sin(pi*time)/(pi*(4*k**(-1.0)*(-(node.X - 0.5)**2 - (node.Y - 0.5)**2 + 0.0625)**2 + 1)) + 2*node.X*(16*node.X - 16)*(atan(2*k**(-0.5)*(-(node.X - 0.5)**2 - (node.Y - 0.5)**2 + 0.0625))/pi + 0.5)*sin(pi*time) + 4*node.Y*k**(-0.5)*(1.0 - 2*node.X)*(1 - node.Y)*(16 - 16*node.X)*sin(pi*time)/(pi*(4*k**(-1.0)*(-(node.X - 0.5)**2 - (node.Y - 0.5)**2 + 0.0625)**2 + 1)) + 2*node.Y*(16*node.Y - 16)*(atan(2*k**(-0.5)*(-(node.X - 0.5)**2 - (node.Y - 0.5)**2 + 0.0625))/pi + 0.5)*sin(pi*time))
-            node.SetSolutionStepValue(KratosMultiphysics.HEAT_FLUX,f)
+        self.k = 0.000001
+        self.s = 500.0
 
     def source_term(self, x, y, z, t):
-        return  # TODO: paste here the function
 
-    def velocity(self, x, y ,z ,t):
-        return  # TODO: paste here the function
+        f = 4.0*x*y*self.k**(-0.5)*(1.0 - 2*x)*(1 - y)*(16 - 16*x)*sin(pi*t)/(pi*(4*self.k**(-1.0)*(-(x - 0.5)**2 - (y - 0.5)**2 + 0.0625)**2 + 1)) + 6.0*x*y*self.k**(-0.5)*(1.0 - 2*y)*(1 - y)*(16 - 16*x)*sin(pi*t)/(pi*(4*self.k**(-1.0)*(-(x - 0.5)**2 - (y - 0.5)**2 + 0.0625)**2 + 1)) + 16*x*y*self.s*(1 - x)*(1 - y)*(arctan(2*self.k**(-0.5)*(-(x - 0.5)**2 - (y - 0.5)**2 + 0.0625))/pi + 0.5)*sin(pi*t) + x*y*pi*(1 - y)*(16 - 16*x)*(arctan(2*self.k**(-0.5)*(-(x - 0.5)**2 - (y - 0.5)**2 + 0.0625))/pi + 0.5)*cos(pi*t) + 3.0*x*y*(16*x - 16)*(arctan(2*self.k**(-0.5)*(-(x - 0.5)**2 - (y - 0.5)**2 + 0.0625))/pi + 0.5)*sin(pi*t) + 2.0*x*y*(16*y - 16)*(arctan(2*self.k**(-0.5)*(-(x - 0.5)**2 - (y - 0.5)**2 + 0.0625))/pi + 0.5)*sin(pi*t) + 3.0*x*(1 - y)*(16 - 16*x)*(arctan(2*self.k**(-0.5)*(-(x - 0.5)**2 - (y - 0.5)**2 + 0.0625))/pi + 0.5)*sin(pi*t) + 2.0*y*(1 - y)*(16 - 16*x)*(arctan(2*self.k**(-0.5)*(-(x - 0.5)**2 - (y - 0.5)**2 + 0.0625))/pi + 0.5)*sin(pi*t) - self.k*(-8*x*y*self.k**(-1.5)*(1.0 - 2*x)*(1 - y)*(2.0 - 4*x)*(16 - 16*x)*(-(x - 0.5)**2 - (y - 0.5)**2 + 0.0625)*sin(pi*t)/(pi*(4*self.k**(-1.0)*(-(x - 0.5)**2 - (y - 0.5)**2 + 0.0625)**2 + 1)**2) - 8*x*y*self.k**(-1.5)*(1.0 - 2*y)*(1 - y)*(2.0 - 4*y)*(16 - 16*x)*(-(x - 0.5)**2 - (y - 0.5)**2 + 0.0625)*sin(pi*t)/(pi*(4*self.k**(-1.0)*(-(x - 0.5)**2 - (y - 0.5)**2 + 0.0625)**2 + 1)**2) - 32*x*y*self.k**(-0.5)*(1.0 - 2*x)*(1 - y)*sin(pi*t)/(pi*(4*self.k**(-1.0)*(-(x - 0.5)**2 - (y - 0.5)**2 + 0.0625)**2 + 1)) + 2*x*y*self.k**(-0.5)*(1.0 - 2*x)*(16*y - 16)*sin(pi*t)/(pi*(4*self.k**(-1.0)*(-(x - 0.5)**2 - (y - 0.5)**2 + 0.0625)**2 + 1)) - 2*x*y*self.k**(-0.5)*(1.0 - 2*y)*(16 - 16*x)*sin(pi*t)/(pi*(4*self.k**(-1.0)*(-(x - 0.5)**2 - (y - 0.5)**2 + 0.0625)**2 + 1)) + 2*x*y*self.k**(-0.5)*(1.0 - 2*y)*(16*x - 16)*sin(pi*t)/(pi*(4*self.k**(-1.0)*(-(x - 0.5)**2 - (y - 0.5)**2 + 0.0625)**2 + 1)) - 8*x*y*self.k**(-0.5)*(1 - y)*(16 - 16*x)*sin(pi*t)/(pi*(4*self.k**(-1.0)*(-(x - 0.5)**2 - (y - 0.5)**2 + 0.0625)**2 + 1)) + 4*x*self.k**(-0.5)*(1.0 - 2*y)*(1 - y)*(16 - 16*x)*sin(pi*t)/(pi*(4*self.k**(-1.0)*(-(x - 0.5)**2 - (y - 0.5)**2 + 0.0625)**2 + 1)) + 2*x*(16*x - 16)*(arctan(2*self.k**(-0.5)*(-(x - 0.5)**2 - (y - 0.5)**2 + 0.0625))/pi + 0.5)*sin(pi*t) + 4*y*self.k**(-0.5)*(1.0 - 2*x)*(1 - y)*(16 - 16*x)*sin(pi*t)/(pi*(4*self.k**(-1.0)*(-(x - 0.5)**2 - (y - 0.5)**2 + 0.0625)**2 + 1)) + 2*y*(16*y - 16)*(arctan(2*self.k**(-0.5)*(-(x - 0.5)**2 - (y - 0.5)**2 + 0.0625))/pi + 0.5)*sin(pi*t))
+
+        # sense terme temporal
+        # f = 4.0*x*y*self.k**(-0.5)*(1.0 - 2*x)*(1 - y)*(16 - 16*x)/(pi*(4*self.k**(-1.0)*(-(x - 0.5)**2 - (y - 0.5)**2 + 0.0625)**2 + 1)) + 6.0*x*y*self.k**(-0.5)*(1.0 - 2*y)*(1 - y)*(16 - 16*x)/(pi*(4*self.k**(-1.0)*(-(x - 0.5)**2 - (y - 0.5)**2 + 0.0625)**2 + 1)) + 16*x*y*self.s*(1 - x)*(1 - y)*(atan(2*self.k**(-0.5)*(-(x - 0.5)**2 - (y - 0.5)**2 + 0.0625))/pi + 0.5) + 3.0*x*y*(16*x - 16)*(atan(2*self.k**(-0.5)*(-(x - 0.5)**2 - (y - 0.5)**2 + 0.0625))/pi + 0.5) + 2.0*x*y*(16*y - 16)*(atan(2*self.k**(-0.5)*(-(x - 0.5)**2 - (y - 0.5)**2 + 0.0625))/pi + 0.5) + 3.0*x*(1 - y)*(16 - 16*x)*(atan(2*self.k**(-0.5)*(-(x - 0.5)**2 - (y - 0.5)**2 + 0.0625))/pi + 0.5) + 2.0*y*(1 - y)*(16 - 16*x)*(atan(2*self.k**(-0.5)*(-(x - 0.5)**2 - (y - 0.5)**2 + 0.0625))/pi + 0.5) - self.k*(-8*x*y*self.k**(-1.5)*(1.0 - 2*x)*(1 - y)*(2.0 - 4*x)*(16 - 16*x)*(-(x - 0.5)**2 - (y - 0.5)**2 + 0.0625)/(pi*(4*self.k**(-1.0)*(-(x - 0.5)**2 - (y - 0.5)**2 + 0.0625)**2 + 1)**2) - 8*x*y*self.k**(-1.5)*(1.0 - 2*y)*(1 - y)*(2.0 - 4*y)*(16 - 16*x)*(-(x - 0.5)**2 - (y - 0.5)**2 + 0.0625)/(pi*(4*self.k**(-1.0)*(-(x - 0.5)**2 - (y - 0.5)**2 + 0.0625)**2 + 1)**2) - 32*x*y*self.k**(-0.5)*(1.0 - 2*x)*(1 - y)/(pi*(4*self.k**(-1.0)*(-(x - 0.5)**2 - (y - 0.5)**2 + 0.0625)**2 + 1)) + 2*x*y*self.k**(-0.5)*(1.0 - 2*x)*(16*y - 16)/(pi*(4*self.k**(-1.0)*(-(x - 0.5)**2 - (y - 0.5)**2 + 0.0625)**2 + 1)) - 2*x*y*self.k**(-0.5)*(1.0 - 2*y)*(16 - 16*x)/(pi*(4*self.k**(-1.0)*(-(x - 0.5)**2 - (y - 0.5)**2 + 0.0625)**2 + 1)) + 2*x*y*self.k**(-0.5)*(1.0 - 2*y)*(16*x - 16)/(pi*(4*self.k**(-1.0)*(-(x - 0.5)**2 - (y - 0.5)**2 + 0.0625)**2 + 1)) - 8*x*y*self.k**(-0.5)*(1 - y)*(16 - 16*x)/(pi*(4*self.k**(-1.0)*(-(x - 0.5)**2 - (y - 0.5)**2 + 0.0625)**2 + 1)) + 4*x*self.k**(-0.5)*(1.0 - 2*y)*(1 - y)*(16 - 16*x)/(pi*(4*self.k**(-1.0)*(-(x - 0.5)**2 - (y - 0.5)**2 + 0.0625)**2 + 1)) + 2*x*(16*x - 16)*(atan(2*self.k**(-0.5)*(-(x - 0.5)**2 - (y - 0.5)**2 + 0.0625))/pi + 0.5) + 4*y*self.k**(-0.5)*(1.0 - 2*x)*(1 - y)*(16 - 16*x)/(pi*(4*self.k**(-1.0)*(-(x - 0.5)**2 - (y - 0.5)**2 + 0.0625)**2 + 1)) + 2*y*(16*y - 16)*(atan(2*self.k**(-0.5)*(-(x - 0.5)**2 - (y - 0.5)**2 + 0.0625))/pi + 0.5))
+
+        return f
+
+   # def velocity(self, x, y ,z ,t):
+   #     return  # TODO: paste here the function
 
     def analytical_solution(self, x, y, z, t):
-        return  # TODO: paste here the function
+        u = 16 * sin(pi * t) * x * (1 - x) * y*(1 - y) * (1/2 + (arctan(2 * self.k ** (-1/2) * (0.25**2 - (x - 0.5)**2 - (y - 0.5)**2)))/pi)
+
+        # sense terme temporal:
+        # u = 16 * x * (1 - x) * y*(1 - y) * (1/2 + (arctan(2 * self.k ** (-1/2) * (0.25**2 - (x - 0.5)**2 - (y - 0.5)**2)))/pi)
+
+        return u
 
     def ExecuteInitializeSolutionStep(self):
         time = self.model_part.ProcessInfo[KratosMultiphysics.TIME]
         for node in self.model_part.Nodes:
             f = self.source_term(node.X, node.Y, node.Z, time)
-            a = self.velocity(node.X, node.Y, node.Z, time)
+           # a = self.velocity(node.X, node.Y, node.Z, time)
             u = self.analytical_solution(node.X, node.Y, node.Z, time)
             node.SetSolutionStepValue(KratosMultiphysics.HEAT_FLUX, f)
-            node.SetSolutionStepValue(KratosMultiphysics.VELOCITY, a)
-            node.SetSolutionStepValue(KratosFluidTransport.ANALYTICAL_PHI, u) # put the right variable
+           # node.SetSolutionStepValue(KratosMultiphysics.VELOCITY, a)
+            node.SetSolutionStepValue(KratosFluidTransport.NODAL_ANALYTIC_SOLUTION, u) # put the right variable
