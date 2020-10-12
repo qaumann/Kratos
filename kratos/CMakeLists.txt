@@ -58,6 +58,7 @@ set( KRATOS_CORE_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/processes/find_intersected_geometrical_objects_process.cpp;
     ${CMAKE_CURRENT_SOURCE_DIR}/processes/find_intersected_geometrical_objects_with_obb_process.cpp;
     ${CMAKE_CURRENT_SOURCE_DIR}/processes/calculate_discontinuous_distance_to_skin_process.cpp;
+    ${CMAKE_CURRENT_SOURCE_DIR}/processes/calculate_discontinuous_edge_distance_to_skin_process.cpp;
     ${CMAKE_CURRENT_SOURCE_DIR}/processes/calculate_distance_to_skin_process.cpp;
     ${CMAKE_CURRENT_SOURCE_DIR}/processes/reorder_and_optimize_modelpart_process.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/processes/compute_nodal_gradient_process.cpp

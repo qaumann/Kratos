@@ -11,8 +11,8 @@
 //                   Ruben Zorrilla
 //
 
-#if !defined(KRATOS_CALCULATE_DISCONTINUOUS_DISTANCE_TO_SKIN_PROCESS_H_INCLUDED )
-#define  KRATOS_CALCULATE_DISCONTINUOUS_DISTANCE_TO_SKIN_PROCESS_H_INCLUDED
+#if !defined(KRATOS_CALCULATE_DISCONTINUOUS_EDGE_DISTANCE_TO_SKIN_PROCESS_H_INCLUDED )
+#define  KRATOS_CALCULATE_DISCONTINUOUS_EDGE_DISTANCE_TO_SKIN_PROCESS_H_INCLUDED
 
 // System includes
 #include <string>
@@ -25,6 +25,7 @@
 #include "includes/checks.h"
 #include "processes/process.h"
 #include "processes/find_intersected_geometrical_objects_process.h"
+#include "processes/calculate_discontinuous_distance_to_skin_process.h"
 
 namespace Kratos
 {
@@ -34,151 +35,65 @@ namespace Kratos
 ///@name Kratos Classes
 ///@{
 
-/// This only calculates the distance. Calculating the inside outside should be done by a derived class of this.
+/// ((This only calculates the distance. Calculating the inside outside should be done by a derived class of this.))
 /** This process takes a volume model part (with tetrahedra mesh) and a skin model part (with triangle mesh) and
      and calcualtes the distance to the skin for all the elements and nodes of the volume model part.
 */
 template<std::size_t TDim = 3>
-class KRATOS_API(KRATOS_CORE) CalculateDiscontinuousDistanceToSkinProcess : public Process
+class KRATOS_API(KRATOS_CORE) CalculateDiscontinuousEdgeDistanceToSkinProcess : public CalculateDiscontinuousDistanceToSkinProcess<TDim>
 {
 
 public:
     ///@name Type Definitions
     ///@{
 
-    /// Pointer definition of CalculateDiscontinuousDistanceToSkinProcess
-    KRATOS_CLASS_POINTER_DEFINITION(CalculateDiscontinuousDistanceToSkinProcess);
+    /// Pointer definition of CalculateDiscontinuousEdgeDistanceToSkinProcess
+    KRATOS_CLASS_POINTER_DEFINITION(CalculateDiscontinuousEdgeDistanceToSkinProcess);
 
     ///@}
     ///@name Life Cycle
     ///@{
 
     /// Constructor to be used.
-    CalculateDiscontinuousDistanceToSkinProcess(
+    CalculateDiscontinuousEdgeDistanceToSkinProcess(
         ModelPart& rVolumePart,
         ModelPart& rSkinPart);
 
     /// Destructor.
-    ~CalculateDiscontinuousDistanceToSkinProcess() override;
+    ~CalculateDiscontinuousEdgeDistanceToSkinProcess() override;
 
     ///@}
     ///@name Deleted
     ///@{
 
     /// Default constructor.
-    CalculateDiscontinuousDistanceToSkinProcess() = delete;
+    CalculateDiscontinuousEdgeDistanceToSkinProcess() = delete;
 
     /// Copy constructor.
-    CalculateDiscontinuousDistanceToSkinProcess(CalculateDiscontinuousDistanceToSkinProcess const& rOther) = delete;
+    CalculateDiscontinuousEdgeDistanceToSkinProcess(CalculateDiscontinuousEdgeDistanceToSkinProcess const& rOther) = delete;
 
     /// Assignment operator.
-    CalculateDiscontinuousDistanceToSkinProcess& operator=(CalculateDiscontinuousDistanceToSkinProcess const& rOther) = delete;
-
-    FindIntersectedGeometricalObjectsProcess mFindIntersectedObjectsProcess;
+    CalculateDiscontinuousEdgeDistanceToSkinProcess& operator=(CalculateDiscontinuousEdgeDistanceToSkinProcess const& rOther) = delete;
 
     ///@}
     ///@name Operations
     ///@{
 
-    /**
-     * @brief Initializes discontinuous distance computation process
-     * This method initializes the TO_SPLIT flag, the DISTANCE and
-     * ELEMENTAL_DISTANCES variables as well as the EMBEDDED_VELOCITY
-     */
-    virtual void Initialize();
-
-    /**
-     * @brief Calls the FindIntersectedObjectsProcess to find the intersections
-     * This method calls the FindIntersectedObjectsProcess FindIntersections method.
-     */
-    virtual void FindIntersections();
-
-    /**
-     * @brief Get the array containing the intersecting objects
-     * This method returns an array containing pointers to the intersecting geometries
-     * @return std::vector<PointerVector<GeometricalObject>>&
-     */
-    virtual std::vector<PointerVector<GeometricalObject>>& GetIntersections();
-
-    /**
-     * @brief Computes the elemental distance values
-     * Given an intersecting objects vector, this method computes the elemental distance field
-     * @param rIntersectedObjects array containing pointers to the intersecting geometries
-     */
-    virtual void CalculateDistances(std::vector<PointerVector<GeometricalObject>>& rIntersectedObjects);
-
-    /**
-     * @brief Calls the FindIntersectedObjects Clear() method
-     * This method calls the FindIntersectedObjects Clear() to empty the intersecting objects geometries array
-     */
-    void Clear() override;
-
-    /**
-     * @brief Executes the CalculateDiscontinuousDistanceToSkinProcess
-     * This method automatically does all the calls required to compute the discontinuous distance function.
-     */
-    void Execute() override;
-
-    /**
-     * @brief Calculate embedded variable from skin double specialization
-     * This method calls the specialization method for two double variables
-     * @param rVariable origin double variable in the skin mesh
-     * @param rEmbeddedVariable elemental double variable in the volume mesh to be computed
-     */
-    void CalculateEmbeddedVariableFromSkin(
-        const Variable<double> &rVariable,
-        const Variable<double> &rEmbeddedVariable);
-
-    /**
-     * @brief Calculate embedded variable from skin array specialization
-     * This method calls the specialization method for two double variables
-     * @param rVariable origin array variable in the skin mesh
-     * @param rEmbeddedVariable elemental array variable in the volume mesh to be computed
-     */
-    void CalculateEmbeddedVariableFromSkin(
-        const Variable<array_1d<double,3>> &rVariable,
-        const Variable<array_1d<double,3>> &rEmbeddedVariable);
-
     ///@}
     ///@name Access
     ///@{
-
 
     ///@}
     ///@name Input and output
     ///@{
 
     /// Turn back information as a string.
-    virtual std::string Info() const override;
-
-    /// Print information about this object.
-    void PrintInfo(std::ostream& rOStream) const override;
-
-    /// Print object's data.
-    void PrintData(std::ostream& rOStream) const override;
+    std::string Info() const override;
 
     ///@}
 protected:
     ///@name Protected Operations
     ///@{
-
-    /**
-     * @brief Set the Intersection Plane object
-     * This method returns the plane that defines the element intersection. The 2D
-     * case is considered to be a simplification of the 3D one, so a "fake" extra
-     * point is created by extruding the first point in the z-direction.
-     * @param rIntPtsVector array containing the intersecting points coordinates
-     * @return Plane3D the plane defined by the given intersecting points coordinates
-     */
-    Plane3D SetIntersectionPlane(const std::vector<array_1d<double,3>> &rIntPtsVector);
-
-    /**
-     * @brief Calculates the domain characteristic length
-     * This method computes the domain characteristic length as the norm of
-     * the diagonal vector that joins the maximum and minimum coordinates
-     * @return double the calculated characteristic length
-     */
-    double CalculateCharacteristicLength();
 
     ///@}
 private:
@@ -380,7 +295,7 @@ private:
 
     ///@}
 
-}; // Class CalculateDiscontinuousDistanceToSkinProcess
+}; // Class CalculateDiscontinuousEdgeDistanceToSkinProcess
 
 ///@}
 
@@ -390,12 +305,12 @@ private:
 /// input stream function
 inline std::istream& operator >> (
     std::istream& rIStream,
-    CalculateDiscontinuousDistanceToSkinProcess<>& rThis);
+    CalculateDiscontinuousEdgeDistanceToSkinProcess<>& rThis);
 
 /// output stream function
 inline std::ostream& operator << (
     std::ostream& rOStream,
-    const CalculateDiscontinuousDistanceToSkinProcess<>& rThis)
+    const CalculateDiscontinuousEdgeDistanceToSkinProcess<>& rThis)
 {
     rThis.PrintInfo(rOStream);
     rOStream << std::endl;
@@ -410,4 +325,4 @@ inline std::ostream& operator << (
 
 }  // namespace Kratos.
 
-#endif // KRATOS_CALCULATE_DISCONTINUOUS_DISTANCE_TO_SKIN_PROCESS_H_INCLUDED  defined
+#endif // KRATOS_CALCULATE_DISCONTINUOUS_EDGE_DISTANCE_TO_SKIN_PROCESS_H_INCLUDED  defined
