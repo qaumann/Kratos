@@ -108,6 +108,21 @@ private:
     ///@{
 
     /**
+     * NEW
+     */
+    void CalculateEdgeDistances(
+        Element& rElement1,
+        PointerVector<GeometricalObject>& rIntersectedObjects);
+
+    /**
+     * NEW
+     */
+    unsigned int ComputeIntersections(
+        Element& rElement1,
+        const PointerVector<GeometricalObject>& rIntersectedObjects,
+        std::vector<double> &rIntersectionRatiosArray);
+
+    /**
      * @brief Computes the discontinuous distance in one element
      * This method computes the discontinuous distance field for a given element
      * @param rElement1 reference to the element of interest
