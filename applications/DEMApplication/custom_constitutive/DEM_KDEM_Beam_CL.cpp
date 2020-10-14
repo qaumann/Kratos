@@ -94,8 +94,6 @@ namespace Kratos {
                                         int i_neighbour_count,
                                         int time_steps,
                                         bool& sliding,
-                                        int search_control,
-                                        DenseVector<int>& search_control_vector,
                                         double &equiv_visco_damp_coeff_normal,
                                         double &equiv_visco_damp_coeff_tangential_0,
                                         double &equiv_visco_damp_coeff_tangential_1,
@@ -131,8 +129,6 @@ namespace Kratos {
                                   element2,
                                   i_neighbour_count,
                                   sliding,
-                                  search_control,
-                                  search_control_vector,
                                   r_process_info);
 
         CalculateViscoDampingCoeff(equiv_visco_damp_coeff_normal,
@@ -186,8 +182,6 @@ namespace Kratos {
                                                   SphericContinuumParticle* element2,
                                                   int i_neighbour_count,
                                                   bool& sliding,
-                                                  int search_control,
-                                                  DenseVector<int>& search_control_vector,
                                                   const ProcessInfo& r_process_info) {
 
         LocalElasticContactForce[0] = OldLocalElasticContactForce[0] - kt_el_0 * LocalDeltDisp[0]; // 0: first tangential

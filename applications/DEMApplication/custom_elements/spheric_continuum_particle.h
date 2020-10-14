@@ -81,11 +81,9 @@ namespace Kratos
             }
         };
 
-        typedef std::unique_ptr<ParticleDataBuffer> BufferPointerType;
-
-        virtual std::unique_ptr<ParticleDataBuffer> CreateParticleDataBuffer(SphericContinuumParticle* p_this_particle)
+        std::unique_ptr<SphericParticle::ParticleDataBuffer> CreateParticleDataBuffer(SphericParticle* p_this_particle) override
         {
-            return std::unique_ptr<ParticleDataBuffer>(new ParticleDataBuffer(p_this_particle));
+            return std::unique_ptr<SphericParticle::ParticleDataBuffer>(new ParticleDataBuffer(p_this_particle));
         }
 
         void SetInitialSphereContacts(const ProcessInfo& r_process_info);
@@ -154,10 +152,10 @@ namespace Kratos
         void Initialize(const ProcessInfo& r_process_info) override;
         virtual double GetInitialDeltaWithFEM(int index) override;
         virtual void ComputeBallToBallContactForce(SphericParticle::ParticleDataBuffer &,
-                                                   ProcessInfo& r_process_info,
+                                                   const ProcessInfo& r_process_info,
                                                    array_1d<double, 3>& rElasticForce,
                                                    array_1d<double, 3>& rContactForce,
-                                                   double& RollingResistance) override final;
+                                                   double& RollingResistance) override;
 
         virtual void ComputeRollingResistance(double& RollingResistance,
                                             const double& NormalLocalContactForce,

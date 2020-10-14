@@ -54,7 +54,7 @@ namespace Kratos {
 
         virtual void Initialize(const ProcessInfo& r_process_info) override;
 
-        virtual void InitializeSolutionStep(ProcessInfo& r_process_info) override;
+        virtual void InitializeSolutionStep(const ProcessInfo& r_process_info) override;
 
         virtual void CalculateLocalAngularMomentum(array_1d<double, 3>& r_angular_momentum) override;
 
@@ -63,7 +63,7 @@ namespace Kratos {
         virtual void ContactAreaWeighting() override;
 
         virtual void ComputeBallToBallContactForce(SphericParticle::ParticleDataBuffer &,
-                                                   ProcessInfo& r_process_info,
+                                                   const ProcessInfo& r_process_info,
                                                    array_1d<double, 3>& rElasticForce,
                                                    array_1d<double, 3>& rContactForce,
                                                    double& RollingResistance) override;

@@ -90,7 +90,7 @@ namespace Kratos {
         }
     }
 
-    void BeamParticle::InitializeSolutionStep(ProcessInfo& r_process_info)
+    void BeamParticle::InitializeSolutionStep(const ProcessInfo& r_process_info)
     {
         mRadius = this->GetGeometry()[0].FastGetSolutionStepValue(RADIUS); //Just in case someone is overwriting the radius in Python
         mPartialRepresentativeVolume = 0.0;
@@ -269,7 +269,7 @@ namespace Kratos {
     void BeamParticle::ContactAreaWeighting() {}
 
     void BeamParticle::ComputeBallToBallContactForce(SphericParticle::ParticleDataBuffer & data_buffer,
-                                                     ProcessInfo& r_process_info,
+                                                     const ProcessInfo& r_process_info,
                                                      array_1d<double, 3>& rElasticForce,
                                                      array_1d<double, 3>& rContactForce,
                                                      double& RollingResistance)
@@ -278,8 +278,6 @@ namespace Kratos {
         DEM_COPY_SECOND_TO_FIRST_3(data_buffer.mMyCoors, this_node)
 
         const int time_steps = r_process_info[TIME_STEPS];
-        const int& search_control = r_process_info[SEARCH_CONTROL];
-        DenseVector<int>& search_control_vector = r_process_info[SEARCH_CONTROL_VECTOR];
 
         const array_1d<double, 3>& vel         = this->GetGeometry()[0].FastGetSolutionStepValue(VELOCITY);
         const array_1d<double, 3>& delta_displ = this->GetGeometry()[0].FastGetSolutionStepValue(DELTA_DISPLACEMENT);
@@ -407,8 +405,6 @@ namespace Kratos {
                                                                    i,
                                                                    r_process_info[TIME_STEPS],
                                                                    sliding,
-                                                                   search_control,
-                                                                   search_control_vector,
                                                                    equiv_visco_damp_coeff_normal,
                                                                    equiv_visco_damp_coeff_tangential_0,
                                                                    equiv_visco_damp_coeff_tangential_1,
