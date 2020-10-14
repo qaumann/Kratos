@@ -86,6 +86,20 @@ class ExplicitMechanicalSolver(MechanicalSolver):
                 self.delta_time_refresh_counter = 0
             else:
                 self.delta_time_refresh_counter += 1
+        #TODO
+        # time = self.main_model_part.ProcessInfo[KratosMultiphysics.TIME]
+        # if time <= 250.0:
+        #     self.delta_time = 0.0071+0.0055716*time
+        #     self.main_model_part.ProcessInfo.SetValue(KratosMultiphysics.DELTA_TIME, self.delta_time)
+        #     alpha = 0.339408*time
+        #     beta = 1.414-0.001696*time
+        #     self.main_model_part.ProcessInfo.SetValue(StructuralMechanicsApplication.RAYLEIGH_ALPHA, alpha)
+        #     self.main_model_part.ProcessInfo.SetValue(StructuralMechanicsApplication.RAYLEIGH_BETA, beta)
+        # else:
+        #     self.delta_time = self.settings["time_stepping"]["time_step"].GetDouble()
+        #     self.main_model_part.ProcessInfo.SetValue(KratosMultiphysics.DELTA_TIME, self.settings["time_stepping"]["time_step"].GetDouble())
+        #     self.main_model_part.ProcessInfo.SetValue(StructuralMechanicsApplication.RAYLEIGH_ALPHA, self.settings["rayleigh_alpha"].GetDouble())
+        #     self.main_model_part.ProcessInfo.SetValue(StructuralMechanicsApplication.RAYLEIGH_BETA, self.settings["rayleigh_beta"].GetDouble())
         return self.delta_time
 
     def Initialize(self):
@@ -121,7 +135,8 @@ class ExplicitMechanicalSolver(MechanicalSolver):
         process_info.SetValue(StructuralMechanicsApplication.USE_CONSISTENT_MASS_MATRIX, use_rayleigh_damping)
         process_info.SetValue(StructuralMechanicsApplication.XI_DAMPING, self.settings["xi_damping"].GetDouble())
         process_info.SetValue(StructuralMechanicsApplication.SERIAL_PARALLEL_EQUILIBRIUM_TOLERANCE, self.settings["l2_tolerance"].GetDouble())
-        self.main_model_part.ProcessInfo[KratosMultiphysics.DELTA_TIME] = self.settings["time_stepping"]["time_step"].GetDouble()
+        process_info.SetValue(KratosMultiphysics.DELTA_TIME, self.settings["time_stepping"]["time_step"].GetDouble())
+        # self.main_model_part.ProcessInfo[KratosMultiphysics.DELTA_TIME] = self.settings["time_stepping"]["time_step"].GetDouble()
 
         # Setting the time integration schemes
         if(scheme_type == "central_differences"):

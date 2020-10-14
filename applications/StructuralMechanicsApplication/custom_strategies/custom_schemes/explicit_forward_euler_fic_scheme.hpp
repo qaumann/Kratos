@@ -313,6 +313,8 @@ public:
         // The first step is time =  initial_time ( 0.0) + delta time
         // mTime.Current = r_current_process_info[TIME];
         mDeltaTime = r_current_process_info[DELTA_TIME];
+        mAlpha = r_current_process_info[RAYLEIGH_ALPHA];
+        mBeta = r_current_process_info[RAYLEIGH_BETA];
 
         // The iterator of the first node
         const auto it_node_begin = rModelPart.NodesBegin();
@@ -491,7 +493,7 @@ public:
         // Step Update
         // The first step is time =  initial_time ( 0.0) + delta time
         // mTime.Current = r_current_process_info[TIME];
-        mDeltaTime = r_current_process_info[DELTA_TIME];
+        // mDeltaTime = r_current_process_info[DELTA_TIME];
 
         // The iterator of the first node
         const auto it_node_begin = rModelPart.NodesBegin();
