@@ -422,6 +422,20 @@ public:
             //     r_exact_displacement[0] = 8.776268e-5;
             // } else if(itCurrentNode->Id()==4){
             //     r_exact_displacement[0] = 0.000131644;
+            // } else if(itCurrentNode->Id()==5){
+            //     r_exact_displacement[0] = 0.0001755254;
+            // } else if(itCurrentNode->Id()==6){
+            //     r_exact_displacement[0] = 0.0002194067;
+            // } else if(itCurrentNode->Id()==7){
+            //     r_exact_displacement[0] = 0.0002632881;
+            // } else if(itCurrentNode->Id()==8){
+            //     r_exact_displacement[0] = 0.0003071694;
+            // } else if(itCurrentNode->Id()==9){
+            //     r_exact_displacement[0] = 0.0003510507;
+            // } else if(itCurrentNode->Id()==10){
+            //     r_exact_displacement[0] = 0.0003949321;
+            // } else if(itCurrentNode->Id()==11){
+            //     r_exact_displacement[0] = 0.0004388134;
             // }
             array_1d<double, 3> delta_displacement;
             noalias(delta_displacement) = r_current_displacement-r_previous_displacement;
