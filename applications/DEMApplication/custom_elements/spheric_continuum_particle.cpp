@@ -133,6 +133,80 @@ namespace Kratos {
         }
     }//SetInitialFemContacts
 
+    void SphericContinuumParticle::CalculateRightHandSide(const ProcessInfo& r_process_info, double dt, const array_1d<double,3>& gravity)
+    {
+        KRATOS_TRY
+
+        // Creating a data buffer to store those variables that we want to reuse so that we can keep function parameter lists short
+
+        SphericContinuumParticle::BufferPointerType p_buffer = CreateParticleDataBuffer(this); // all memory will be freed once this shared pointer goes out of scope
+        ParticleDataBuffer& data_buffer = *p_buffer;
+        data_buffer.SetBoundingBox(r_process_info[DOMAIN_IS_PERIODIC], r_process_info[DOMAIN_MIN_CORNER], r_process_info[DOMAIN_MAX_CORNER]);
+
+        NodeType& this_node = GetGeometry()[0];
+
+        data_buffer.mDt = dt;
+        data_buffer.mMultiStageRHS = false;
+
+        array_1d<double, 3> additional_forces = ZeroVector(3);
+        array_1d<double, 3> additionally_applied_moment = ZeroVector(3);
+        array_1d<double, 3>& elastic_force       = this_node.FastGetSolutionStepValue(ELASTIC_FORCES);
+        array_1d<double, 3>& contact_force       = this_node.FastGetSolutionStepValue(CONTACT_FORCES);
+        array_1d<double, 3>& rigid_element_force = this_node.FastGetSolutionStepValue(RIGID_ELEMENT_FORCE);
+
+        mContactMoment.clear();
+        elastic_force.clear();
+        contact_force.clear();
+        rigid_element_force.clear();
+
+        InitializeForceComputation(r_process_info);
+
+        double RollingResistance = 0.0;
+
+        ComputeBallToBallContactForce(data_buffer, r_process_info, elastic_force, contact_force, RollingResistance);
+
+        ComputeBallToRigidFaceContactForce(data_buffer, elastic_force, contact_force, RollingResistance, rigid_element_force, r_process_info);
+
+        if (this->IsNot(DEMFlags::BELONGS_TO_A_CLUSTER)){
+            ComputeAdditionalForces(additional_forces, additionally_applied_moment, r_process_info, gravity);
+            #ifdef KRATOS_DEBUG
+            DemDebugFunctions::CheckIfNan(additional_forces, "NAN in Additional Force in RHS of Ball");
+            DemDebugFunctions::CheckIfNan(additionally_applied_moment, "NAN in Additional Torque in RHS of Ball");
+            #endif
+        }
+
+        // ROLLING FRICTION
+        if (this->Is(DEMFlags::HAS_ROTATION) && !data_buffer.mMultiStageRHS) {
+            if (this->Is(DEMFlags::HAS_ROLLING_FRICTION) && !data_buffer.mMultiStageRHS) {
+                array_1d<double, 3>& rolling_resistance_moment = this_node.FastGetSolutionStepValue(ROLLING_RESISTANCE_MOMENT);
+                rolling_resistance_moment.clear();
+
+                ComputeRollingFriction(rolling_resistance_moment, RollingResistance, data_buffer.mDt);
+            }
+        }
+
+        if (mContinuumInitialNeighborsSize) ApplyGlobalDampingToContactForcesAndMoments(contact_force, mContactMoment);
+
+        array_1d<double,3>& total_forces = this_node.FastGetSolutionStepValue(TOTAL_FORCES);
+        array_1d<double,3>& total_moment = this_node.FastGetSolutionStepValue(PARTICLE_MOMENT);
+
+        total_forces[0] = contact_force[0] + additional_forces[0];
+        total_forces[1] = contact_force[1] + additional_forces[1];
+        total_forces[2] = contact_force[2] + additional_forces[2];
+
+        total_moment[0] = mContactMoment[0] + additionally_applied_moment[0];
+        total_moment[1] = mContactMoment[1] + additionally_applied_moment[1];
+        total_moment[2] = mContactMoment[2] + additionally_applied_moment[2];
+
+        #ifdef KRATOS_DEBUG
+        DemDebugFunctions::CheckIfNan(total_forces, "NAN in Total Forces in RHS of Ball");
+        DemDebugFunctions::CheckIfNan(total_moment, "NAN in Total Torque in RHS of Ball");
+        #endif
+
+        FinalizeForceComputation(data_buffer);
+        KRATOS_CATCH("")
+    }
+
     void SphericContinuumParticle::ContactAreaWeighting() //MISMI 10: POOYAN this could be done by calculating on the bars. not looking at the neighbors of my neighbors.
     {
         double alpha = 1.0;
@@ -201,6 +275,16 @@ namespace Kratos {
 
         return effectiveVolumeRadius;
     }
+
+
+    /*void SphericContinuumParticle::InitializeSolutionStep(const ProcessInfo& r_process_info) {
+    KRATOS_TRY
+    SphericParticle::InitializeSolutionStep(r_process_info);
+    for (unsigned int i = 0; i < mContinuumInitialNeighborsSize; i++) {
+        DEM_COPY_SECOND_TO_FIRST_3(mArrayOfOldDeltaDisplacements[i], mArrayOfDeltaDisplacements[i]);
+    }
+    KRATOS_CATCH("")
+    }*/
 
     void SphericContinuumParticle::ComputeBallToBallContactForce(SphericParticle::ParticleDataBuffer & data_buffer,
                                                                 const ProcessInfo& r_process_info,

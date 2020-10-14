@@ -81,18 +81,29 @@ namespace Kratos
             }
         };
 
-        std::unique_ptr<SphericParticle::ParticleDataBuffer> CreateParticleDataBuffer(SphericParticle* p_this_particle) override
+        typedef std::unique_ptr<ParticleDataBuffer> BufferPointerType;
+
+        virtual std::unique_ptr<ParticleDataBuffer> CreateParticleDataBuffer(SphericContinuumParticle* p_this_particle)
         {
-            return std::unique_ptr<SphericParticle::ParticleDataBuffer>(new ParticleDataBuffer(p_this_particle));
+            return std::unique_ptr<ParticleDataBuffer>(new ParticleDataBuffer(p_this_particle));
         }
+
+        // std::unique_ptr<SphericParticle::ParticleDataBuffer> CreateParticleDataBuffer(SphericParticle* p_this_particle) override
+        // {
+        //     return std::unique_ptr<SphericParticle::ParticleDataBuffer>(new ParticleDataBuffer(p_this_particle));
+        // }
+
+        virtual void CalculateRightHandSide(const ProcessInfo& r_process_info, double dt, const array_1d<double,3>& gravity)  override;
 
         void SetInitialSphereContacts(const ProcessInfo& r_process_info);
         void SetInitialFemContacts();
         void CreateContinuumConstitutiveLaws();
+        //void InitializeSolutionStep(const ProcessInfo& r_process_info) override;
         void FinalizeSolutionStep(const ProcessInfo& r_process_info) override;
         void GetStressTensorFromNeighbourStep1();
         void GetStressTensorFromNeighbourStep2();
         void GetStressTensorFromNeighbourStep3();
+        //void CorrectRepresentativeVolume(double& rRepresentative_Volume, bool& is_smaller_than_sphere) override;
 
         void Calculate(const Variable<double>& rVariable, double& Output, const ProcessInfo& r_process_info) override;
 
@@ -149,7 +160,7 @@ namespace Kratos
 
         SphericContinuumParticle();
 
-        void Initialize(const ProcessInfo& r_process_info) override;
+        virtual void Initialize(const ProcessInfo& r_process_info) override;
         virtual double GetInitialDeltaWithFEM(int index) override;
         virtual void ComputeBallToBallContactForce(SphericParticle::ParticleDataBuffer &,
                                                    const ProcessInfo& r_process_info,
