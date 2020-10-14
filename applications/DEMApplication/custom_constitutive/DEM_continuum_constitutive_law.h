@@ -131,8 +131,6 @@ namespace Kratos {
                 int i_neighbour_count,
                 int time_steps,
                 bool& sliding,
-                int search_control,
-                DenseVector<int>& search_control_vector,
                 double &equiv_visco_damp_coeff_normal,
                 double &equiv_visco_damp_coeff_tangential,
                 double LocalRelVel[3],
@@ -202,9 +200,7 @@ namespace Kratos {
                 SphericContinuumParticle* element2,
                 int i_neighbour_count,
                 bool& sliding,
-                int search_control,
-                                            DenseVector<int>& search_control_vector,
-                                            const ProcessInfo& r_process_info) {
+                const ProcessInfo& r_process_info) {
             KRATOS_THROW_ERROR(std::runtime_error,"This function (DEMContinuumConstitutiveLaw::CalculateTangentialForces) should not be called.","")
         };
 
