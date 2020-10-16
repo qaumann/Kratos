@@ -79,6 +79,24 @@ public:
     ///@name Operations
     ///@{
 
+    /**
+     * @brief Initializes discontinuous distance computation process
+     * This method initializes the TO_SPLIT flag, the DISTANCE and
+     * ELEMENTAL_DISTANCES variables as well as the EMBEDDED_VELOCITY
+     *
+     * NEW - initialize ELEMENTAL_EDGE_DISTANCES aswell
+     */
+    virtual void Initialize() override;
+
+    /**
+     * @brief Computes the elemental distance values
+     * Given an intersecting objects vector, this method computes the elemental distance field
+     * @param rIntersectedObjects array containing pointers to the intersecting geometries
+     *
+     * NEW ...
+     */
+    virtual void CalculateDistances(std::vector<PointerVector<GeometricalObject>>& rIntersectedObjects) override;
+
     ///@}
     ///@name Access
     ///@{
@@ -108,27 +126,14 @@ private:
     ///@{
 
     /**
+     * @brief Computes the edge distances of one element (EMBEDDED_EDGE_DISTANCES)
+     * This method computes ratios for intersections along the edges of a given element
+     * @param rElement1 reference to the element of interest
+     * @param rIntersectedObjects reference to the array containing the element of interest intersecting geometries
+     *
      * NEW
      */
     void CalculateEdgeDistances(
-        Element& rElement1,
-        PointerVector<GeometricalObject>& rIntersectedObjects);
-
-    /**
-     * NEW
-     */
-    unsigned int ComputeIntersections(
-        Element& rElement1,
-        const PointerVector<GeometricalObject>& rIntersectedObjects,
-        std::vector<double> &rIntersectionRatiosArray);
-
-    /**
-     * @brief Computes the discontinuous distance in one element
-     * This method computes the discontinuous distance field for a given element
-     * @param rElement1 reference to the element of interest
-     * @param rIntersectedObjects reference to the array containing the element of interest intersecting geometries
-     */
-    void CalculateElementalDistances(
         Element& rElement1,
         PointerVector<GeometricalObject>& rIntersectedObjects);
 
@@ -139,14 +144,15 @@ private:
      * @param rElement1 reference to the element of interest
      * @param rIntersectedObjects reference to the array containing the element of interest intersecting geometries
      * @param rCutEdgesVector array that classifies the edges depending on their cut / uncut status
-     * @param rIntersectionPointsArray array containing the edges intersection points
+     * @param rIntersectionRatiosArray array containing the edges intersection ratios
      * @return unsigned int number of cut edges
+     *
+     * NEW
      */
-    unsigned int ComputeEdgesIntersections(
+    unsigned int ComputeEdgeIntersectionRatios(
         Element& rElement1,
         const PointerVector<GeometricalObject>& rIntersectedObjects,
-        std::vector<unsigned int> &rCutEdgesVector,
-        std::vector<array_1d <double,3> > &rIntersectionPointsArray);
+        std::vector<double> &rIntersectionRatios);
 
     /**
      * @brief Computes the intersection of a single edge
@@ -164,6 +170,29 @@ private:
         const Element::NodeType& rEdgePoint1,
         const Element::NodeType& rEdgePoint2,
         Point& rIntersectionPoint);
+
+    /**
+     * @brief Computes the discontinuous distance for nodes of one element (ELEMENTAL_DISTANCES)
+     * This method computes the discontinuous distance field for a given element
+     * @param rElement1 reference to the element of interest
+     * @param rIntersectedObjects reference to the array containing the element of interest intersecting geometries
+     */
+    void CalculateNodeDistances(
+        Element& rElement1,
+        const PointerVector<GeometricalObject>& rIntersectedObjects);
+
+    /**
+     * @brief 
+     * @param rElement1 reference to the element of interest
+     * @param rEdgeDistances
+     * @param rIntersectionPointsArray
+     *
+     * NEW
+     */
+    void ComputeIntPtsFromRatios(
+        Element& rElement1,
+        const Vector& rEdgeDistances,
+        std::vector<array_1d <double,3> > &rIntersectionPointsArray);
 
     /**
      * @brief Computes the element intersection unit normal
