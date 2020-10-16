@@ -90,7 +90,7 @@ namespace Kratos
 		}
 
 		// This function assumes tetrahedra element and triangle intersected object as input at this moment
-		constexpr int number_of_edges = (TDim - 1) * 2;
+		constexpr int number_of_edges = (TDim - 1) * 3;
 		Vector& edge_distances = rElement1.GetValue(ELEMENTAL_DISTANCES); //TODO EMBEDDED_EDGE_DISTANCES
 		//std::vector<double>&
 		
@@ -109,11 +109,13 @@ namespace Kratos
 		if (is_intersection){
 			for (int i = 0; i < number_of_edges; i++)
 				edge_distances[i] = int_ratio_vector[i];
-		} else {
+		} /*else {
 			for (int i = 0; i < number_of_edges; i++) {
-				edge_distances[i] = -1;
+				edge_distances[i] = false;
 			}
-		}
+		}*/
+		// TODO: TO_SPLIT only for completely intersected elements? epsilon??
+		// like this same definition of split elements as for ELEMENTAL_DISTNANCES??
 		rElement1.Set(TO_SPLIT, is_intersection);
 	}
 
@@ -183,7 +185,6 @@ namespace Kratos
 				rIntersectionRatios.push_back(-1);
 			}
 		}
-
 		return n_cut_edges;
 	}
 
@@ -219,36 +220,36 @@ namespace Kratos
 			return;
 		}
 
-		const Vector& edge_distances = rElement1.GetValue(ELEMENTAL_DISTANCES);
-		constexpr int number_of_edges = (TDim - 1) * 2;
+		const Vector edge_distances = rElement1.GetValue(ELEMENTAL_DISTANCES);
+		constexpr int number_of_edges = (TDim - 1) * 3;
 		// Check if the element is split and set the TO_SPLIT flag accordingly
-		unsigned int n_pos_distance = 0;
+		unsigned int n_cut_edges = 0;
 		for (int i = 0; i < number_of_edges; i++) {
 			if (edge_distances[i] >= 0){
-				n_pos_distance++;
+				n_cut_edges++;
 			}				
 		}
-		const bool is_intersection = (n_pos_distance < rElement1.GetGeometry().WorkingSpaceDimension()) ? false : true;
-
-		// This function assumes tetrahedra element and triangle intersected object as input at this moment
-		constexpr int number_of_tetrahedra_points = TDim + 1;
-		// constexpr double epsilon = std::numeric_limits<double>::epsilon();
-		Vector& elemental_distances = rElement1.GetValue(ELEMENTAL_DISTANCES);
-
-		if(elemental_distances.size() != number_of_tetrahedra_points){
-			elemental_distances.resize(number_of_tetrahedra_points, false);
-		}
-
-		std::vector<array_1d <double,3> > int_pts_vector;
-		// Calculate points from nodes of edges and length ratio of intersections
-		ComputeIntPtsFromRatios(rElement1, edge_distances, int_pts_vector);
+		const bool is_intersection = (n_cut_edges < rElement1.GetGeometry().WorkingSpaceDimension()) ? false : true;
 
 		if (is_intersection){
+			// This function assumes tetrahedra element and triangle intersected object as input at this moment
+			constexpr int number_of_tetrahedra_points = TDim + 1;
+			// constexpr double epsilon = std::numeric_limits<double>::epsilon();
+			Vector& elemental_distances = rElement1.GetValue(ELEMENTAL_DISTANCES);
+
+			if(elemental_distances.size() != number_of_tetrahedra_points){
+				elemental_distances.resize(number_of_tetrahedra_points, false);
+			}
+
+			// Calculate points from nodes of edges and length ratio of intersections
+			std::vector<array_1d <double,3> > int_pts_vector;
+			ComputeIntPtsFromRatios(rElement1, edge_distances, int_pts_vector);
+
 			// If there are more than 3 intersected edges, compute the least squares plane approximation
 			// by using the ComputePlaneApproximation utility. Otherwise, the distance is computed using
 			// the plane defined by the 3 intersection points.
 			auto &r_geometry = rElement1.GetGeometry();
-			const bool do_plane_approx = (n_pos_distance == r_geometry.WorkingSpaceDimension()) ? false : true;
+			const bool do_plane_approx = (n_cut_edges == r_geometry.WorkingSpaceDimension()) ? false : true;
 
 			if (do_plane_approx){
 				// Call the plane optimization utility
@@ -278,7 +279,7 @@ namespace Kratos
 	template<std::size_t TDim>
 	void CalculateDiscontinuousEdgeDistanceToSkinProcess<TDim>::ComputeIntPtsFromRatios(
 		Element& rElement1,
-		const Vector& rElementalDistances,
+		const Vector &rElementalDistances,
       	std::vector<array_1d <double,3> > &rIntersectionPointsArray)
 	{
 		auto &r_geometry = rElement1.GetGeometry();

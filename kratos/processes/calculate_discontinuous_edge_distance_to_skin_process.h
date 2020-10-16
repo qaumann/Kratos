@@ -191,7 +191,7 @@ private:
      */
     void ComputeIntPtsFromRatios(
         Element& rElement1,
-        const Vector& rEdgeDistances,
+        const Vector &rEdgeDistances,
         std::vector<array_1d <double,3> > &rIntersectionPointsArray);
 
     /**
