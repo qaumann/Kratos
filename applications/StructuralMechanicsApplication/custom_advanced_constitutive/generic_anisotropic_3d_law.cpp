@@ -576,6 +576,15 @@ void GenericAnisotropic3DLaw::InitializeMaterial(
     KRATOS_ERROR_IF_NOT(r_props_isotropic_cl.Has(CONSTITUTIVE_LAW)) << "No constitutive law set" << std::endl;
     mpIsotropicCL = r_props_isotropic_cl[CONSTITUTIVE_LAW]->Clone();
     mpIsotropicCL->InitializeMaterial(r_props_isotropic_cl, rElementGeometry, rShapeFunctionsValues);
+
+    // We check now the dimension of the CL pointer, must be 3D
+    KRATOS_ERROR_IF_NOT(mpIsotropicCL->GetStrainSize() == 6) << "The slave CL has a dimension lower than 3, not possible" << std::endl;
+
+    // Let's check variables
+    KRATOS_ERROR_IF_NOT(rMaterialProperties.Has(ISOTROPIC_ANISOTROPIC_YIELD_RATIO))  << "ISOTROPIC_ANISOTROPIC_YIELD_RATIO not defined in properties" << std::endl;
+
+    KRATOS_ERROR_IF_NOT(rMaterialProperties.Has(ORTHOTROPIC_ELASTIC_CONSTANTS)) << "The ORTHOTROPIC_ELASTIC_CONSTANTS are not defined" << std::endl;
+    KRATOS_ERROR_IF_NOT(rMaterialProperties[ORTHOTROPIC_ELASTIC_CONSTANTS].size() == 6) << "The dimension of the ORTHOTROPIC_ELASTIC_CONSTANTS is incorrect" << std::endl;
 }
 
 /***********************************************************************************/
@@ -610,7 +619,8 @@ void GenericAnisotropic3DLaw::CalculateCauchyGreenStrain(
     // Compute total deformation gradient
     const BoundedMatrixType& F = rValues.GetDeformationGradientF();
 
-    BoundedMatrixType E_tensor = prod(trans(F), F);
+    BoundedMatrixType E_tensor = ZeroMatrix(F.size1());
+    E_tensor = prod(trans(F), F);
     for(unsigned int i = 0; i < Dimension; ++i)
         E_tensor(i, i) -= 1.0;
     E_tensor *= 0.5;
