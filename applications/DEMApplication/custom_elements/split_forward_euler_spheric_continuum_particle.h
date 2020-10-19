@@ -56,7 +56,7 @@ virtual ~SplitForwardEulerSphericContinuumParticle();
 
 // typedef typename SphericContinuumParticle::ParticleDataBuffer ParticleDataBuffer;
 
-void CalculateRightHandSide(ProcessInfo& r_process_info, double dt, const array_1d<double,3>& gravity, int search_control) override;
+void CalculateRightHandSide(const ProcessInfo& r_process_info, double dt, const array_1d<double,3>& gravity) override;
 
 /// Turn back information as a string.
 virtual std::string Info() const override
@@ -76,7 +76,7 @@ SplitForwardEulerSphericContinuumParticle();
 void Initialize(const ProcessInfo& r_process_info) override;
 
 void ComputeBallToBallContactForce(SphericParticle::ParticleDataBuffer& data_buffer,
-                                        ProcessInfo& r_process_info,
+                                        const ProcessInfo& r_process_info,
                                         array_1d<double, 3>& rElasticForce,
                                         array_1d<double, 3>& rContactForce,
                                         double& RollingResistance) override;
@@ -86,8 +86,7 @@ void ComputeBallToRigidFaceContactForce(SphericParticle::ParticleDataBuffer & da
                                             array_1d<double, 3>& rContactForce,
                                             double& RollingResistance,
                                             array_1d<double, 3>& rigid_element_force,
-                                            ProcessInfo& r_process_info,
-                                            int search_control) override;
+                                            const ProcessInfo& r_process_info) override;
 
 virtual void ComputeBallToBallStiffness(SphericParticle::ParticleDataBuffer & data_buffer,
                                                                             double& r_nodal_stiffness,

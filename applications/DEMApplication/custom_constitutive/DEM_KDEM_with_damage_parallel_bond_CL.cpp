@@ -558,8 +558,6 @@ namespace Kratos {
                                 int i_neighbour_count,
                                 int time_steps,
                                 bool& sliding,
-                                int search_control,
-                                DenseVector<int>& search_control_vector,
                                 double LocalRelVel[3],
                                 double ViscoDampingLocalContactForce[3]) {
 
@@ -605,8 +603,6 @@ namespace Kratos {
                 element2,
                 i_neighbour_count,
                 sliding,
-                search_control,
-                search_control_vector,
                 r_process_info);
 
         FindMaximumValueOfNormalAndTangentialDamageComponents();

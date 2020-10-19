@@ -67,7 +67,7 @@ virtual void PrintInfo(std::ostream& rOStream) const override {rOStream << "Spli
 
 void ContactAreaWeighting() override;
 
-void FinalizeStressTensor(ProcessInfo& r_process_info, double& rRepresentative_Volume) override;
+void FinalizeStressTensor(const ProcessInfo& r_process_info, double& rRepresentative_Volume) override;
 
 protected:
 

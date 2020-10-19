@@ -123,8 +123,6 @@ namespace Kratos {
                                     int i_neighbour_count,
                                     int time_steps,
                                     bool& sliding,
-                                    int search_control,
-                                    DenseVector<int>& search_control_vector,
                                     double LocalRelVel[3],
                                     double ViscoDampingLocalContactForce[3]) override;
 

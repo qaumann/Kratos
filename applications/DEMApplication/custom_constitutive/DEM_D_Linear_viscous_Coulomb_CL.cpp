@@ -296,7 +296,7 @@ namespace Kratos {
         CalculateInelasticViscodampingEnergyFEM(inelastic_viscodamping_energy, ViscoDampingLocalContactForce, LocalDeltDisp);
     }
 
-    void DEM_D_Linear_viscous_Coulomb::CalculateForcesRayleighWithFEM(ProcessInfo& r_process_info,
+    void DEM_D_Linear_viscous_Coulomb::CalculateForcesRayleighWithFEM(const ProcessInfo& r_process_info,
                                                               const double OldLocalElasticContactForce[3],
                                                               double LocalElasticContactForce[3],
                                                               double LocalDeltDisp[3],

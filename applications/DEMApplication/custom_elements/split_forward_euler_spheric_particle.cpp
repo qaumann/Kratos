@@ -67,7 +67,7 @@ void SplitForwardEulerSphericParticle::Initialize(const ProcessInfo& r_process_i
     KRATOS_CATCH( "" )
 }
 
-void SplitForwardEulerSphericParticle::CalculateRightHandSide(ProcessInfo& r_process_info, double dt, const array_1d<double,3>& gravity, int search_control)
+void SplitForwardEulerSphericParticle::CalculateRightHandSide(const ProcessInfo& r_process_info, double dt, const array_1d<double,3>& gravity)
 {
     KRATOS_TRY
 
@@ -117,7 +117,7 @@ void SplitForwardEulerSphericParticle::CalculateRightHandSide(ProcessInfo& r_pro
 
     ComputeBallToBallContactForce(data_buffer, r_process_info, elastic_force, contact_force, RollingResistance);
 
-    ComputeBallToRigidFaceContactForce(data_buffer, elastic_force, contact_force, RollingResistance, rigid_element_force, r_process_info, search_control);
+    ComputeBallToRigidFaceContactForce(data_buffer, elastic_force, contact_force, RollingResistance, rigid_element_force, r_process_info);
 
     if (this->IsNot(DEMFlags::BELONGS_TO_A_CLUSTER)){
         ComputeAdditionalForces(additional_forces, additionally_applied_moment, r_process_info, gravity);
@@ -143,7 +143,7 @@ void SplitForwardEulerSphericParticle::CalculateRightHandSide(ProcessInfo& r_pro
     array_1d<double,3>& angular_velocity = this_node.FastGetSolutionStepValue(ANGULAR_VELOCITY);
 
     // TODO: check sign of diagonal damping force
-    // TODO: can be diagonal damping force added globally ? I think it must be added globally. However, 
+    // TODO: can be diagonal damping force added globally ? I think it must be added globally. However,
     //       if the local damping force is used to calculate other local forces, there will be a small
     //       error because the diagonal damping force won't have been added until now.
     total_forces[0] = contact_force[0] + additional_forces[0] + r_process_info[BETA_RAYLEIGH] * nodal_stiffness * velocity[0];
@@ -200,8 +200,7 @@ void SplitForwardEulerSphericParticle::ComputeBallToRigidFaceContactForce(Spheri
                                                          array_1d<double, 3>& r_contact_force,
                                                          double& RollingResistance,
                                                          array_1d<double, 3>& rigid_element_force,
-                                                         ProcessInfo& r_process_info,
-                                                         int search_control)
+                                                         const ProcessInfo& r_process_info)
 {
     KRATOS_TRY
 
@@ -558,7 +557,7 @@ void SplitForwardEulerSphericParticle::ComputeBallToRigidFaceStiffness(SphericPa
         if (ContactType == 1 || ContactType == 2 || ContactType == 3) {
 
             double indentation = -(DistPToB - GetInteractionRadius()) - ini_delta;
- 
+
             if (indentation > 0.0) {
 
                 double normal_stiffness, tangential_stiffness;

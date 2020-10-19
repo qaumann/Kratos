@@ -91,7 +91,7 @@ double SplitForwardEulerCylinderContinuumParticle::CalculateMomentOfInertia() {
     return 0.5 * GetMass() * GetRadius() * GetRadius();
 }
 
-void SplitForwardEulerCylinderContinuumParticle::FinalizeStressTensor(ProcessInfo& r_process_info, double& rRepresentative_Volume){
+void SplitForwardEulerCylinderContinuumParticle::FinalizeStressTensor(const ProcessInfo& r_process_info, double& rRepresentative_Volume){
 
     KRATOS_TRY
     SphericParticle::FinalizeStressTensor(r_process_info, rRepresentative_Volume);
