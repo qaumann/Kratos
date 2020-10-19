@@ -47,6 +47,11 @@ namespace Kratos
 		for (unsigned int i_node = 0; i_node < num_nodes; ++i_node) {
 			init_dist_vect[i_node] = initial_distance;
 		}
+		constexpr std::size_t num_edges = (TDim -1) * 3;
+		array_1d<double,num_edges> init_edge_dist_vect;
+		for (unsigned int i_node = 0; i_node < num_edges; ++i_node) {
+			init_edge_dist_vect[i_node] = -1;
+		}
 
 		// Also initialize the embedded velocity of the fluid element and the TO_SPLIT flag.
 		#pragma omp parallel for
@@ -55,18 +60,18 @@ namespace Kratos
 			itElement->Set(TO_SPLIT, false);
 			itElement->SetValue(EMBEDDED_VELOCITY, ZeroVector(3));
 			itElement->SetValue(ELEMENTAL_DISTANCES,init_dist_vect);
-			// TODO:  initialize ELEMENTAL_EDGE_DISTANCES;
+			itElement->SetValue(ELEMENTAL_EDGE_DISTANCES,init_edge_dist_vect);
 		}
 	}
 
 	template<std::size_t TDim>
 	void CalculateDiscontinuousEdgeDistanceToSkinProcess<TDim>::CalculateDistances(std::vector<PointerVector<GeometricalObject>>& rIntersectedObjects)
 	{
-		const int number_of_elements = (this->mFindIntersectedObjectsProcess.GetModelPart1()).NumberOfElements();
+		const int num_elements = (this->mFindIntersectedObjectsProcess.GetModelPart1()).NumberOfElements();
 		auto& r_elements = (this->mFindIntersectedObjectsProcess.GetModelPart1()).ElementsArray();
 
 		#pragma omp parallel for schedule(dynamic)
-		for (int i = 0; i < number_of_elements; ++i) {
+		for (int i = 0; i < num_elements; ++i) {
 			this->CalculateEdgeDistances(*(r_elements[i]), rIntersectedObjects[i]);
 			this->CalculateNodeDistances(*(r_elements[i]), rIntersectedObjects[i]);
 		}
@@ -74,7 +79,7 @@ namespace Kratos
 
 	/// Turn back information as a string.
 	template<std::size_t TDim>
-	std::string CalculateDiscontinuousEdgeDistanceToSkinProcess<TDim>::Info() const 
+	std::string CalculateDiscontinuousEdgeDistanceToSkinProcess<TDim>::Info() const
 	{
 		return "CalculateDiscontinuousEdgeDistanceToSkinProcess";
 	}
@@ -90,34 +95,34 @@ namespace Kratos
 		}
 
 		// This function assumes tetrahedra element and triangle intersected object as input at this moment
-		constexpr int number_of_edges = (TDim - 1) * 3;
+		constexpr int num_edges = (TDim - 1) * 3;
 		constexpr double epsilon = std::numeric_limits<double>::epsilon();
-		Vector& edge_distances = rElement1.GetValue(ELEMENTAL_DISTANCES); //TODO EMBEDDED_EDGE_DISTANCES
+		Vector& edge_distances = rElement1.GetValue(ELEMENTAL_EDGE_DISTANCES);
 		//std::vector<double>&
-		
-		if(edge_distances.size() != number_of_edges){
-			edge_distances.resize(number_of_edges, false);
+
+		if(edge_distances.size() != num_edges){
+			edge_distances.resize(num_edges, false);
 		}
 
 		// Compute the number of intersected edges
-		std::vector<double> int_ratio_vector;
-		const unsigned int n_cut_edges = ComputeEdgeIntersectionRatios(rElement1, rIntersectedObjects, int_ratio_vector);
-		
-		for (unsigned int i = 0; i < number_of_edges; i++) {
-			edge_distances[i] = int_ratio_vector[i];
+		std::vector<double> intersect_ratio_vector;
+		const unsigned int num_cut_edges = ComputeEdgeIntersectionRatios(rElement1, rIntersectedObjects, intersect_ratio_vector);
+
+		for (unsigned int i = 0; i < num_edges; i++) {
+			edge_distances[i] = intersect_ratio_vector[i];
 		}
 
 		// Only complete intersection considered - 3 or more intersected edges for a tetrahedron, 2 or more for triangle
-		const bool is_intersection = (n_cut_edges < rElement1.GetGeometry().WorkingSpaceDimension()) ? false : true;
-		
+		const bool is_intersection = (num_cut_edges < rElement1.GetGeometry().WorkingSpaceDimension()) ? false : true;
+
 		// TODO: TO_SPLIT only for completely intersected elements? epsilon??
-		// like this same definition of split elements as for ELEMENTAL_DISTNANCES??
+		// is it like this the  same definition of split elements as for ELEMENTAL_DISTNANCES??
 		// Check if the element is split and set the TO_SPLIT flag accordingly
 		unsigned int n_greater_epsilon = 0;
-		for (unsigned int i = 0; i < number_of_edges; i++) {
+		for (unsigned int i = 0; i < num_edges; i++) {
 			if (edge_distances[i] > epsilon){
 				n_greater_epsilon++;
-			}				
+			}
 		}
 		rElement1.Set(TO_SPLIT, is_intersection && n_greater_epsilon > 0);
 	}
@@ -130,30 +135,30 @@ namespace Kratos
 	{
 		auto &r_geometry = rElement1.GetGeometry();
 		const auto r_edges_container = r_geometry.GenerateEdges();
-		const std::size_t n_edges = r_geometry.EdgesNumber();
+		const std::size_t r_num_edges = r_geometry.EdgesNumber();
 
 		// Initialize cut edges and points arrays
-		unsigned int n_cut_edges = 0;
+		unsigned int num_cut_edges = 0;
 		rIntersectionRatios.clear();
-		std::vector<unsigned int> rCutEdgesVector = std::vector<unsigned int>(n_edges, 0);
+		std::vector<unsigned int> cut_edges_vector = std::vector<unsigned int>(r_num_edges, 0);
 
 		// Check wich edges are intersected
-		for (std::size_t i_edge = 0; i_edge < n_edges; ++i_edge){
+		for (std::size_t i_edge = 0; i_edge < r_num_edges; ++i_edge){
 			array_1d<double,3> avg_pt = ZeroVector(3);
 			std::vector<array_1d<double,3> > aux_pts;
 			// Check against all candidates to count the number of current edge intersections
 			for (const auto &r_int_obj : rIntersectedObjects){
 				// Call the compute intersection method
-				Point int_pt;
+				Point intersect_pt;
 				const auto &r_int_obj_geom = r_int_obj.GetGeometry();
-				const int int_id = ComputeEdgeIntersection(r_int_obj_geom, r_edges_container[i_edge][0], r_edges_container[i_edge][1], int_pt);
+				const int intersect_id = ComputeEdgeIntersection(r_int_obj_geom, r_edges_container[i_edge][0], r_edges_container[i_edge][1], intersect_pt);
 
 				// There is intersection
-				if (int_id == 1){
+				if (intersect_id == 1){
 					// Check if there is a close intersection (repeated intersection point)
 					bool is_repeated = false;
 					for (auto aux_pt : aux_pts){
-						const double aux_dist = norm_2(int_pt - aux_pt);
+						const double aux_dist = norm_2(intersect_pt - aux_pt);
 						const double tol_edge = 1e-2*norm_2(r_edges_container[i_edge][0] - r_edges_container[i_edge][1]);
 						if (aux_dist < tol_edge){
 							is_repeated = true;
@@ -164,31 +169,31 @@ namespace Kratos
 					// If the intersection pt. is not repeated, consider it
 					if (!is_repeated){
 						// Add the intersection pt. to the aux array pts.
-						aux_pts.push_back(int_pt);
+						aux_pts.push_back(intersect_pt);
 						// Increase the edge intersections counter
-						rCutEdgesVector[i_edge] += 1;
+						cut_edges_vector[i_edge] += 1;
 						// Save the intersection point for computing the average
-						avg_pt += int_pt;
+						avg_pt += intersect_pt;
 					}
 				}
 			}
 
 			// No intersection if the edge is intersected a pair number of times
 			// It is assumed that the skin enters and leaves the element
-			// if (rCutEdgesVector[i_edge] % 2 != 0){
-			if (rCutEdgesVector[i_edge] != 0){
-				avg_pt /= rCutEdgesVector[i_edge];
+			// if (cut_edges_vector[i_edge] % 2 != 0){
+			if (cut_edges_vector[i_edge] != 0){
+				avg_pt /= cut_edges_vector[i_edge];
 				// NEW calculate ratio
 				double dist_avg_pt = norm_2(r_edges_container[i_edge][0] - avg_pt);
 				double edge_length = norm_2(r_edges_container[i_edge][0] - r_edges_container[i_edge][1]);
 				double avg_ratio =  dist_avg_pt / edge_length;
 				rIntersectionRatios.push_back(avg_ratio);
-				n_cut_edges++;
+				num_cut_edges++;
 			} else {
 				rIntersectionRatios.push_back(-1);
 			}
 		}
-		return n_cut_edges;
+		return num_cut_edges;
 	}
 
 	template<std::size_t TDim>
@@ -223,84 +228,83 @@ namespace Kratos
 			return;
 		}
 
-		const Vector edge_distances = rElement1.GetValue(ELEMENTAL_DISTANCES);
-		//KRATOS_WATCH(edge_distances);
-		constexpr int number_of_edges = (TDim - 1) * 3;
+		// Get edge-based elemental distances of the element in order to calculate node-based ones
+		const Vector r_edge_distances = rElement1.GetValue(ELEMENTAL_EDGE_DISTANCES);
+		//KRATOS_WATCH(r_edge_distances);
+		constexpr int num_edges = (TDim - 1) * 3;
 
-		// Check for valid (complete) intersection
-		unsigned int n_cut_edges = 0;
-		for (unsigned int i = 0; i < number_of_edges; i++) {
-			if (edge_distances[i] >= 0){
-				n_cut_edges++;
-			}				
+		// Check for valid (complete) intersections
+		unsigned int num_cut_edges = 0;
+		for (unsigned int i = 0; i < num_edges; i++) {
+			if (r_edge_distances[i] >= 0){
+				num_cut_edges++;
+			}
 		}
-		const bool is_intersection = (n_cut_edges < rElement1.GetGeometry().WorkingSpaceDimension()) ? false : true;
+		const bool is_intersection = (num_cut_edges < rElement1.GetGeometry().WorkingSpaceDimension()) ? false : true;
 
+		// Get reference to node-based elemental distances variable to change it after calculations
 		// This function assumes tetrahedra element and triangle intersected object as input at this moment
-		constexpr int number_of_tetrahedra_points = TDim + 1;
-		const double initial_distance = this->CalculateCharacteristicLength();
-		Vector& elemental_distances = rElement1.GetValue(ELEMENTAL_DISTANCES);
+		constexpr int num_nodes = TDim + 1;
+		Vector& node_distances = rElement1.GetValue(ELEMENTAL_DISTANCES);
 
-		if(elemental_distances.size() != number_of_tetrahedra_points){
-			elemental_distances.resize(number_of_tetrahedra_points, false);
-		}
-		for (unsigned int i = 0; i < number_of_tetrahedra_points; i++) {
-			elemental_distances[i] = initial_distance;				
+		if(node_distances.size() != num_nodes){
+			node_distances.resize(num_nodes, false);
 		}
 
-		// Calculate points from nodes of edges and length ratio of intersections
-		std::vector<array_1d <double,3> > int_pts_vector;
-		ComputeIntPtsFromRatios(rElement1, edge_distances, int_pts_vector);
-		KRATOS_WATCH(int_pts_vector);
-
+		// Calculate node-based elemental distances for the element if there is a valid intersection
 		if (is_intersection){
+			// Calculate points from nodes of edges and length ratio of intersections
+			std::vector<array_1d <double,3> > intsect_pts_vector;
+			ComputeIntersectPtsFromRatios(rElement1, r_edge_distances, intsect_pts_vector);
+			//KRATOS_WATCH(intsect_pts_vector);
+
 			// If there are more than 3 intersected edges, compute the least squares plane approximation
 			// by using the ComputePlaneApproximation utility. Otherwise, the distance is computed using
 			// the plane defined by the 3 intersection points.
 			auto &r_geometry = rElement1.GetGeometry();
-			const bool do_plane_approx = (n_cut_edges == r_geometry.WorkingSpaceDimension()) ? false : true;
+			const bool do_plane_approx = (num_cut_edges == r_geometry.WorkingSpaceDimension()) ? false : true;
 
 			if (do_plane_approx){
 				// Call the plane optimization utility
 				array_1d<double,3> base_pt, normal;
-				ComputePlaneApproximation(rElement1, int_pts_vector, base_pt, normal);
+				ComputePlaneApproximation(rElement1, intsect_pts_vector, base_pt, normal);
 
 				// Compute the distance to the approximation plane
 				Plane3D approximation_plane(normal, Point{base_pt});
-				for (int i = 0; i < number_of_tetrahedra_points; i++) {
-					elemental_distances[i] = approximation_plane.CalculateSignedDistance(r_geometry[i]);
+				for (int i = 0; i < num_nodes; i++) {
+					node_distances[i] = approximation_plane.CalculateSignedDistance(r_geometry[i]);
 				}
 			} else {
 				// Create a plane with the 3 intersection points (or 2 in 2D)
-				Plane3D plane = this->SetIntersectionPlane(int_pts_vector);
+				Plane3D plane = this->SetIntersectionPlane(intsect_pts_vector);
 
 				// Compute the distance to the intersection plane
-				for (int i = 0; i < number_of_tetrahedra_points; i++) {
-					elemental_distances[i] = plane.CalculateSignedDistance(r_geometry[i]);
+				for (int i = 0; i < num_nodes; i++) {
+					node_distances[i] = plane.CalculateSignedDistance(r_geometry[i]);
 				}
 			}
 
 			// Correct the distance values orientation
-			CorrectDistanceOrientation(r_geometry, rIntersectedObjects, elemental_distances);
-			//KRATOS_WATCH(elemental_distances);
+			CorrectDistanceOrientation(r_geometry, rIntersectedObjects, node_distances);
+			//KRATOS_WATCH(node_distances);
 		}
 	}
 
 	template<std::size_t TDim>
-	void CalculateDiscontinuousEdgeDistanceToSkinProcess<TDim>::ComputeIntPtsFromRatios(
+	void CalculateDiscontinuousEdgeDistanceToSkinProcess<TDim>::ComputeIntersectPtsFromRatios(
 		Element& rElement1,
 		const Vector &rEdgeDistances,
       	std::vector<array_1d <double,3> > &rIntersectionPointsArray)
 	{
 		auto &r_geometry = rElement1.GetGeometry();
 		const auto r_edges_container = r_geometry.GenerateEdges();
-		const std::size_t n_edges = r_geometry.EdgesNumber();
+		const std::size_t r_num_edges = r_geometry.EdgesNumber();
 
 		// Initialize point vector and points arrays
 		array_1d<double,3> avg_pt = ZeroVector(3);
 		rIntersectionPointsArray.clear();
 
-		for (std::size_t i_edge = 0; i_edge < n_edges; ++i_edge){
+		for (std::size_t i_edge = 0; i_edge < r_num_edges; ++i_edge){
 			if (rEdgeDistances[i_edge] >= 0){
 				avg_pt = r_edges_container[i_edge][0] + rEdgeDistances[i_edge] * (r_edges_container[i_edge][1] - r_edges_container[i_edge][0]);
 				rIntersectionPointsArray.push_back(avg_pt);

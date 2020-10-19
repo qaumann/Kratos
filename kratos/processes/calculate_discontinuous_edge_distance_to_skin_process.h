@@ -120,6 +120,7 @@ private:
 
     ModelPart& mrSkinPart;
     ModelPart& mrVolumePart;
+    //std::size_t mNumEdges = (TDim -1) * 3; //TODO: declare here?
 
     ///@}
     ///@name Private Operations
@@ -182,19 +183,19 @@ private:
         const PointerVector<GeometricalObject>& rIntersectedObjects);
 
     /**
-     * @brief 
+     * @brief
      * @param rElement1 reference to the element of interest
      * @param rEdgeDistances
      * @param rIntersectionPointsArray
      *
      * NEW
      */
-    void ComputeIntPtsFromRatios(
+    void ComputeIntersectPtsFromRatios(
         Element& rElement1,
         const Vector &rEdgeDistances,
         std::vector<array_1d <double,3> > &rIntersectionPointsArray);
 
-    /**
+    /** TODO: make base class method protected?
      * @brief Computes the element intersection unit normal
      * This method computes the element intersection unit normal vector using the distance function gradient.
      * @param rGeometry reference to the geometry of the element of interest
@@ -206,7 +207,7 @@ private:
         const Vector& rElementalDistances,
         array_1d<double,3> &rNormal);
 
-    /**
+    /** TODO: make base class method protected?
      * @brief Computes the intersection plane approximation
      * For complex intersection patterns, this method takes a list containing
      * all the intersecting points and computes the plane that minimizes the
@@ -223,7 +224,7 @@ private:
         array_1d<double,3>& rPlaneBasePointCoords,
         array_1d<double,3>& rPlaneNormal);
 
-    /**
+    /** TODO: make base class method protected?
      * @brief Checks (and corrects if needed) the intersection normal orientation
      * This method checks the orientation of the previously computed intersection normal.
      * To do that, the normal vector to each one of the intersecting geometries is
@@ -238,7 +239,7 @@ private:
         const PointerVector<GeometricalObject>& rIntersectedObjects,
         Vector& rElementalDistances);
 
-    /**
+    /** TODO: make base class method protected?
      * @brief Computes the normal vector to an intersecting object geometry
      * This method computes the normal vector to an intersecting object geometry.
      * @param rGeometry reference to the geometry of the intersecting object
@@ -248,7 +249,7 @@ private:
         const Element::GeometryType &rGeometry,
         array_1d<double,3> &rIntObjNormal);
 
-    /**
+    /** TODO: make base class method protected?
      * @brief Computes the value of any embedded variable
      * For a given array variable in the skin mesh, this method calculates the value
      * of such variable in the embedded mesh. This is done in each element of the volume
