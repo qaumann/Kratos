@@ -466,6 +466,18 @@ namespace Kratos {
         KRATOS_CATCH("")
     }
 
+    double DEM_D_Linear_viscous_Coulomb::GetTgOfDynamicFrictionAngleOfElement(SphericParticle* element){
+        return element->GetTgOfDynamicFrictionAngle();
+    }
+
+    double DEM_D_Linear_viscous_Coulomb::GetTgOfStaticFrictionAngleOfElement(SphericParticle* element){
+        return element->GetTgOfStaticFrictionAngle();
+    }
+
+    std::size_t DEM_D_Linear_viscous_Coulomb::GetElementId(SphericParticle* element){
+        return element->Id();
+    }
+
     double DEM_D_Linear_viscous_Coulomb::CalculateNormalForce(const double indentation) {
         return mKn * indentation;
     }
