@@ -86,15 +86,16 @@ class ExplicitMechanicalSolver(MechanicalSolver):
                 self.delta_time_refresh_counter = 0
             else:
                 self.delta_time_refresh_counter += 1
-        #TODO
+        #TODO:
         # time = self.main_model_part.ProcessInfo[KratosMultiphysics.TIME]
         # if time <= 250.0:
-        #     self.delta_time = 0.0071+0.0055716*time
-        #     self.main_model_part.ProcessInfo.SetValue(KratosMultiphysics.DELTA_TIME, self.delta_time)
-        #     alpha = 0.339408*time
-        #     beta = 1.414-0.001696*time
-        #     self.main_model_part.ProcessInfo.SetValue(StructuralMechanicsApplication.RAYLEIGH_ALPHA, alpha)
-        #     self.main_model_part.ProcessInfo.SetValue(StructuralMechanicsApplication.RAYLEIGH_BETA, beta)
+            # self.delta_time = 0.0071
+            # self.delta_time = 0.0071+0.0055716*time
+            # self.main_model_part.ProcessInfo.SetValue(KratosMultiphysics.DELTA_TIME, self.delta_time)
+            # alpha = 0.0
+            # beta = 1.414
+            # alpha = 0.339408*time
+            # beta = 1.414-0.001696*time
         # else:
         #     self.delta_time = self.settings["time_stepping"]["time_step"].GetDouble()
         #     self.main_model_part.ProcessInfo.SetValue(KratosMultiphysics.DELTA_TIME, self.settings["time_stepping"]["time_step"].GetDouble())

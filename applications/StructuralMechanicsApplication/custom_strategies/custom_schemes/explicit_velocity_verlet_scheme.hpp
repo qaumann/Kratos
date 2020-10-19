@@ -223,6 +223,10 @@ public:
         const SizeType DomainSize = 3
         ) override
     {
+        // TODO
+        // if(itCurrentNode->Id()==11){
+        //     itCurrentNode->SetValue(NODAL_MASS, 2.27887e1);
+        // }
         const double nodal_mass = itCurrentNode->GetValue(NODAL_MASS);
         const array_1d<double, 3>& r_current_residual = itCurrentNode->FastGetSolutionStepValue(FORCE_RESIDUAL);
         array_1d<double, 3>& r_current_displacement = itCurrentNode->FastGetSolutionStepValue(DISPLACEMENT);

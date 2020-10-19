@@ -355,6 +355,12 @@ public:
         array_1d<double, 3>& r_current_displacement = itCurrentNode->FastGetSolutionStepValue(DISPLACEMENT);
         const array_1d<double, 3>& r_previous_displacement = itCurrentNode->FastGetSolutionStepValue(DISPLACEMENT,1);
         const array_1d<double, 3>& r_current_impulse = itCurrentNode->FastGetSolutionStepValue(NODAL_DISPLACEMENT_STIFFNESS);
+        // TODO
+        // if(itCurrentNode->Id()==11){
+        //     itCurrentNode->SetValue(NODAL_MASS, 2.27887e1);
+        //     // itCurrentNode->SetValue(NODAL_DISPLACEMENT_DAMPING, 4.55774);
+        //     itCurrentNode->SetValue(NODAL_DISPLACEMENT_DAMPING, 0.00455774);
+        // }
         const double nodal_mass = itCurrentNode->GetValue(NODAL_MASS);
         // const double nodal_damping = itCurrentNode->GetValue(NODAL_DISPLACEMENT_DAMPING);
 
@@ -368,14 +374,25 @@ public:
         if ( (nodal_mass + mAlpha*mTheta2*mDeltaTime*nodal_mass) > numerical_limit){
             for (IndexType j = 0; j < DomainSize; j++) {
                 if (fix_displacements[j] == false) {
-                        r_current_displacement[j] = (mDeltaTime*r_current_impulse[j] + (nodal_mass -
-                                                     (1.0-mTheta2)*mAlpha*mDeltaTime*nodal_mass)*r_current_displacement[j]) /
-                                                     (nodal_mass + mAlpha*mTheta2*mDeltaTime*nodal_mass);
+                            r_current_displacement[j] = (mDeltaTime*r_current_impulse[j] + (nodal_mass -
+                                                        (1.0-mTheta2)*mAlpha*mDeltaTime*nodal_mass)*r_current_displacement[j]) /
+                                                        (nodal_mass + mAlpha*mTheta2*mDeltaTime*nodal_mass);
+                        // TODO
+                        // if(itCurrentNode->Id()==11){
+                        //     double min_mass = 2.27887e-5;
+                        //     r_current_displacement[j] = (mDeltaTime*r_current_impulse[j] + (nodal_mass -
+                        //                              (1.0-mTheta2)*mAlpha*mDeltaTime*min_mass)*r_current_displacement[j]) /
+                        //                              (nodal_mass + mAlpha*mTheta2*mDeltaTime*min_mass);
+                        // } else {
+                        //     r_current_displacement[j] = (mDeltaTime*r_current_impulse[j] + (nodal_mass -
+                        //                                 (1.0-mTheta2)*mAlpha*mDeltaTime*nodal_mass)*r_current_displacement[j]) /
+                        //                                 (nodal_mass + mAlpha*mTheta2*mDeltaTime*nodal_mass);
+                        // }
                         // TODO: imposed velocity
                         // if(itCurrentNode->Id()==4){
                         //     r_current_displacement[0] = r_previous_displacement[0] + 1.3145e-6*mDeltaTime;
                         // }
-                        // TODO: to use Cdi=2*xi*sqrt(Ki*Mi)
+                        // TODO: to use Cdi=2*xi*sqrt(Ki*Mi), define alpha=1.0, beta=0.0, theta1=0.5, theta2=1.0, xi, use critical damping
                         // r_current_displacement[j] = (mDeltaTime*r_current_impulse[j] + (nodal_mass -
                         //                              (1.0-mTheta2)*mAlpha*mDeltaTime*nodal_damping)*r_current_displacement[j]) /
                         //                              (nodal_mass + mAlpha*mTheta2*mDeltaTime*nodal_damping);
@@ -414,6 +431,7 @@ public:
             NodeIterator itCurrentNode = it_node_begin + i;
             const array_1d<double, 3>& r_current_displacement = itCurrentNode->FastGetSolutionStepValue(DISPLACEMENT);
             const array_1d<double, 3>& r_previous_displacement = itCurrentNode->FastGetSolutionStepValue(DISPLACEMENT,1);
+            // TODO
             // array_1d<double, 3> r_exact_displacement;
             // noalias(r_exact_displacement) = ZeroVector(3);
             // if(itCurrentNode->Id()==1){
@@ -450,11 +468,12 @@ public:
         if (l2_denominator > 1.0e-12) {
             double l2_error = std::sqrt(l2_numerator)/std::sqrt(l2_denominator);
 
-            std::fstream l2_error_file;
-            l2_error_file.open ("l2_error_time.txt", std::fstream::out | std::fstream::app);
-            l2_error_file.precision(12);
-            l2_error_file << r_current_process_info[TIME] << " " << l2_error << std::endl;
-            l2_error_file.close();
+            // TODO
+            // std::fstream l2_error_file;
+            // l2_error_file.open ("l2_error_time.txt", std::fstream::out | std::fstream::app);
+            // l2_error_file.precision(12);
+            // l2_error_file << r_current_process_info[TIME] << " " << l2_error << std::endl;
+            // l2_error_file.close();
 
             if (l2_error < r_current_process_info[SERIAL_PARALLEL_EQUILIBRIUM_TOLERANCE]) {
                 KRATOS_INFO("STOP CRITERION") << "L2 Error is: " << l2_error << " . The simulation is completed at step: " << r_current_process_info[STEP] << std::endl;
