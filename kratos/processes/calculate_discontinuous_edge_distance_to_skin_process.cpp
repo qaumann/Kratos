@@ -77,6 +77,47 @@ namespace Kratos
 		}
 	}
 
+	template<std::size_t TDim>
+	bool CalculateDiscontinuousEdgeDistanceToSkinProcess<TDim>::CheckIfIncised(Element& rElement1)
+	{
+		// Get edge-based elemental distances of the element in order to calculate node-based ones
+		const Vector r_edge_distances = rElement1.GetValue(ELEMENTAL_EDGE_DISTANCES);
+		const uint8_t r_num_edges = rElement1.GetGeometry().EdgesNumber();
+
+		// Check for edge intersections
+		unsigned int num_cut_edges = 0;
+		for (unsigned int i = 0; i < r_num_edges; i++) {
+			if (r_edge_distances[i] >= 0){
+				num_cut_edges++;
+			}
+		}
+		return (num_cut_edges > 0);
+	}
+
+	template<std::size_t TDim>
+	bool CalculateDiscontinuousEdgeDistanceToSkinProcess<TDim>::CheckIfIntersected(Element& rElement1)
+	{
+		// Get edge-based elemental distances of the element in order to calculate node-based ones
+		const Vector r_edge_distances = rElement1.GetValue(ELEMENTAL_EDGE_DISTANCES);
+		const uint8_t r_num_edges = rElement1.GetGeometry().EdgesNumber();
+
+		// Check for edge intersections
+		unsigned int num_cut_edges = 0;
+		/*constexpr double epsilon = std::numeric_limits<double>::epsilon();
+		unsigned int num_greater_epsilon = 0;*/
+		for (unsigned int i = 0; i < r_num_edges; i++) {
+			if (r_edge_distances[i] >= 0){
+				num_cut_edges++;
+				/*if (r_edge_distances[i] > epsilon){
+					num_greater_epsilon++;
+				}*/
+			}
+		}
+		const bool is_intersection = (num_cut_edges < rElement1.GetGeometry().WorkingSpaceDimension()) ? false : true;
+		//TODO: element can still not be completely intersected!?!
+		return is_intersection /*&& num_greater_epsilon > 0*/;
+	}
+
 	/// Turn back information as a string.
 	template<std::size_t TDim>
 	std::string CalculateDiscontinuousEdgeDistanceToSkinProcess<TDim>::Info() const
