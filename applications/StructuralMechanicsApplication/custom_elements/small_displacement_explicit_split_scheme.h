@@ -218,6 +218,27 @@ protected:
     {
     }
 
+    virtual void CalculateLumpedDampingVector(
+        VectorType& rDampingVector,
+        const ProcessInfo& rCurrentProcessInfo
+        );
+
+    virtual void CalculateLumpedStiffnessVector(
+        VectorType& rStiffnessVector,
+        const ProcessInfo& rCurrentProcessInfo
+        );
+
+    virtual void CalculateInternalForces(
+        VectorType& rInternalForces,
+        const ProcessInfo& rCurrentProcessInfo
+        );
+
+    /**
+     * @brief This method computes directly the lumped mass vector
+     * @param rMassMatrix The lumped mass vector
+     */
+    virtual void CalculateLumpedMassVector(VectorType& rMassVector) const;
+
     ///@}
     ///@name Protected Operations
     ///@{
