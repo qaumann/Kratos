@@ -328,8 +328,8 @@ public:
             this->PredictTranslationalDegreesOfFreedom(it_node_begin + i, disppos, dim);
 
             // TODO
-            KRATOS_WATCH((it_node_begin+i)->GetValue(NODAL_MASS))
-            KRATOS_WATCH((it_node_begin+i)->GetValue(NODAL_DISPLACEMENT_DAMPING))
+            // KRATOS_WATCH((it_node_begin+i)->GetValue(NODAL_MASS))
+            // KRATOS_WATCH((it_node_begin+i)->GetValue(NODAL_DISPLACEMENT_DAMPING))
         } // for Node parallel
 
         this->CalculateAndAddRHS(rModelPart);
