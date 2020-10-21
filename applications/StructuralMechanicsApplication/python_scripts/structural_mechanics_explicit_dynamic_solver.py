@@ -40,7 +40,8 @@ class ExplicitMechanicalSolver(MechanicalSolver):
             "theta_2"                    : 0.0,
             "diagonal_critical_damping"  : false,
             "xi_damping"                 : 0.0,
-            "l2_tolerance"               : 1.0e-3
+            "l2_rel_tolerance"           : 1.0e-4,
+            "l2_abs_tolerance"           : 1.0e-8
         }""")
         this_defaults.AddMissingParameters(super().GetDefaultParameters())
         return this_defaults
@@ -135,7 +136,8 @@ class ExplicitMechanicalSolver(MechanicalSolver):
             use_rayleigh_damping = False
         process_info.SetValue(StructuralMechanicsApplication.USE_CONSISTENT_MASS_MATRIX, use_rayleigh_damping)
         process_info.SetValue(StructuralMechanicsApplication.XI_DAMPING, self.settings["xi_damping"].GetDouble())
-        process_info.SetValue(StructuralMechanicsApplication.SERIAL_PARALLEL_EQUILIBRIUM_TOLERANCE, self.settings["l2_tolerance"].GetDouble())
+        process_info.SetValue(KratosMultiphysics.ERROR_RATIO, self.settings["l2_rel_tolerance"].GetDouble())
+        process_info.SetValue(KratosMultiphysics.ERROR_INTEGRATION_POINT, self.settings["l2_abs_tolerance"].GetDouble())
         process_info.SetValue(KratosMultiphysics.DELTA_TIME, self.settings["time_stepping"]["time_step"].GetDouble())
         # self.main_model_part.ProcessInfo[KratosMultiphysics.DELTA_TIME] = self.settings["time_stepping"]["time_step"].GetDouble()
 
