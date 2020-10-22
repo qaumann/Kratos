@@ -280,25 +280,22 @@ class PfemFluidDynamicsAnalysis(AnalysisStage):
         """
         print("GraphicalOutputPrintOutput pfemFLuid!")
         if( self.project_parameters.Has("output_configuration") ):
-            print(" A")
             self.post_process_model_part.ProcessInfo[KratosMultiphysics.TIME] = self.main_model_part.ProcessInfo[KratosMultiphysics.TIME]
-            print(" B")
             if(self.graphical_output.IsOutputStep()):
-                print(" C")
                 time=self.main_model_part.ProcessInfo[KratosMultiphysics.TIME]
                 delta_time=self.main_model_part.ProcessInfo[KratosMultiphysics.DELTA_TIME]
                 step=self.main_model_part.ProcessInfo[KratosMultiphysics.STEP]
-                print(" D")
+                # this has been added
                 if self.model.HasModelPart("post_temp_model"):
                     self.model.DeleteModelPart("post_temp_model")
                 self.post_process_model_part = self.model.CreateModelPart("post_temp_model")
+                # until here
                 KratosMultiphysics.PfemFluidDynamicsApplication.PostProcessUtilities().RebuildPostProcessModelPart(self.post_process_model_part, self.main_model_part)
                 self.KratosPrintInfo("")
                 self.KratosPrintInfo("**********************************************************")
                 self.KratosPrintInfo("---> Print Output at [STEP:" + str(step) + " TIME:" + str(time) + " DT:" + str(delta_time) + "]")
                 self.KratosPrintInfo("**********************************************************")
                 self.KratosPrintInfo("")
-                print(" E")
                 self.graphical_output.PrintOutput()
 
     def GraphicalOutputExecuteFinalize(self):
