@@ -63,6 +63,7 @@
         },
         "thermal_solver_settings"  : {
             "solver_type"                        : "Transient",
+	    "time_integration_method"		 : "implicit",
             "analysis_type"                      : "linear",
             "model_part_name"                    : "ThermalModelPart",
             "computing_model_part_name"          : "thermal_computing_domain",
