@@ -1948,7 +1948,7 @@ namespace Kratos
 
 			unsigned int initial_node_size = NodeIdParent + 1 + ElementsToRefine; //total model part node size
 
-			NodeType::Pointer pnode;
+			//NodeType::Pointer pnode;
 			NodeType::DofsContainerType &ReferenceDofs = mrModelPart.Nodes().front().GetDofs();
 
 			if (NodeId > NodeIdParent)
