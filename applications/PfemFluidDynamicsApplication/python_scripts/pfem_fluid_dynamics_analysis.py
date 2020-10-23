@@ -277,11 +277,6 @@ class PfemFluidDynamicsAnalysis(AnalysisStage):
                 time=self.main_model_part.ProcessInfo[KratosMultiphysics.TIME]
                 delta_time=self.main_model_part.ProcessInfo[KratosMultiphysics.DELTA_TIME]
                 step=self.main_model_part.ProcessInfo[KratosMultiphysics.STEP]
-                # this has been added
-                if self.model.HasModelPart("post_temp_model"):
-                    self.model.DeleteModelPart("post_temp_model")
-                self.post_process_model_part = self.model.CreateModelPart("post_temp_model")
-                # until here
                 KratosMultiphysics.PfemFluidDynamicsApplication.PostProcessUtilities().RebuildPostProcessModelPart(self.post_process_model_part, self.main_model_part)
                 self.KratosPrintInfo("")
                 self.KratosPrintInfo("**********************************************************")
