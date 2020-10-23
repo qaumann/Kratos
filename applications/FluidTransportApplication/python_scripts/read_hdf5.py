@@ -26,7 +26,11 @@ class ReadHdf5(KratosMultiphysics.Process):
 
     def ExecuteInitializeSolutionStep(self):
         time = self.model_part.ProcessInfo[KratosMultiphysics.TIME]
-        self.group_name = str(time)
+
+        time_str = str(round(time,3))
+
+        self.group_name = time_str
+
         i = 0
         # nodes = self.f[self.group_name + '/NODE'][:,]
         # temp = self.f[self.group_name + '/TEMP'][:,]

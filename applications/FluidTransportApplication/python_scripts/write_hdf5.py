@@ -44,7 +44,10 @@ class WriteHdf5(KratosMultiphysics.Process):
 
     def ExecuteFinalizeSolutionStep(self):
         time = self.model_part.ProcessInfo[KratosMultiphysics.TIME]
-        self.group_name = str(time)
+
+        time_str = str(round(time,3))
+
+        self.group_name = time_str
 
         temp = 0.0
         i = 0
