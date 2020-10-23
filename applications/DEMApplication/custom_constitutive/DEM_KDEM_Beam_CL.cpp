@@ -22,13 +22,6 @@ namespace Kratos {
 
     void DEM_KDEM_Beam::Check(Properties::Pointer pProp) const {
         DEMContinuumConstitutiveLaw::Check(pProp);
-
-        if(!pProp->Has(ROTATIONAL_MOMENT_COEFFICIENT)) {
-            KRATOS_WARNING("DEM")<<std::endl;
-            KRATOS_WARNING("DEM")<<"WARNING: Variable ROTATIONAL_MOMENT_COEFFICIENT should be present in the properties when using DEM_KDEM. 1.0 value assigned by default."<<std::endl;
-            KRATOS_WARNING("DEM")<<std::endl;
-            pProp->GetValue(ROTATIONAL_MOMENT_COEFFICIENT) = 1.0;
-        }
     }
 
     void DEM_KDEM_Beam::CalculateElasticConstants(double& kn_el,
@@ -41,6 +34,8 @@ namespace Kratos {
                                                   SphericContinuumParticle* element1,
                                                   SphericContinuumParticle* element2) {
 
+        KRATOS_TRY
+
         kn_el = equiv_young * calculation_area / initial_dist;
 
         const double Inertia_Ix = 0.5 * (element1->GetProperties()[BEAM_PLANAR_MOMENT_OF_INERTIA_X] + element2->GetProperties()[BEAM_PLANAR_MOMENT_OF_INERTIA_X]);
@@ -52,6 +47,8 @@ namespace Kratos {
         // 2013 Bourrier. Discrete modeling of granular soils reinforcement by plant roots FOR CYLINDERS!!! CHECK!!!
         kt_el_0 = 12.0 * equiv_young * Inertia_Iy / (initial_dist * initial_dist * initial_dist);
         kt_el_1 = 12.0 * equiv_young * Inertia_Ix / (initial_dist * initial_dist * initial_dist);
+
+        KRATOS_CATCH("")
     }
 
     void DEM_KDEM_Beam::CalculateViscoDampingCoeff(double& equiv_visco_damp_coeff_normal,
@@ -63,6 +60,8 @@ namespace Kratos {
                                                    const double kt_el_0,
                                                    const double kt_el_1) {
 
+        KRATOS_TRY
+
         const double equiv_mass  = std::max(element1->GetMass(), element2->GetMass());
         const double aux_mass    = 0.5 * (element1->GetProperties()[BEAM_MASS] / equiv_mass);
         const double equiv_gamma = 0.5 * (element1->GetProperties()[DAMPING_GAMMA] + element2->GetProperties()[DAMPING_GAMMA]);
@@ -70,6 +69,8 @@ namespace Kratos {
         equiv_visco_damp_coeff_normal       = 2.0 * equiv_gamma * aux_mass * sqrt(equiv_mass * kn_el  );
         equiv_visco_damp_coeff_tangential_0 = 2.0 * equiv_gamma * aux_mass * sqrt(equiv_mass * kt_el_0);
         equiv_visco_damp_coeff_tangential_1 = 2.0 * equiv_gamma * aux_mass * sqrt(equiv_mass * kt_el_1);
+
+        KRATOS_CATCH("")
     }
 
     void DEM_KDEM_Beam::CalculateForces(const ProcessInfo& r_process_info,
@@ -99,6 +100,8 @@ namespace Kratos {
                                         double &equiv_visco_damp_coeff_tangential_1,
                                         double LocalRelVel[3],
                                         double ViscoDampingLocalContactForce[3]) {
+
+        KRATOS_TRY
 
         CalculateNormalForces(LocalElasticContactForce,
                               kn_el,
@@ -148,6 +151,8 @@ namespace Kratos {
                               equiv_visco_damp_coeff_tangential_1,
                               sliding,
                               element1->mIniNeighbourFailureId[i_neighbour_count]);
+
+        KRATOS_CATCH("")
     }
 
     void DEM_KDEM_Beam::CalculateNormalForces(double LocalElasticContactForce[3],
@@ -162,7 +167,11 @@ namespace Kratos {
                                               int time_steps,
                                               const ProcessInfo& r_process_info) {
 
+        KRATOS_TRY
+
             LocalElasticContactForce[2] = kn_el * indentation;
+
+        KRATOS_CATCH("")
     }
 
     void DEM_KDEM_Beam::CalculateTangentialForces(double OldLocalElasticContactForce[3],
@@ -184,8 +193,12 @@ namespace Kratos {
                                                   bool& sliding,
                                                   const ProcessInfo& r_process_info) {
 
+        KRATOS_TRY
+
         LocalElasticContactForce[0] = OldLocalElasticContactForce[0] - kt_el_0 * LocalDeltDisp[0]; // 0: first tangential
         LocalElasticContactForce[1] = OldLocalElasticContactForce[1] - kt_el_1 * LocalDeltDisp[1]; // 1: second tangential
+
+        KRATOS_CATCH("")
     }
 
     void DEM_KDEM_Beam::CalculateViscoDamping(double LocalRelVel[3],
@@ -197,9 +210,13 @@ namespace Kratos {
                                               bool& sliding,
                                               int failure_id) {
 
+        KRATOS_TRY
+
         ViscoDampingLocalContactForce[2] = -equiv_visco_damp_coeff_normal       * LocalRelVel[2];
         ViscoDampingLocalContactForce[0] = -equiv_visco_damp_coeff_tangential_0 * LocalRelVel[0];
         ViscoDampingLocalContactForce[1] = -equiv_visco_damp_coeff_tangential_1 * LocalRelVel[1];
+
+        KRATOS_CATCH("")
     }
 
     void DEM_KDEM_Beam::ComputeParticleRotationalMoments(SphericContinuumParticle* element,
@@ -214,6 +231,7 @@ namespace Kratos {
                                                          double indentation) {
 
         KRATOS_TRY
+
         double LocalDeltaRotatedAngle[3]    = {0.0};
         double LocalDeltaAngularVelocity[3] = {0.0};
 

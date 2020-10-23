@@ -60,6 +60,9 @@ namespace Kratos {
 
     void BeamParticle::Initialize(const ProcessInfo& r_process_info)
     {
+
+        KRATOS_TRY
+
         SphericContinuumParticle::Initialize(r_process_info);
 
         double distance = GetProperties()[BEAM_DISTANCE];
@@ -88,10 +91,33 @@ namespace Kratos {
                 GetGeometry()[0].FastGetSolutionStepValue(PRINCIPAL_MOMENTS_OF_INERTIA)[2] = GetGeometry()[0].FastGetSolutionStepValue(PARTICLE_MOMENT_OF_INERTIA);
             }
         }
+
+        array_1d<double, 3> base_principal_moments_of_inertia = GetGeometry()[0].FastGetSolutionStepValue(PRINCIPAL_MOMENTS_OF_INERTIA);
+
+        Quaternion<double>& Orientation = GetGeometry()[0].FastGetSolutionStepValue(ORIENTATION);
+        Orientation.normalize();
+
+        array_1d<double, 3> angular_velocity = GetGeometry()[0].FastGetSolutionStepValue(ANGULAR_VELOCITY);
+        array_1d<double, 3> angular_momentum;
+        double LocalTensor[3][3];
+        double GlobalTensor[3][3];
+        GeometryFunctions::ConstructLocalTensor(base_principal_moments_of_inertia, LocalTensor);
+        GeometryFunctions::QuaternionTensorLocal2Global(Orientation, LocalTensor, GlobalTensor);
+        GeometryFunctions::ProductMatrix3X3Vector3X1(GlobalTensor, angular_velocity, angular_momentum);
+        noalias(this->GetGeometry()[0].FastGetSolutionStepValue(ANGULAR_MOMENTUM)) = angular_momentum;
+
+        array_1d<double, 3> local_angular_velocity;
+        GeometryFunctions::QuaternionVectorGlobal2Local(Orientation, angular_velocity, local_angular_velocity);
+        noalias(this->GetGeometry()[0].FastGetSolutionStepValue(LOCAL_ANGULAR_VELOCITY)) = local_angular_velocity;
+
+        KRATOS_CATCH("")
     }
 
     void BeamParticle::InitializeSolutionStep(const ProcessInfo& r_process_info)
     {
+
+        KRATOS_TRY
+
         mRadius = this->GetGeometry()[0].FastGetSolutionStepValue(RADIUS); //Just in case someone is overwriting the radius in Python
         mPartialRepresentativeVolume = 0.0;
         double& elastic_energy = this->GetElasticEnergy();
@@ -103,12 +129,15 @@ namespace Kratos {
                 }
             }
         }
-    }
 
-    void BeamParticle::CalculateLocalAngularMomentum(array_1d<double, 3>& r_angular_momentum) {}
+        KRATOS_CATCH("")
+    }
 
     void BeamParticle::ComputeNewNeighboursHistoricalData(DenseVector<int>& temp_neighbours_ids, std::vector<array_1d<double, 3> >& temp_neighbour_elastic_contact_forces)
     {
+
+        KRATOS_TRY
+
         std::vector<array_1d<double, 3> > temp_neighbour_elastic_extra_contact_forces;
         std::vector<double> temp_neighbour_contact_radius;
         std::vector<double> temp_neighbour_indentation;
@@ -171,10 +200,15 @@ namespace Kratos {
         mNeighbourTgOfDynFriAng.swap(temp_neighbour_tg_of_dyn_fri_ang);
         mNeighbourContactStress.swap(temp_neighbour_contact_stress);
         mNeighbourCohesion.swap(temp_neighbour_cohesion);
+
+        KRATOS_CATCH("")
     }
 
     void BeamParticle::ComputeNewRigidFaceNeighboursHistoricalData()
     {
+
+        KRATOS_TRY
+
         array_1d<double, 3> vector_of_zeros = ZeroVector(3);
         std::vector<DEMWall*>& rNeighbours = this->mNeighbourRigidFaces;
         unsigned int new_size              = rNeighbours.size();
@@ -230,43 +264,9 @@ namespace Kratos {
         mNeighbourRigidTgOfDynFriAng.swap(temp_tg_of_dyn_fri_ang);
         mNeighbourRigidContactStress.swap(temp_contact_stress);
         mNeighbourRigidCohesion.swap(temp_cohesion);
+
+        KRATOS_CATCH("")
     }
-
-    void BeamParticle::ComputeRollingFriction(array_1d<double, 3>& rolling_resistance_moment, double& RollingResistance, double dt)
-    {
-        array_1d<double, 3> base_principal_moments_of_inertia = GetGeometry()[0].GetSolutionStepValue(PRINCIPAL_MOMENTS_OF_INERTIA);
-        const array_1d<double, 3>  coeff_acc                  = base_principal_moments_of_inertia / dt;
-        const array_1d<double, 3>& ang_velocity               = this->GetGeometry()[0].FastGetSolutionStepValue(ANGULAR_VELOCITY);
-
-        const double MaxRotaMoment[3] = {coeff_acc[0] * ang_velocity[0] + mContactMoment[0], coeff_acc[1] * ang_velocity[1] + mContactMoment[1], coeff_acc[2] * ang_velocity[2] + mContactMoment[2]};
-        double CoordSystemMoment[3]   = {0.0};
-
-        double max_rota_moment_modulus_inv = 1.0 / DEM_MODULUS_3(MaxRotaMoment);
-        CoordSystemMoment[0]         = MaxRotaMoment[0] * max_rota_moment_modulus_inv;
-        CoordSystemMoment[1]         = MaxRotaMoment[1] * max_rota_moment_modulus_inv;
-        CoordSystemMoment[2]         = MaxRotaMoment[2] * max_rota_moment_modulus_inv;
-
-        const double MR_now = DEM_INNER_PRODUCT_3(CoordSystemMoment, CoordSystemMoment) * RollingResistance * RollingResistance;
-        const double MR_max = DEM_INNER_PRODUCT_3(MaxRotaMoment, MaxRotaMoment);
-
-        if (MR_max > MR_now) {
-            mContactMoment[0] -= CoordSystemMoment[0] * RollingResistance;
-            mContactMoment[1] -= CoordSystemMoment[1] * RollingResistance;
-            mContactMoment[2] -= CoordSystemMoment[2] * RollingResistance;
-
-            rolling_resistance_moment[0] -= CoordSystemMoment[0] * RollingResistance;
-            rolling_resistance_moment[1] -= CoordSystemMoment[1] * RollingResistance;
-            rolling_resistance_moment[2] -= CoordSystemMoment[2] * RollingResistance;
-        }
-        else {
-            rolling_resistance_moment = - mContactMoment;
-            mContactMoment[0] = - coeff_acc[0] * ang_velocity[0];
-            mContactMoment[1] = - coeff_acc[1] * ang_velocity[1];
-            mContactMoment[2] = - coeff_acc[2] * ang_velocity[2];
-        }
-    }
-
-    void BeamParticle::ContactAreaWeighting() {}
 
     void BeamParticle::ComputeBallToBallContactForce(SphericParticle::ParticleDataBuffer & data_buffer,
                                                      const ProcessInfo& r_process_info,
@@ -274,6 +274,9 @@ namespace Kratos {
                                                      array_1d<double, 3>& rContactForce,
                                                      double& RollingResistance)
     {
+
+        KRATOS_TRY
+
         NodeType& this_node = this->GetGeometry()[0];
         DEM_COPY_SECOND_TO_FIRST_3(data_buffer.mMyCoors, this_node)
 
@@ -282,6 +285,7 @@ namespace Kratos {
         const array_1d<double, 3>& vel         = this->GetGeometry()[0].FastGetSolutionStepValue(VELOCITY);
         const array_1d<double, 3>& delta_displ = this->GetGeometry()[0].FastGetSolutionStepValue(DELTA_DISPLACEMENT);
         const array_1d<double, 3>& ang_vel     = this->GetGeometry()[0].FastGetSolutionStepValue(ANGULAR_VELOCITY);
+
         int NeighbourSize = mNeighbourElements.size();
         GetGeometry()[0].GetSolutionStepValue(NEIGHBOUR_SIZE) = NeighbourSize;
 
@@ -299,12 +303,12 @@ namespace Kratos {
             const double& other_radius = data_buffer.mpOtherParticle->GetRadius();
 
             data_buffer.mDistance = DEM_MODULUS_3(data_buffer.mOtherToMeVector);
+
             double radius_sum = GetRadius() + other_radius;
-
             double initial_delta = GetInitialDelta(i);
-
             double initial_dist = radius_sum - initial_delta;
             double indentation = initial_dist - data_buffer.mDistance;
+
             double myYoung = GetYoung();
             double myPoisson = GetPoisson();
 
@@ -337,16 +341,41 @@ namespace Kratos {
                 double area = this->GetProperties()[BEAM_CROSS_SECTION];
                 double other_area = data_buffer.mpOtherParticle->GetProperties()[BEAM_CROSS_SECTION];
                 calculation_area = std::max(area, other_area);
-                mContinuumConstitutiveLawArray[i]->CalculateElasticConstants(kn_el, kt_el_0, kt_el_1, initial_dist, equiv_young, equiv_poisson, calculation_area, this, neighbour_iterator);
+                mContinuumConstitutiveLawArray[i]->CalculateElasticConstants(kn_el,
+                                                                             kt_el_0,
+                                                                             kt_el_1,
+                                                                             initial_dist,
+                                                                             equiv_young,
+                                                                             equiv_poisson,
+                                                                             calculation_area,
+                                                                             this,
+                                                                             neighbour_iterator);
             }
 
-            EvaluateDeltaDisplacement(data_buffer, DeltDisp, RelVel, data_buffer.mLocalCoordSystem, data_buffer.mOldLocalCoordSystem, vel, delta_displ);
+            EvaluateDeltaDisplacement(data_buffer,
+                                      DeltDisp,
+                                      RelVel,
+                                      data_buffer.mLocalCoordSystem,
+                                      data_buffer.mOldLocalCoordSystem,
+                                      vel,
+                                      delta_displ);
 
             if (this->Is(DEMFlags::HAS_ROTATION)) {
-                RelativeDisplacementAndVelocityOfContactPointDueToRotationQuaternion(DeltDisp, RelVel, data_buffer.mOldLocalCoordSystem, other_radius, data_buffer.mDt, ang_vel, neighbour_iterator);
+                RelativeDisplacementAndVelocityOfContactPointDueToRotationQuaternion(DeltDisp,
+                                                                                     RelVel,
+                                                                                     data_buffer.mOldLocalCoordSystem,
+                                                                                     other_radius,
+                                                                                     data_buffer.mDt,
+                                                                                     ang_vel,
+                                                                                     neighbour_iterator);
             }
 
-            RelativeDisplacementAndVelocityOfContactPointDueToOtherReasons(r_process_info, DeltDisp, RelVel, data_buffer.mOldLocalCoordSystem, data_buffer.mLocalCoordSystem, neighbour_iterator);
+            RelativeDisplacementAndVelocityOfContactPointDueToOtherReasons(r_process_info,
+                                                                           DeltDisp,
+                                                                           RelVel,
+                                                                           data_buffer.mOldLocalCoordSystem,
+                                                                           data_buffer.mLocalCoordSystem,
+                                                                           neighbour_iterator);
 
             double LocalDeltDisp[3] = {0.0};
             double LocalElasticContactForce[3] = {0.0}; // 0: first tangential, // 1: second tangential, // 2: normal force
@@ -436,23 +465,48 @@ namespace Kratos {
             double LocalContactForce[3] = {0.0};
             double GlobalContactForce[3] = {0.0};
 
-            if (this->Is(DEMFlags::HAS_STRESS_TENSOR) && (i < (int)mContinuumInitialNeighborsSize)) { // We leave apart the discontinuum neighbors (the same for the walls). The neighbor would not be able to do the same if we activate it.
-                mContinuumConstitutiveLawArray[i]->AddPoissonContribution(equiv_poisson, data_buffer.mLocalCoordSystem, LocalElasticContactForce[2], calculation_area, mSymmStressTensor, this, neighbour_iterator, r_process_info, i, indentation);
-            }
-
             array_1d<double, 3> other_ball_to_ball_forces(3,0.0);
             ComputeOtherBallToBallForces(other_ball_to_ball_forces);
 
-            AddUpForcesAndProject(data_buffer.mOldLocalCoordSystem, data_buffer.mLocalCoordSystem, LocalContactForce, LocalElasticContactForce, LocalElasticExtraContactForce, GlobalContactForce,
-                                  GlobalElasticContactForce, GlobalElasticExtraContactForce, TotalGlobalElasticContactForce,ViscoDampingLocalContactForce, 0.0, other_ball_to_ball_forces, rElasticForce, rContactForce, i, r_process_info); //TODO: replace the 0.0 with an actual cohesive force for discontinuum neighbours
+            AddUpForcesAndProject(data_buffer.mOldLocalCoordSystem,
+                                  data_buffer.mLocalCoordSystem,
+                                  LocalContactForce,
+                                  LocalElasticContactForce,
+                                  LocalElasticExtraContactForce,
+                                  GlobalContactForce,
+                                  GlobalElasticContactForce,
+                                  GlobalElasticExtraContactForce,
+                                  TotalGlobalElasticContactForce,
+                                  ViscoDampingLocalContactForce,
+                                  0.0,
+                                  other_ball_to_ball_forces,
+                                  rElasticForce,
+                                  rContactForce,
+                                  i,
+                                  r_process_info); //TODO: replace the 0.0 with an actual cohesive force for discontinuum neighbours
 
             if (this->Is(DEMFlags::HAS_ROTATION)) {
-                ComputeMoments(LocalContactForce[2], TotalGlobalElasticContactForce, RollingResistance, data_buffer.mLocalCoordSystem[2], data_buffer.mpOtherParticle, indentation, false, i);
-                if (i < (int)mContinuumInitialNeighborsSize && mIniNeighbourFailureId[i] == 0) {
-                    mContinuumConstitutiveLawArray[i]->ComputeParticleRotationalMoments(this, neighbour_iterator, equiv_young, data_buffer.mDistance, calculation_area,
-                                                                                        data_buffer.mLocalCoordSystem, ElasticLocalRotationalMoment, ViscoLocalRotationalMoment, equiv_poisson, indentation);
-                }
+                ComputeMoments(LocalContactForce[2],
+                               TotalGlobalElasticContactForce,
+                               RollingResistance,
+                               data_buffer.mLocalCoordSystem[2],
+                               data_buffer.mpOtherParticle,
+                               indentation,
+                               false,
+                               i);
 
+                if (i < (int)mContinuumInitialNeighborsSize && mIniNeighbourFailureId[i] == 0) {
+                    mContinuumConstitutiveLawArray[i]->ComputeParticleRotationalMoments(this,
+                                                                                        neighbour_iterator,
+                                                                                        equiv_young,
+                                                                                        data_buffer.mDistance,
+                                                                                        calculation_area,
+                                                                                        data_buffer.mLocalCoordSystem,
+                                                                                        ElasticLocalRotationalMoment,
+                                                                                        ViscoLocalRotationalMoment,
+                                                                                        equiv_poisson,
+                                                                                        indentation);
+                }
                 AddUpMomentsAndProject(data_buffer.mLocalCoordSystem, ElasticLocalRotationalMoment, ViscoLocalRotationalMoment);
             }
 
@@ -461,132 +515,44 @@ namespace Kratos {
                 total_local_elastic_contact_force[0] = LocalElasticContactForce[0] + LocalElasticExtraContactForce[0];
                 total_local_elastic_contact_force[1] = LocalElasticContactForce[1] + LocalElasticExtraContactForce[1];
                 total_local_elastic_contact_force[2] = LocalElasticContactForce[2] + LocalElasticExtraContactForce[2];
-                CalculateOnContinuumContactElements(i, total_local_elastic_contact_force, contact_sigma, contact_tau, failure_criterion_state, acumulated_damage, time_steps);
+                CalculateOnContinuumContactElements(i,
+                                                    total_local_elastic_contact_force,
+                                                    contact_sigma,
+                                                    contact_tau,
+                                                    failure_criterion_state,
+                                                    acumulated_damage,
+                                                    time_steps);
             }
-
-            if (this->Is(DEMFlags::HAS_STRESS_TENSOR) /*&& (i < mContinuumInitialNeighborsSize)*/) {
-                AddNeighbourContributionToStressTensor(r_process_info, TotalGlobalElasticContactForce, data_buffer.mLocalCoordSystem[2], data_buffer.mDistance, radius_sum, this);
-            }
-
-            AddContributionToRepresentativeVolume(data_buffer.mDistance, radius_sum, calculation_area);
-
-            ComputeForceWithNeighbourFinalOperations();
         } // for each neighbor
 
         ComputeBrokenBondsRatio();
-    } //  ComputeBallToBallContactForce
-
-    void BeamParticle::Calculate(const Variable<double>& rVariable, double& Output, const ProcessInfo& r_process_info)
-    {
-        KRATOS_TRY
-
-        //CRITICAL DELTA CALCULATION
-
-        if (rVariable == DELTA_TIME) {
-            double mass = GetMass();
-            double coeff = r_process_info[NODAL_MASS_COEFF];
-
-            if (coeff > 1.0) {
-                KRATOS_THROW_ERROR(std::runtime_error, "The coefficient assigned for virtual mass is larger than one. Virtual_mass_coeff is ", coeff);
-            }
-
-            else if ((coeff == 1.0) && (r_process_info[VIRTUAL_MASS_OPTION])) {
-                Output = 9.0E09;
-            }
-
-            else {
-
-                if (r_process_info[VIRTUAL_MASS_OPTION]) {
-                    mass = mass / (1 - coeff);
-                }
-
-                double eq_mass = 0.5 * mass; //"mass" of the contact
-
-                double kn = 0.0;
-                double kt = 0.0;
-
-                double ini_delta = 0.05 * GetInteractionRadius(); // Hertz needs an initial Delta, linear ignores it
-
-                mDiscontinuumConstitutiveLaw->GetContactStiffness(this, this, ini_delta, kn, kt);
-
-                //double K = Globals::Pi * GetYoung() * GetRadius(); //M. Error, should be the same that the local definition.
-
-                Output = 0.34 * sqrt(eq_mass / kn);
-
-                if (this->Is(DEMFlags::HAS_ROTATION)) {
-                    //Output *= 0.5; //factor for critical time step when rotation is allowed.
-                }
-            }
-
-            return;
-        }
-
-        if (rVariable == PARTICLE_TRANSLATIONAL_KINEMATIC_ENERGY) {
-
-          const array_1d<double, 3>& vel = this->GetGeometry()[0].FastGetSolutionStepValue(VELOCITY);
-          double square_of_celerity      = vel[0] * vel[0] + vel[1] * vel[1] + vel[2] * vel[2];
-
-          Output = 0.5 * (GetMass() * square_of_celerity);
-
-          return;
-        }
-
-        if (rVariable == PARTICLE_ROTATIONAL_KINEMATIC_ENERGY) {
-
-            const array_1d<double, 3> ang_vel = this->GetGeometry()[0].FastGetSolutionStepValue(ANGULAR_VELOCITY);
-            array_1d<double, 3> base_principal_moments_of_inertia = GetGeometry()[0].GetSolutionStepValue(PRINCIPAL_MOMENTS_OF_INERTIA);
-            Output = 0.5 * (base_principal_moments_of_inertia[0] * ang_vel[0] * ang_vel[0] +
-                            base_principal_moments_of_inertia[1] * ang_vel[1] * ang_vel[1] +
-                            base_principal_moments_of_inertia[2] * ang_vel[2] * ang_vel[2]);
-
-            return;
-        }
-
-        if (rVariable == PARTICLE_ELASTIC_ENERGY) {
-
-            Output = GetElasticEnergy();
-
-        }
-
-        if (rVariable == PARTICLE_INELASTIC_FRICTIONAL_ENERGY) {
-
-            Output = GetInelasticFrictionalEnergy();
-
-        }
-
-        if (rVariable == PARTICLE_INELASTIC_VISCODAMPING_ENERGY) {
-
-            Output = GetInelasticViscodampingEnergy();
-
-        }
-
-        AdditionalCalculate(rVariable, Output, r_process_info);
 
         KRATOS_CATCH("")
-
-    } //Calculate
+    } //  ComputeBallToBallContactForce
 
     void BeamParticle::Move(const double delta_t, const bool rotation_option, const double force_reduction_factor, const int StepFlag) {
+
+        KRATOS_TRY
+
         GetTranslationalIntegrationScheme().Move(GetGeometry()[0], delta_t, force_reduction_factor, StepFlag);
         if (rotation_option) {
             GetRotationalIntegrationScheme().RotateBeam(GetGeometry()[0], delta_t, force_reduction_factor, StepFlag);
         }
-    }
 
-    void BeamParticle::AddContributionToRepresentativeVolume(const double distance, const double radius_sum, const double contact_area) {}
+        KRATOS_CATCH("")
+    }
 
     void BeamParticle::FinalizeSolutionStep(ProcessInfo& r_process_info) {
 
+        KRATOS_TRY
+
         ComputeReactions();
 
-        // this->GetGeometry()[0].FastGetSolutionStepValue(REPRESENTATIVE_VOLUME) = mPartialRepresentativeVolume;
         double& rRepresentative_Volume = this->GetGeometry()[0].FastGetSolutionStepValue(REPRESENTATIVE_VOLUME);
 
         if (this->Is(DEMFlags::HAS_STRESS_TENSOR)) {
 
             //Divide Stress Tensor by the total volume:
-            //const array_1d<double, 3>& reaction_force=this->GetGeometry()[0].FastGetSolutionStepValue(FORCE_REACTION);
-
             for (int i = 0; i < 3; i++) {
                 for (int j = 0; j < 3; j++) {
                     (*mStressTensor)(i,j) /= rRepresentative_Volume;
@@ -596,8 +562,7 @@ namespace Kratos {
             SymmetrizeStressTensor();
         }
 
-        //Update sphere mass and inertia taking into account the real volume of the represented volume:
-        // SetMass(this->GetGeometry()[0].FastGetSolutionStepValue(REPRESENTATIVE_VOLUME) * GetDensity());
+        KRATOS_CATCH("")
     }
 
     double BeamParticle::GetParticleInitialCohesion()            { return SphericParticle::GetFastProperties()->GetParticleInitialCohesion();            }
