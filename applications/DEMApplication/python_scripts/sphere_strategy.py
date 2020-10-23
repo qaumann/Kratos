@@ -537,6 +537,7 @@ class ExplicitStrategy():
 
         return math.sqrt(1.0/(1.0 - (1.0+e)*(1.0+e) * math.exp(alpha)) - 1.0)
 
+    @classmethod
     def SinAlphaConicalDamage(self, e):
 
         if e < 0.001:

@@ -36,7 +36,8 @@ namespace Kratos {
 
     /// Destructor
 
-    SphericContinuumParticle::~SphericContinuumParticle() {}
+    SphericContinuumParticle::~SphericContinuumParticle() {
+    }
 
     void SphericContinuumParticle::SetInitialSphereContacts(const ProcessInfo& r_process_info) {
 
@@ -201,16 +202,6 @@ namespace Kratos {
 
         return effectiveVolumeRadius;
     }
-
-
-    /*void SphericContinuumParticle::InitializeSolutionStep(const ProcessInfo& r_process_info) {
-    KRATOS_TRY
-    SphericParticle::InitializeSolutionStep(r_process_info);
-    for (unsigned int i = 0; i < mContinuumInitialNeighborsSize; i++) {
-        DEM_COPY_SECOND_TO_FIRST_3(mArrayOfOldDeltaDisplacements[i], mArrayOfDeltaDisplacements[i]);
-    }
-    KRATOS_CATCH("")
-    }*/
 
     void SphericContinuumParticle::ComputeBallToBallContactForce(SphericParticle::ParticleDataBuffer & data_buffer,
                                                                 const ProcessInfo& r_process_info,

@@ -360,7 +360,7 @@ virtual void ComputeRollingResistance(double& RollingResistance,
                                     const double& equiv_rolling_friction_coeff,
                                     const unsigned int i);
 
-virtual void ComputeRollingFriction(array_1d<double, 3>& rolling_resistance_moment, double& RollingResistance, double dt);
+virtual void ComputeRollingFriction(array_1d<double, 3>& rolling_resistance_moment, double& RollingResistance, double dt) final;
 
 virtual double GetInitialDeltaWithFEM(int index);
 

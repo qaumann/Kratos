@@ -280,8 +280,6 @@ void SphericParticle::CalculateRightHandSide(const ProcessInfo& r_process_info, 
         }
     }
 
-    ApplyGlobalDampingToContactForcesAndMoments(contact_force, mContactMoment);
-
     array_1d<double,3>& total_forces = this_node.FastGetSolutionStepValue(TOTAL_FORCES);
     array_1d<double,3>& total_moment = this_node.FastGetSolutionStepValue(PARTICLE_MOMENT);
 
@@ -292,6 +290,8 @@ void SphericParticle::CalculateRightHandSide(const ProcessInfo& r_process_info, 
     total_moment[0] = mContactMoment[0] + additionally_applied_moment[0];
     total_moment[1] = mContactMoment[1] + additionally_applied_moment[1];
     total_moment[2] = mContactMoment[2] + additionally_applied_moment[2];
+
+    ApplyGlobalDampingToContactForcesAndMoments(total_forces, total_moment);
 
     #ifdef KRATOS_DEBUG
     DemDebugFunctions::CheckIfNan(total_forces, "NAN in Total Forces in RHS of Ball");
@@ -739,9 +739,6 @@ void SphericParticle::ComputeMoments(double NormalLocalContactForce,
             const double my_rolling_friction_coeff    = GetRollingFriction() * GetRadius();
             const double other_rolling_friction_coeff = p_neighbour->GetRollingFriction() * p_neighbour->GetRadius();
             equiv_rolling_friction_coeff = std::min(my_rolling_friction_coeff, other_rolling_friction_coeff);
-            // const double rolling_friction_coeff_sum     = my_rolling_friction_coeff + other_rolling_friction_coeff;
-            // const double rolling_friction_coeff_sum_inv = 1.0 / rolling_friction_coeff_sum;
-            // equiv_rolling_friction_coeff          = my_rolling_friction_coeff * other_rolling_friction_coeff * rolling_friction_coeff_sum_inv;
         }
 
         else if (wall) {
@@ -2022,7 +2019,7 @@ void SphericParticle::Calculate(const Variable<Matrix >& rVariable, Matrix& Outp
 
 void SphericParticle::AdditionalCalculate(const Variable<double>& rVariable, double& Output, const ProcessInfo& r_process_info){}
 
-void SphericParticle::ApplyGlobalDampingToContactForcesAndMoments(array_1d<double,3>& contact_force, array_1d<double,3>& contact_moment) {
+void SphericParticle::ApplyGlobalDampingToContactForcesAndMoments(array_1d<double,3>& total_forces, array_1d<double,3>& total_moment) {
 
         KRATOS_TRY
 
@@ -2030,23 +2027,23 @@ void SphericParticle::ApplyGlobalDampingToContactForcesAndMoments(array_1d<doubl
         const array_1d<double, 3> angular_velocity = this->GetGeometry()[0].FastGetSolutionStepValue(ANGULAR_VELOCITY);
 
         if (this->GetGeometry()[0].IsNot(DEMFlags::FIXED_VEL_X)) {
-            contact_force[0] *= (1.0 - mGlobalDamping * GeometryFunctions::sign(contact_force[0] * velocity[0]));
+            total_forces[0] *= (1.0 - mGlobalDamping * GeometryFunctions::sign(total_forces[0] * velocity[0]));
         }
         if (this->GetGeometry()[0].IsNot(DEMFlags::FIXED_VEL_Y)) {
-            contact_force[1] *= (1.0 - mGlobalDamping * GeometryFunctions::sign(contact_force[1] * velocity[1]));
+            total_forces[1] *= (1.0 - mGlobalDamping * GeometryFunctions::sign(total_forces[1] * velocity[1]));
         }
         if (this->GetGeometry()[0].IsNot(DEMFlags::FIXED_VEL_Z)) {
-            contact_force[2] *= (1.0 - mGlobalDamping * GeometryFunctions::sign(contact_force[2] * velocity[2]));
+            total_forces[2] *= (1.0 - mGlobalDamping * GeometryFunctions::sign(total_forces[2] * velocity[2]));
         }
 
         if (this->GetGeometry()[0].IsNot(DEMFlags::FIXED_ANG_VEL_X)) {
-            contact_moment[0] *= (1.0 - mGlobalDamping * GeometryFunctions::sign(contact_moment[0] * angular_velocity[0]));
+            total_moment[0] *= (1.0 - mGlobalDamping * GeometryFunctions::sign(total_moment[0] * angular_velocity[0]));
         }
         if (this->GetGeometry()[0].IsNot(DEMFlags::FIXED_ANG_VEL_Y)) {
-            contact_moment[1] *= (1.0 - mGlobalDamping * GeometryFunctions::sign(contact_moment[1] * angular_velocity[1]));
+            total_moment[1] *= (1.0 - mGlobalDamping * GeometryFunctions::sign(total_moment[1] * angular_velocity[1]));
         }
         if (this->GetGeometry()[0].IsNot(DEMFlags::FIXED_ANG_VEL_Z)) {
-            contact_moment[2] *= (1.0 - mGlobalDamping * GeometryFunctions::sign(contact_moment[2] * angular_velocity[2]));
+            total_moment[2] *= (1.0 - mGlobalDamping * GeometryFunctions::sign(total_moment[2] * angular_velocity[2]));
         }
 
         KRATOS_CATCH("")
