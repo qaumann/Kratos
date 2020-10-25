@@ -51,21 +51,21 @@ class WriteHdf5(KratosMultiphysics.Process):
 
         temp = 0.0
         i = 0
-        self.temp_list = []
+        #self.temp_list = []
         self.vel_x_list = []
         self.vel_y_list = []
-        self.vel_z_list = []
+        #self.vel_z_list = []
         self.node_id_list = []
 
         for node in self.model_part.Nodes:
             node_id = node.Id
-            temp = node.GetSolutionStepValue(KratosMultiphysics.TEMPERATURE)
+            #temp = node.GetSolutionStepValue(KratosMultiphysics.TEMPERATURE)
             vel_x = node.GetSolutionStepValue(KratosMultiphysics.VELOCITY_X)
             vel_y = node.GetSolutionStepValue(KratosMultiphysics.VELOCITY_Y)
             # vel_z = node.GetSolutionStepValue(KratosMultiphysics.VELOCITY_Z)
 
             self.node_id_list.append (node_id)
-            self.temp_list.append (temp)
+            #self.temp_list.append (temp)
             self.vel_x_list.append (vel_x)
             self.vel_y_list.append (vel_y)
             # self.vel_z_list.append (vel_z)
@@ -76,6 +76,6 @@ class WriteHdf5(KratosMultiphysics.Process):
         #                     data = [self.node_id_list, self.temp_list, self.vel_x_list, self.vel_y_list, self.vel_z_list],
         #                     dtype = 'float16')
         self.WriteDataToFile(file_or_group = self.f,
-                            names = ['NODE', 'TEMP', 'VEL_X', 'VEL_Y'],
-                            data = [self.node_id_list, self.temp_list, self.vel_x_list, self.vel_y_list],
+                            names = ['NODE', 'VEL_X', 'VEL_Y'],
+                            data = [self.node_id_list, self.vel_x_list, self.vel_y_list],
                             dtype = 'float32')
