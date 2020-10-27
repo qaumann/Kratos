@@ -30,8 +30,27 @@ namespace Kratos
             ? mParameters["physics_file_name"].GetString()
             : "physics.iga.json";
 
-        KRATOS_WATCH("HERE")
+        KRATOS_WATCH(analysis_model_part)
+
+        auto a = analysis_model_part.pGetGeometry(1);
+        auto b = *a.get();
+        KRATOS_WATCH(a->GetGeometryData());
+
+
+
+
+        // KRATOS_WATCH(analysis_model_part.GetGeometry(1).Faces())
+        // auto b_rep_model_vector = static_cast<GeometriesArrayType>(*a);
+
+
+        // KRATOS_WATCH(b_rep_model_vector["breps"])
+
+
+
+
     }
+
+
 
     ///@}
 
