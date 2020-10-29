@@ -65,8 +65,7 @@ namespace Kratos {
 
         SphericContinuumParticle::Initialize(r_process_info);
 
-        double distance = GetProperties()[BEAM_DISTANCE];
-        double norm_distance = 2.0 * GetRadius() / distance;
+        double distance = GetProperties()[BEAM_ELEMENTS_DISTANCE];
 
         if (distance)
         {
@@ -78,9 +77,9 @@ namespace Kratos {
             SetMass(GetDensity() * distance * contact_area);
 
             if (this->Is(DEMFlags::HAS_ROTATION)) {
-                GetGeometry()[0].FastGetSolutionStepValue(PRINCIPAL_MOMENTS_OF_INERTIA)[0] = GetProperties()[BEAM_PRINCIPAL_MOMENTS_OF_INERTIA_X] * GetMass() * norm_distance;
-                GetGeometry()[0].FastGetSolutionStepValue(PRINCIPAL_MOMENTS_OF_INERTIA)[1] = GetProperties()[BEAM_PRINCIPAL_MOMENTS_OF_INERTIA_Y] * GetMass() * norm_distance;
-                GetGeometry()[0].FastGetSolutionStepValue(PRINCIPAL_MOMENTS_OF_INERTIA)[2] = GetProperties()[BEAM_PRINCIPAL_MOMENTS_OF_INERTIA_Z] * GetMass() * norm_distance;
+                GetGeometry()[0].FastGetSolutionStepValue(PRINCIPAL_MOMENTS_OF_INERTIA)[0] = GetProperties()[BEAM_PRINCIPAL_MOMENTS_OF_INERTIA_X] * GetDensity() * distance * contact_area;
+                GetGeometry()[0].FastGetSolutionStepValue(PRINCIPAL_MOMENTS_OF_INERTIA)[1] = GetProperties()[BEAM_PRINCIPAL_MOMENTS_OF_INERTIA_Y] * GetDensity() * distance * contact_area;
+                GetGeometry()[0].FastGetSolutionStepValue(PRINCIPAL_MOMENTS_OF_INERTIA)[2] = GetProperties()[BEAM_PRINCIPAL_MOMENTS_OF_INERTIA_Z] * GetDensity() * distance * contact_area;
             }
         }
         else
