@@ -77,7 +77,7 @@ namespace Kratos
 		}
 	}
 
-	template<std::size_t TDim>
+	template<std::size_t TDim> // TODO remove method?
 	bool CalculateDiscontinuousEdgeDistanceToSkinProcess<TDim>::CheckIfIncised(Element& rElement1)
 	{
 		// Get edge-based elemental distances of the element in order to calculate node-based ones
@@ -94,7 +94,7 @@ namespace Kratos
 		return (num_cut_edges > 0);
 	}
 
-	template<std::size_t TDim>
+	template<std::size_t TDim> // TODO remove method?
 	bool CalculateDiscontinuousEdgeDistanceToSkinProcess<TDim>::CheckIfIntersected(Element& rElement1)
 	{
 		// Get edge-based elemental distances of the element in order to calculate node-based ones

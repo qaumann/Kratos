@@ -16,6 +16,9 @@
 #include "intrusive_ptr/intrusive_ptr.hpp"
 #include "containers/model.h"
 #include "includes/checks.h"
+#include "includes/model_part_io.h"
+#include "includes/gid_io.h"
+#include "input_output/vtk_output.h"
 #include "geometries/hexahedra_3d_8.h"
 #include "geometries/quadrilateral_2d_4.h"
 #include "processes/structured_mesh_generator_process.h"
@@ -886,7 +889,7 @@ namespace Testing {
         disc_dist_proc.Execute();
 
         const uint8_t n_elements = 6;
-        const uint8_t n_edges = n_elements;
+        const uint8_t n_edges = 6;
         uint8_t n_cut_edges = 0;
         uint8_t n_incised = 0;
         uint8_t n_intersected = 0;
@@ -1120,6 +1123,86 @@ namespace Testing {
         KRATOS_CHECK_NEAR(volume_part.GetElement(4).GetValue(ELEMENTAL_EDGE_DISTANCES)[0],  0.5, 1e-12);
         KRATOS_CHECK_NEAR(volume_part.GetElement(4).GetValue(ELEMENTAL_EDGE_DISTANCES)[1],  0.5, 1e-12);
         KRATOS_CHECK_NEAR(volume_part.GetElement(4).GetValue(ELEMENTAL_EDGE_DISTANCES)[2], -1.0, 1e-12);
+    }
+
+    KRATOS_TEST_CASE_IN_SUITE(DiscontinuousEdgeDistanceProcessSail3D, KratosCoreFastSuite)
+    {
+        Model current_model;
+
+        // Generate tetrahedron elements
+        ModelPart& volume_part = current_model.CreateModelPart("Volume");
+        volume_part.AddNodalSolutionStepVariable(DISTANCE);
+        auto& process_info = volume_part.GetProcessInfo();
+        process_info.SetValue(DOMAIN_SIZE, 3);
+        process_info.SetValue(STEP, 1);
+        // TODO more general file path
+        ModelPartIO * volume_mpio = new ModelPartIO("Kratos/kratos/tests/cpp_tests/processes/auxiliar_files/fluid");
+        volume_mpio->ReadModelPart(volume_part);
+
+        // Generate the skin line
+        ModelPart& skin_part = current_model.CreateModelPart("Skin");
+        ModelPartIO * skin_mpio = new ModelPartIO("Kratos/kratos/tests/cpp_tests/processes/auxiliar_files/sails");
+        skin_mpio->ReadModelPart(skin_part);
+
+        // Compute the discontinuous distance function
+        CalculateDiscontinuousEdgeDistanceToSkinProcess<3> disc_dist_proc(volume_part, skin_part);
+        disc_dist_proc.Execute();
+
+        const uint32_t n_elements = static_cast<int> (volume_part.NumberOfElements());
+        KRATOS_WATCH(n_elements);
+        const uint8_t n_edges = 6;
+        uint8_t j, n_cut_edges = 0;
+        uint32_t i_elem, n_intersected = 0, n_incised = 0;
+
+        #pragma omp parallel for default(shared) private(i_elem, j) reduction(+:n_intersected, n_incised)
+        for (i_elem = 0; i_elem < n_elements; ++i_elem) {
+            ModelPart::ElementsContainerType::iterator itElement = volume_part.ElementsBegin() + i_elem;
+            const auto &r_edge_dist = itElement->GetValue(ELEMENTAL_EDGE_DISTANCES);
+            n_cut_edges = 0;
+            for (j = 0; j < n_edges; ++j) {
+                if (r_edge_dist[j] >= 0){
+                    n_cut_edges++;
+                }
+            }
+            if (n_cut_edges > 0){
+                if (n_cut_edges > 2){
+                    n_intersected++;
+                    itElement->SetValue(DISTANCE, 3.0);
+                } else {
+                    n_incised++;
+                    itElement->SetValue(DISTANCE, 2.0);
+                }
+            } else {
+                itElement->SetValue(DISTANCE, 1.0);
+            }
+        }
+
+        KRATOS_WATCH((volume_part.ElementsBegin() + 1000)->GetValue(DISTANCE));
+        KRATOS_WATCH((volume_part.ElementsBegin() + 5000)->GetValue(DISTANCE));
+        KRATOS_WATCH((volume_part.ElementsBegin() + 10000)->GetValue(DISTANCE));
+
+        // TODO output gid post.bin
+        /*const int step = volume_part.GetProcessInfo()[STEP];
+        GidIO<> gid_io("TEST_EDGE_DIST", GiD_PostBinary, SingleFile, WriteUndeformed,  WriteElementsOnly);
+        const double label = static_cast<double>(step);
+        gid_io.InitializeMesh(label);
+        gid_io.WriteMesh(volume_part.GetMesh());
+        gid_io.FinalizeMesh();
+        gid_io.InitializeResults(label, volume_part.GetMesh());
+        gid_io.WriteNodalResults(DISTANCE, volume_part.Nodes(), label, step);*/
+
+        Parameters io_parameters = Parameters(R"(
+        {
+            "element_data_value_variables"                : ["DISTANCE"]
+        })" );
+        VtkOutput(volume_part, io_parameters).PrintOutput();
+
+        KRATOS_WATCH(n_intersected);
+        KRATOS_WATCH(n_incised);
+        //KRATOS_CHECK_EQUAL(n_incised, 741);
+        KRATOS_CHECK_GREATER(n_incised, 100);
+        //KRATOS_CHECK_EQUAL(n_intersected, 2);
+        KRATOS_CHECK_EQUAL(n_intersected, 6250);
     }
 
 }  // namespace Testing.
