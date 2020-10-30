@@ -67,7 +67,7 @@ void SplitForwardEulerSphericContinuumParticle::Initialize(const ProcessInfo& r_
     KRATOS_CATCH( "" )
 }
 
-void SplitForwardEulerSphericContinuumParticle::CalculateRightHandSide(ProcessInfo& r_process_info, double dt, const array_1d<double,3>& gravity, int search_control)
+void SplitForwardEulerSphericContinuumParticle::CalculateRightHandSide(const ProcessInfo& r_process_info, double dt, const array_1d<double,3>& gravity)
 {
     KRATOS_TRY
 
@@ -125,7 +125,7 @@ void SplitForwardEulerSphericContinuumParticle::CalculateRightHandSide(ProcessIn
 
     ComputeBallToBallContactForce(data_buffer, r_process_info, elastic_force, contact_force, RollingResistance);
 
-    ComputeBallToRigidFaceContactForce(data_buffer, elastic_force, contact_force, RollingResistance, rigid_element_force, r_process_info, search_control);
+    ComputeBallToRigidFaceContactForce(data_buffer, elastic_force, contact_force, RollingResistance, rigid_element_force, r_process_info);
 
     if (this->IsNot(DEMFlags::BELONGS_TO_A_CLUSTER)){
         ComputeAdditionalForces(additional_forces, additionally_applied_moment, r_process_info, gravity);
@@ -151,7 +151,7 @@ void SplitForwardEulerSphericContinuumParticle::CalculateRightHandSide(ProcessIn
     array_1d<double,3>& angular_velocity = this_node.FastGetSolutionStepValue(ANGULAR_VELOCITY);
 
     // TODO: check sign of diagonal damping force
-    // TODO: can be diagonal damping force added globally ? I think it must be added globally. However, 
+    // TODO: can be diagonal damping force added globally ? I think it must be added globally. However,
     //       if the local damping force is used to calculate other local forces, there will be a small
     //       error because the diagonal damping force won't have been added until now.
     total_forces[0] = contact_force[0] + additional_forces[0] + r_process_info[BETA_RAYLEIGH] * nodal_stiffness * velocity[0];
@@ -174,7 +174,7 @@ void SplitForwardEulerSphericContinuumParticle::CalculateRightHandSide(ProcessIn
 }
 
 void SplitForwardEulerSphericContinuumParticle::ComputeBallToBallContactForce(SphericParticle::ParticleDataBuffer & data_buffer,
-                                                                ProcessInfo& r_process_info,
+                                                                const ProcessInfo& r_process_info,
                                                                 array_1d<double, 3>& rElasticForce,
                                                                 array_1d<double, 3>& rContactForce,
                                                                 double& RollingResistance)
@@ -185,8 +185,6 @@ void SplitForwardEulerSphericContinuumParticle::ComputeBallToBallContactForce(Sp
     DEM_COPY_SECOND_TO_FIRST_3(data_buffer.mMyCoors, this_node)
 
     const int time_steps = r_process_info[TIME_STEPS];
-    const int& search_control = r_process_info[SEARCH_CONTROL];
-    DenseVector<int>& search_control_vector = r_process_info[SEARCH_CONTROL_VECTOR];
 
     const array_1d<double, 3>& vel         = this->GetGeometry()[0].FastGetSolutionStepValue(VELOCITY);
     const array_1d<double, 3>& delta_displ = this->GetGeometry()[0].FastGetSolutionStepValue(DELTA_DISPLACEMENT);
@@ -310,8 +308,6 @@ void SplitForwardEulerSphericContinuumParticle::ComputeBallToBallContactForce(Sp
                                                                 i,
                                                                 r_process_info[TIME_STEPS],
                                                                 sliding,
-                                                                search_control,
-                                                                search_control_vector,
                                                                 LocalRelVel,
                                                                 ViscoDampingLocalContactForce);
 
@@ -381,8 +377,7 @@ void SplitForwardEulerSphericContinuumParticle::ComputeBallToRigidFaceContactFor
                                                          array_1d<double, 3>& r_contact_force,
                                                          double& RollingResistance,
                                                          array_1d<double, 3>& rigid_element_force,
-                                                         ProcessInfo& r_process_info,
-                                                         int search_control)
+                                                         const ProcessInfo& r_process_info)
 {
     KRATOS_TRY
 
@@ -694,7 +689,7 @@ void SplitForwardEulerSphericContinuumParticle::ComputeBallToBallStiffness(Spher
         double indentation = initial_dist - data_buffer.mDistance;
         double myYoung = GetYoung();
         double myPoisson = GetPoisson();
-        
+
         // Getting neighbor properties
         double other_young = data_buffer.mpOtherParticle->GetYoung();
         double other_poisson = data_buffer.mpOtherParticle->GetPoisson();
@@ -765,7 +760,7 @@ void SplitForwardEulerSphericContinuumParticle::ComputeBallToRigidFaceStiffness(
         if (ContactType == 1 || ContactType == 2 || ContactType == 3) {
 
             double indentation = -(DistPToB - GetInteractionRadius()) - ini_delta;
- 
+
             if (indentation > 0.0) {
 
                 double normal_stiffness, tangential_stiffness;

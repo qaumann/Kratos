@@ -218,7 +218,7 @@ namespace Kratos {
                                                 double ViscoDampingLocalContactForce[3],
                                                 const double beta_rayleigh) override;
 
-        void CalculateForcesRayleighWithFEM(ProcessInfo& r_process_info,
+        void CalculateForcesRayleighWithFEM(const ProcessInfo& r_process_info,
                                             const double OldLocalElasticContactForce[3],
                                             double LocalElasticContactForce[3],
                                             double LocalDeltDisp[3],
