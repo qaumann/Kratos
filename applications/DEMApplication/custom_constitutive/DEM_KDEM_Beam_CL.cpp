@@ -247,7 +247,7 @@ namespace Kratos {
         GeometryFunctions::VectorGlobal2Local(LocalCoordSystem, GlobalDeltaAngularVelocity, LocalDeltaAngularVelocity);
 
         const double norm_distance = (element->GetRadius() + neighbor->GetRadius()) / distance; // If spheres are not tangent the Damping coefficient, DeltaRotatedAngle and DeltaAngularVelocity have to be normalized
-        const double norm_length = 3.0 / distance; // Total beam lenght / distance
+        const double norm_length = element->GetProperties()[BEAM_LENGTH] / distance; // Total beam lenght / distance
 
         ////////////////////////////////////////////////////// ElasticLocalRotationalMoment //////////////////////////////////////////////////////
 
@@ -273,15 +273,13 @@ namespace Kratos {
         const double equiv_moment_of_inertiaY = 0.5 * (element->GetGeometry()[0].FastGetSolutionStepValue(PRINCIPAL_MOMENTS_OF_INERTIA)[2] + neighbor->GetGeometry()[0].FastGetSolutionStepValue(PRINCIPAL_MOMENTS_OF_INERTIA)[2]);
         const double equiv_moment_of_inertiaZ = 0.5 * (element->GetGeometry()[0].FastGetSolutionStepValue(PRINCIPAL_MOMENTS_OF_INERTIA)[0] + neighbor->GetGeometry()[0].FastGetSolutionStepValue(PRINCIPAL_MOMENTS_OF_INERTIA)[0]);
 
+        const double equiv_mass  = 0.5 * (element->GetMass() + neighbor->GetMass());
         const double beam_total_mass = element->GetProperties()[BEAM_LENGTH] * element->GetProperties()[BEAM_CROSS_SECTION] * element->GetDensity();
+        const double aux_mass = beam_total_mass / equiv_mass;
 
-        const double aux_moment_of_inertiaX = element->GetProperties()[BEAM_PRINCIPAL_MOMENTS_OF_INERTIA_Y] * beam_total_mass / equiv_moment_of_inertiaX;
-        const double aux_moment_of_inertiaY = element->GetProperties()[BEAM_PRINCIPAL_MOMENTS_OF_INERTIA_Z] * beam_total_mass / equiv_moment_of_inertiaY;
-        const double aux_moment_of_inertiaZ = element->GetProperties()[BEAM_PRINCIPAL_MOMENTS_OF_INERTIA_X] * beam_total_mass / equiv_moment_of_inertiaZ;
-
-        const double visc_param_rot_x = equiv_gamma * aux_moment_of_inertiaX * norm_length * sqrt(equiv_moment_of_inertiaX * k_rot_x);
-        const double visc_param_rot_y = equiv_gamma * aux_moment_of_inertiaY * norm_length * sqrt(equiv_moment_of_inertiaY * k_rot_y);
-        const double visc_param_tor   = equiv_gamma * aux_moment_of_inertiaZ * sqrt(equiv_moment_of_inertiaZ * k_tor);
+        const double visc_param_rot_x = equiv_gamma * aux_mass * norm_length * sqrt(equiv_moment_of_inertiaX * k_rot_x);
+        const double visc_param_rot_y = equiv_gamma * aux_mass * norm_length * sqrt(equiv_moment_of_inertiaY * k_rot_y);
+        const double visc_param_tor = equiv_gamma * aux_mass * sqrt(equiv_moment_of_inertiaZ * k_tor);
 
         ViscoLocalRotationalMoment[0] = -visc_param_rot_x * LocalDeltaAngularVelocity[0];
         ViscoLocalRotationalMoment[1] = -visc_param_rot_y * LocalDeltaAngularVelocity[1];
