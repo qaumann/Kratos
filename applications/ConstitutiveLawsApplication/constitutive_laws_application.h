@@ -7,12 +7,12 @@
 //  License:         BSD License
 //                   Kratos default license: kratos/license.txt
 //
-//  Main authors:    @{KRATOS_APP_AUTHOR}
+//  Main authors:    Alejandro Cornejo Velazquez
+//                   Riccardo Rossi
 //
 
-
-#if !defined(KRATOS_@{APP_NAME_CAPS}_APPLICATION_H_INCLUDED )
-#define  KRATOS_@{APP_NAME_CAPS}_APPLICATION_H_INCLUDED
+#if !defined(KRATOS_CONSTITUTIVE_LAWS_APPLICATION_H_INCLUDED )
+#define  KRATOS_CONSTITUTIVE_LAWS_APPLICATION_H_INCLUDED
 
 
 // System includes
@@ -49,23 +49,23 @@ namespace Kratos {
 /// Short class definition.
 /** Detail class definition.
 */
-class KRATOS_API(@{APP_NAME_CAPS}_APPLICATION) Kratos@{APP_NAME_CAMEL}Application : public KratosApplication {
+class KRATOS_API(CONSTITUTIVE_LAWS_APPLICATION) KratosConstitutiveLawsApplication : public KratosApplication {
 public:
     ///@name Type Definitions
     ///@{
 
-    /// Pointer definition of Kratos@{APP_NAME_CAMEL}Application
-    KRATOS_CLASS_POINTER_DEFINITION(Kratos@{APP_NAME_CAMEL}Application);
+    /// Pointer definition of KratosConstitutiveLawsApplication
+    KRATOS_CLASS_POINTER_DEFINITION(KratosConstitutiveLawsApplication);
 
     ///@}
     ///@name Life Cycle
     ///@{
 
     /// Default constructor.
-    Kratos@{APP_NAME_CAMEL}Application();
+    KratosConstitutiveLawsApplication();
 
     /// Destructor.
-    ~Kratos@{APP_NAME_CAMEL}Application() override {}
+    ~KratosConstitutiveLawsApplication() override {}
 
     ///@}
     ///@name Operators
@@ -95,7 +95,7 @@ public:
     /// Turn back information as a string.
     std::string Info() const override
     {
-        return "Kratos@{APP_NAME_CAMEL}Application";
+        return "KratosConstitutiveLawsApplication";
     }
 
     /// Print information about this object.
@@ -203,15 +203,15 @@ private:
     ///@{
 
     /// Assignment operator.
-    Kratos@{APP_NAME_CAMEL}Application& operator=(Kratos@{APP_NAME_CAMEL}Application const& rOther);
+    KratosConstitutiveLawsApplication& operator=(KratosConstitutiveLawsApplication const& rOther);
 
     /// Copy constructor.
-    Kratos@{APP_NAME_CAMEL}Application(Kratos@{APP_NAME_CAMEL}Application const& rOther);
+    KratosConstitutiveLawsApplication(KratosConstitutiveLawsApplication const& rOther);
 
 
     ///@}
 
-}; // Class Kratos@{APP_NAME_CAMEL}Application
+}; // Class KratosConstitutiveLawsApplication
 
 ///@}
 
@@ -229,4 +229,4 @@ private:
 
 }  // namespace Kratos.
 
-#endif // KRATOS_@{APP_NAME_CAPS}_APPLICATION_H_INCLUDED  defined
+#endif // KRATOS_CONSTITUTIVE_LAWS_APPLICATION_H_INCLUDED  defined

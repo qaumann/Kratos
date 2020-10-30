@@ -7,12 +7,13 @@
 //  License:         BSD License
 //                   Kratos default license: kratos/license.txt
 //
-//  Main authors:    @{KRATOS_APP_AUTHOR}
+//  Main authors:    Alejandro Cornejo Velazquez
+//                   Riccardo Rossi
 //
 
-#include "@{APP_NAME_LOW}_application_variables.h"
+#include "constitutive_laws_application_variables.h"
 
 namespace Kratos
 {
-@{KRATOS_APP_CREATE_VARIABLE_LIST}
+
 }

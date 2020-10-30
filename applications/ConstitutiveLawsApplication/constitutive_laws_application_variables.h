@@ -7,11 +7,12 @@
 //  License:         BSD License
 //                   Kratos default license: kratos/license.txt
 //
-//  Main authors:    @{KRATOS_APP_AUTHOR}
+//  Main authors:    Alejandro Cornejo Velazquez
+//                   Riccardo Rossi
 //
 
-#if !defined(KRATOS_@{APP_NAME_CAPS}_APPLICATION_VARIABLES_H_INCLUDED )
-#define  KRATOS_@{APP_NAME_CAPS}_APPLICATION_VARIABLES_H_INCLUDED
+#if !defined(KRATOS_CONSTITUTIVE_LAWS_APPLICATION_VARIABLES_H_INCLUDED )
+#define  KRATOS_CONSTITUTIVE_LAWS_APPLICATION_VARIABLES_H_INCLUDED
 
 // System includes
 
@@ -22,7 +23,7 @@
 
 namespace Kratos
 {
-@{KRATOS_APP_DEFINE_VARIABLE_LIST}
+
 }
 
-#endif	/* KRATOS_@{APP_NAME_CAPS}_APPLICATION_VARIABLES_H_INCLUDED */
+#endif // KRATOS_CONSTITUTIVE_LAWS_APPLICATION_VARIABLES_H_INCLUDED
