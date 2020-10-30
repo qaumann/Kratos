@@ -98,6 +98,11 @@ KratosStructuralMechanicsApplication::KratosStructuralMechanicsApplication()
       mSmallDisplacement3D20N(0, Element::GeometryType::Pointer(new Hexahedra3D20<NodeType >(Element::GeometryType::PointsArrayType(20)))),
       mSmallDisplacement3D27N(0, Element::GeometryType::Pointer(new Hexahedra3D27<NodeType >(Element::GeometryType::PointsArrayType(27)))),
 
+      mSmallDisplacementExplicitSplitScheme2D3N(0, Element::GeometryType::Pointer(new Triangle2D3<NodeType >(Element::GeometryType::PointsArrayType(3)))),
+      mSmallDisplacementExplicitSplitScheme2D4N(0, Element::GeometryType::Pointer(new Quadrilateral2D4<NodeType >(Element::GeometryType::PointsArrayType(4)))),
+      mSmallDisplacementExplicitSplitScheme3D4N(0, Element::GeometryType::Pointer(new Tetrahedra3D4<NodeType >(Element::GeometryType::PointsArrayType(4)))),
+      mSmallDisplacementExplicitSplitScheme3D8N(0, Element::GeometryType::Pointer(new Hexahedra3D8<NodeType >(Element::GeometryType::PointsArrayType(8)))),
+
       mSmallDisplacementBbar2D4N(0, Element::GeometryType::Pointer(new Quadrilateral2D4<NodeType>(Element::GeometryType::PointsArrayType(4)))),
       mSmallDisplacementBbar3D8N(0, Element::GeometryType::Pointer(new Hexahedra3D8<NodeType>(Element::GeometryType::PointsArrayType(8)))),
 
@@ -584,6 +589,11 @@ void KratosStructuralMechanicsApplication::Register() {
     KRATOS_REGISTER_ELEMENT("SmallDisplacementElement3D15N", mSmallDisplacement3D15N)
     KRATOS_REGISTER_ELEMENT("SmallDisplacementElement3D20N", mSmallDisplacement3D20N)
     KRATOS_REGISTER_ELEMENT("SmallDisplacementElement3D27N", mSmallDisplacement3D27N)
+
+    KRATOS_REGISTER_ELEMENT("SmallDisplacementExplicitSplitSchemeElement2D3N", mSmallDisplacementExplicitSplitScheme2D3N)
+    KRATOS_REGISTER_ELEMENT("SmallDisplacementExplicitSplitSchemeElement2D4N", mSmallDisplacementExplicitSplitScheme2D4N)
+    KRATOS_REGISTER_ELEMENT("SmallDisplacementExplicitSplitSchemeElement3D4N", mSmallDisplacementExplicitSplitScheme3D4N)
+    KRATOS_REGISTER_ELEMENT("SmallDisplacementExplicitSplitSchemeElement3D8N", mSmallDisplacementExplicitSplitScheme3D8N)
 
     KRATOS_REGISTER_ELEMENT("SmallDisplacementMixedVolumetricStrainElement2D3N", mSmallDisplacementMixedVolumetricStrainElement2D3N)
     KRATOS_REGISTER_ELEMENT("SmallDisplacementMixedVolumetricStrainElement2D4N", mSmallDisplacementMixedVolumetricStrainElement2D4N)

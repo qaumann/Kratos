@@ -34,11 +34,14 @@ class ExplicitMechanicalSolver(MechanicalSolver):
             "delta_time_refresh"         : 1000,
             "max_delta_time"             : 1.0e0,
             "fraction_delta_time"        : 0.333333333333333333333333333333333333,
-            "l2_tolerance"               : 1.0e-3,
+            "l2_rel_tolerance"           : 1.0e-4,
+            "l2_abs_tolerance"           : 1.0e-9,
             "diagonal_critical_damping"  : false,
             "xi_damping"                 : 0.0,
             "rayleigh_alpha"             : 0.0,
-            "rayleigh_beta"              : 0.0
+            "rayleigh_beta"              : 0.0,
+            "theta_1"                    : 0.0,
+            "theta_2"                    : 1.0
         }""")
         this_defaults.AddMissingParameters(super().GetDefaultParameters())
         return this_defaults
@@ -114,8 +117,9 @@ class ExplicitMechanicalSolver(MechanicalSolver):
             use_rayleigh_damping = False
         process_info.SetValue(StructuralMechanicsApplication.USE_CONSISTENT_MASS_MATRIX, use_rayleigh_damping)
         process_info.SetValue(StructuralMechanicsApplication.XI_DAMPING, self.settings["xi_damping"].GetDouble())
-        process_info.SetValue(StructuralMechanicsApplication.SERIAL_PARALLEL_EQUILIBRIUM_TOLERANCE, self.settings["l2_tolerance"].GetDouble())
-        self.main_model_part.ProcessInfo[KratosMultiphysics.DELTA_TIME] = self.settings["time_stepping"]["time_step"].GetDouble()
+        process_info.SetValue(KratosMultiphysics.ERROR_RATIO, self.settings["l2_rel_tolerance"].GetDouble())
+        process_info.SetValue(KratosMultiphysics.ERROR_INTEGRATION_POINT, self.settings["l2_abs_tolerance"].GetDouble())
+        process_info.SetValue(KratosMultiphysics.DELTA_TIME, self.settings["time_stepping"]["time_step"].GetDouble())
 
         # Setting the time integration schemes
         if(scheme_type == "central_differences"):

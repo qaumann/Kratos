@@ -337,8 +337,8 @@ public:
             this->UpdateTranslationalDegreesOfFreedom(it_node_begin + i, disppos, dim);
 
             // TODO
-            KRATOS_WATCH((it_node_begin+i)->GetValue(NODAL_DISPLACEMENT_DAMPING))
-            KRATOS_WATCH((it_node_begin+i)->GetValue(NODAL_MASS))
+            // KRATOS_WATCH((it_node_begin+i)->GetValue(NODAL_DISPLACEMENT_DAMPING))
+            // KRATOS_WATCH((it_node_begin+i)->GetValue(NODAL_MASS))
         } // for Node parallel
 
         // TODO: STOP CRITERION
@@ -394,18 +394,21 @@ public:
             l2_denominator += norm_2_u_old;
         }
         if (l2_denominator > 1.0e-12) {
-            double l2_error = std::sqrt(l2_numerator)/std::sqrt(l2_denominator);
+            double l2_abs_error = std::sqrt(l2_numerator);
+            double l2_rel_error = l2_abs_error/std::sqrt(l2_denominator);
 
-            std::fstream l2_error_file;
-            l2_error_file.open ("l2_error_time.txt", std::fstream::out | std::fstream::app);
-            l2_error_file.precision(12);
-            l2_error_file << r_current_process_info[TIME] << " " << l2_error << std::endl;
-            l2_error_file.close();
+            // std::fstream l2_error_file;
+            // l2_error_file.open ("l2_error_time.txt", std::fstream::out | std::fstream::app);
+            // l2_error_file.precision(12);
+            // l2_error_file << r_current_process_info[TIME] << " " << l2_error << std::endl;
+            // l2_error_file.close();
 
-            if (l2_error < r_current_process_info[SERIAL_PARALLEL_EQUILIBRIUM_TOLERANCE]) {
-                KRATOS_INFO("STOP CRITERION") << "L2 Error is: " << l2_error << " . The simulation is completed at step: " << r_current_process_info[STEP] << std::endl;
-                KRATOS_INFO("STOP CRITERION") << "L2 numerator is: " << std::sqrt(l2_numerator) << " . L2 denominator is: " << std::sqrt(l2_denominator) << std::endl;
-                // KRATOS_ERROR << "L2 Error is: " << l2_error << " . The simulation is completed at step: " << r_current_process_info[STEP] << std::endl;
+            if (l2_rel_error <= r_current_process_info[ERROR_RATIO] && l2_abs_error <= r_current_process_info[ERROR_INTEGRATION_POINT]) {
+                KRATOS_INFO("STOP CRITERION") << "The simulation is completed at step: " << r_current_process_info[STEP] << std::endl;
+                KRATOS_INFO("STOP CRITERION") << "L2 Relative Error is: " << l2_rel_error << std::endl;
+                KRATOS_INFO("STOP CRITERION") << "L2 Absolute Error is: " << l2_abs_error << std::endl;
+                KRATOS_INFO("STOP CRITERION") << "L2 denominator is: " << std::sqrt(l2_denominator) << std::endl;
+                // KRATOS_ERROR << "L2 Error is: " << l2_rel_error << " . The simulation is completed at step: " << r_current_process_info[STEP] << std::endl;
             }
         }
     }
