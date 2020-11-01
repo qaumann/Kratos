@@ -98,8 +98,8 @@ void CalculateDiscontinuousEmbeddedVariableFromSkinArray(
 }
 
 // Discontinuous edge distance computation auxiliar functions
-/*template<std::size_t TDim>
-void CalculateDiscontinuousEmbeddedVariableFromSkinDouble(
+template<std::size_t TDim>
+void CalculateDiscontinuousEdgeEmbeddedVariableFromSkinDouble(
     CalculateDiscontinuousEdgeDistanceToSkinProcess<TDim> &rDiscDistProcess,
     const Variable<double> &rVariable,
     const Variable<double> &rEmbeddedVariable)
@@ -108,13 +108,13 @@ void CalculateDiscontinuousEmbeddedVariableFromSkinDouble(
 }
 
 template<std::size_t TDim>
-void CalculateDiscontinuousEmbeddedVariableFromSkinArray(
+void CalculateDiscontinuousEdgeEmbeddedVariableFromSkinArray(
     CalculateDiscontinuousEdgeDistanceToSkinProcess<TDim> &rDiscDistProcess,
     const Variable<array_1d<double,3>> &rVariable,
     const Variable<array_1d<double,3>> &rEmbeddedVariable)
 {
     rDiscDistProcess.CalculateEmbeddedVariableFromSkin(rVariable, rEmbeddedVariable);
-}*/
+}
 
 // Continuous distance computation auxiliar functions
 template<std::size_t TDim>
@@ -379,17 +379,17 @@ void  AddProcessesToPython(pybind11::module& m)
         ;
 
     // Discontinuous edge distance computation methods
-    /*py::class_<CalculateDiscontinuousEdgeDistanceToSkinProcess<2>, CalculateDiscontinuousEdgeDistanceToSkinProcess<2>::Pointer, Process>(m,"CalculateDiscontinuousEdgeDistanceToSkinProcess2D")
+    py::class_<CalculateDiscontinuousEdgeDistanceToSkinProcess<2>, CalculateDiscontinuousEdgeDistanceToSkinProcess<2>::Pointer, Process>(m,"CalculateDiscontinuousEdgeDistanceToSkinProcess2D")
         .def(py::init<ModelPart&, ModelPart&>())
-        .def("CalculateEmbeddedVariableFromSkin", CalculateDiscontinuousEmbeddedVariableFromSkinArray<2>)
-        .def("CalculateEmbeddedVariableFromSkin", CalculateDiscontinuousEmbeddedVariableFromSkinDouble<2>)
+        .def("CalculateEmbeddedVariableFromSkin", CalculateDiscontinuousEdgeEmbeddedVariableFromSkinArray<2>)
+        .def("CalculateEmbeddedVariableFromSkin", CalculateDiscontinuousEdgeEmbeddedVariableFromSkinDouble<2>)
         ;
 
     py::class_<CalculateDiscontinuousEdgeDistanceToSkinProcess<3>, CalculateDiscontinuousEdgeDistanceToSkinProcess<3>::Pointer, Process>(m,"CalculateDiscontinuousEdgeDistanceToSkinProcess3D")
         .def(py::init<ModelPart&, ModelPart&>())
-        .def("CalculateEmbeddedVariableFromSkin", CalculateDiscontinuousEmbeddedVariableFromSkinArray<3>)
-        .def("CalculateEmbeddedVariableFromSkin", CalculateDiscontinuousEmbeddedVariableFromSkinDouble<3>)
-        ;*/
+        .def("CalculateEmbeddedVariableFromSkin", CalculateDiscontinuousEdgeEmbeddedVariableFromSkinArray<3>)
+        .def("CalculateEmbeddedVariableFromSkin", CalculateDiscontinuousEdgeEmbeddedVariableFromSkinDouble<3>)
+        ;
 
     // Continuous distance computation methods
     py::class_<CalculateDistanceToSkinProcess<2>, CalculateDistanceToSkinProcess<2>::Pointer, Process>(m,"CalculateDistanceToSkinProcess2D")
