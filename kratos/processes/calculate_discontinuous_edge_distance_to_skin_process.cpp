@@ -26,13 +26,11 @@ namespace Kratos
 	template<std::size_t TDim>
 	CalculateDiscontinuousEdgeDistanceToSkinProcess<TDim>::CalculateDiscontinuousEdgeDistanceToSkinProcess(ModelPart& rVolumePart, ModelPart& rSkinPart)
 		: CalculateDiscontinuousDistanceToSkinProcess<TDim>(rVolumePart, rSkinPart), mrSkinPart(rSkinPart), mrVolumePart(rVolumePart)
-	{
-	}
+	{}
 
 	template<std::size_t TDim>
 	CalculateDiscontinuousEdgeDistanceToSkinProcess<TDim>::~CalculateDiscontinuousEdgeDistanceToSkinProcess()
-	{
-	}
+	{}
 
 	template<std::size_t TDim>
 	void CalculateDiscontinuousEdgeDistanceToSkinProcess<TDim>::Initialize()
@@ -157,7 +155,7 @@ namespace Kratos
 		const bool is_intersection = (num_cut_edges < rElement1.GetGeometry().WorkingSpaceDimension()) ? false : true;
 
 		// TODO: TO_SPLIT only for completely intersected elements? epsilon??
-		// is it like this the  same definition of split elements as for ELEMENTAL_DISTNANCES??
+		//       like this, we have almost the same definition of a split element as for CalculateDiscontinuousDistanceToSkinProcess??
 		// Check if the element is split and set the TO_SPLIT flag accordingly
 		unsigned int n_greater_epsilon = 0;
 		for (unsigned int i = 0; i < num_edges; i++) {

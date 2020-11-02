@@ -9,22 +9,23 @@
 //
 //  Main authors:    Pooyan Dadvand
 //                   Ruben Zorrilla
+//                   Franziska Wahl
 //
 
 #if !defined(KRATOS_CALCULATE_DISCONTINUOUS_EDGE_DISTANCE_TO_SKIN_PROCESS_H_INCLUDED )
 #define  KRATOS_CALCULATE_DISCONTINUOUS_EDGE_DISTANCE_TO_SKIN_PROCESS_H_INCLUDED
 
 // System includes
-#include <string>
-#include <iostream>
+//#include <string>
+//#include <iostream>
 
 // External includes
 
 // Project includes
-#include "geometries/plane_3d.h"
-#include "includes/checks.h"
-#include "processes/process.h"
-#include "processes/find_intersected_geometrical_objects_process.h"
+//#include "geometries/plane_3d.h"
+//#include "includes/checks.h"
+//#include "processes/process.h"
+//#include "processes/find_intersected_geometrical_objects_process.h"
 #include "processes/calculate_discontinuous_distance_to_skin_process.h"
 
 namespace Kratos
