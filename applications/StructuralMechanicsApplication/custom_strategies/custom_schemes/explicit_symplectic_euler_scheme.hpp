@@ -164,6 +164,21 @@ public:
         KRATOS_CATCH("")
     }
 
+     void Predict(
+        ModelPart& rModelPart,
+        DofsArrayType& rDofSet,
+        TSystemMatrixType& A,
+        TSystemVectorType& Dx,
+        TSystemVectorType& b
+    ) override
+    {
+        KRATOS_TRY;
+
+        this->CalculateAndAddRHS(rModelPart);
+
+        KRATOS_CATCH("")
+    }
+
     /**
      * @brief Performing the update of the solution
      * @param rModelPart The model of the problem to solve

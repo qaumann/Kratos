@@ -147,6 +147,10 @@ public:
         // dt)
         // mTime.Current = r_current_process_info[TIME] + r_current_process_info[DELTA_TIME];
         mDeltaTime = r_current_process_info[DELTA_TIME];
+        mAlpha = r_current_process_info[RAYLEIGH_ALPHA];
+        mBeta = r_current_process_info[RAYLEIGH_BETA];
+        mTheta1 = r_current_process_info[THETA_1];
+        mTheta2 = r_current_process_info[THETA_2];
 
         /// Working in 2D/3D (the definition of DOMAIN_SIZE is check in the Check method)
         const SizeType dim = r_current_process_info[DOMAIN_SIZE];
@@ -236,7 +240,7 @@ public:
         const array_1d<double, 3> zero_array = ZeroVector(3);
         // Initializing the variables
         VariableUtils().SetVariable(FORCE_RESIDUAL, zero_array,r_nodes);
-        // VariableUtils().SetVariable(NODAL_INERTIA, zero_array,r_nodes);
+        VariableUtils().SetVariable(NODAL_INERTIA, zero_array,r_nodes);
 
         KRATOS_CATCH("")
     }
@@ -264,15 +268,14 @@ public:
         for (int i = 0; i < static_cast<int>(r_nodes.size()); ++i) {
             auto it_node = (it_node_begin + i);
             it_node->SetValue(NODAL_MASS, 0.0);
-            it_node->SetValue(NODAL_DISPLACEMENT_DAMPING, 0.0);
-            array_1d<double, 3>& r_current_aux_velocity = it_node->FastGetSolutionStepValue(NODAL_DISPLACEMENT_STIFFNESS);
-            // array_1d<double, 3>& r_previous_aux_velocity = it_node->FastGetSolutionStepValue(NODAL_DISPLACEMENT_STIFFNESS,1);
-            array_1d<double, 3>& r_current_residual = it_node->FastGetSolutionStepValue(FORCE_RESIDUAL);
-            // array_1d<double, 3>& r_current_inertial_residual = it_node->FastGetSolutionStepValue(NODAL_INERTIA);
-            noalias(r_current_aux_velocity) = it_node->FastGetSolutionStepValue(VELOCITY);
-            // noalias(r_previous_aux_velocity) = it_node->FastGetSolutionStepValue(VELOCITY,1);
-            noalias(r_current_residual) = ZeroVector(3);
-            // noalias(r_current_inertial_residual) = ZeroVector(3);
+            it_node->SetValue(NODAL_DISPLACEMENT_DAMPING, 0.0); // Nodal diagonal damping
+            it_node->SetValue(NODAL_PAUX, 0.0); // Nodal diagonal stiffness
+            array_1d<double, 3>& r_current_impulse = it_node->FastGetSolutionStepValue(NODAL_DISPLACEMENT_STIFFNESS);
+            array_1d<double, 3>& r_external_forces = it_node->FastGetSolutionStepValue(FORCE_RESIDUAL);
+            array_1d<double, 3>& r_current_internal_force = it_node->FastGetSolutionStepValue(NODAL_INERTIA);
+            noalias(r_current_impulse) = ZeroVector(3);
+            noalias(r_external_forces) = ZeroVector(3);
+            noalias(r_current_internal_force) = ZeroVector(3);
         }
 
         KRATOS_CATCH("")
@@ -289,28 +292,6 @@ public:
     {
         KRATOS_TRY;
 
-        this->CalculateAndAddRHS(rModelPart);
-
-        KRATOS_CATCH("")
-    }
-
-    /**
-     * @brief Performing the update of the solution
-     * @param rModelPart The model of the problem to solve
-     * @param rDofSet Set of all primary variables
-     * @param rA LHS matrix
-     * @param rDx incremental update of primary variables
-     * @param rb RHS Vector
-     */
-    void Update(
-        ModelPart& rModelPart,
-        DofsArrayType& rDofSet,
-        TSystemMatrixType& rA,
-        TSystemVectorType& rDx,
-        TSystemVectorType& rb
-        ) override
-    {
-        KRATOS_TRY
         // The current process info
         const ProcessInfo& r_current_process_info = rModelPart.GetProcessInfo();
 
@@ -324,6 +305,8 @@ public:
         // The first step is time =  initial_time ( 0.0) + delta time
         // mTime.Current = r_current_process_info[TIME];
         mDeltaTime = r_current_process_info[DELTA_TIME];
+        mAlpha = r_current_process_info[RAYLEIGH_ALPHA];
+        mBeta = r_current_process_info[RAYLEIGH_BETA];
 
         // The iterator of the first node
         const auto it_node_begin = rModelPart.NodesBegin();
@@ -334,17 +317,68 @@ public:
         #pragma omp parallel for schedule(guided,512)
         for (int i = 0; i < static_cast<int>(r_nodes.size()); ++i) {
             // Current step information "N+1" (before step update).
-            this->UpdateTranslationalDegreesOfFreedom(it_node_begin + i, disppos, dim);
+            this->PredictTranslationalDegreesOfFreedom(it_node_begin + i, disppos, dim);
 
             // TODO
-            // KRATOS_WATCH((it_node_begin+i)->GetValue(NODAL_DISPLACEMENT_DAMPING))
             // KRATOS_WATCH((it_node_begin+i)->GetValue(NODAL_MASS))
+            // KRATOS_WATCH((it_node_begin+i)->GetValue(NODAL_DISPLACEMENT_DAMPING))
         } // for Node parallel
+
+        this->CalculateAndAddRHS(rModelPart);
 
         // TODO: STOP CRITERION
         this->CheckStopCriterion(rModelPart);
 
         KRATOS_CATCH("")
+    }
+
+    /**
+     * @brief This method updates the translation DoF
+     * @param itCurrentNode The iterator of the current node
+     * @param DisplacementPosition The position of the displacement dof on the database
+     * @param DomainSize The current dimention of the problem
+     */
+    virtual void PredictTranslationalDegreesOfFreedom(
+        NodeIterator itCurrentNode,
+        const IndexType DisplacementPosition,
+        const SizeType DomainSize = 3
+        )
+    {
+        array_1d<double, 3>& r_current_displacement = itCurrentNode->FastGetSolutionStepValue(DISPLACEMENT);
+        const array_1d<double, 3>& r_current_impulse = itCurrentNode->FastGetSolutionStepValue(NODAL_DISPLACEMENT_STIFFNESS);
+        const double nodal_mass = itCurrentNode->GetValue(NODAL_MASS);
+        const double nodal_damping = itCurrentNode->GetValue(NODAL_DISPLACEMENT_DAMPING);
+
+        std::array<bool, 3> fix_displacements = {false, false, false};
+        fix_displacements[0] = (itCurrentNode->GetDof(DISPLACEMENT_X, DisplacementPosition).IsFixed());
+        fix_displacements[1] = (itCurrentNode->GetDof(DISPLACEMENT_Y, DisplacementPosition + 1).IsFixed());
+        if (DomainSize == 3)
+            fix_displacements[2] = (itCurrentNode->GetDof(DISPLACEMENT_Z, DisplacementPosition + 2).IsFixed());
+
+        // Solution of the explicit equation:
+        if ( (nodal_mass + mDeltaTime*mTheta2*nodal_damping) > numerical_limit){
+            for (IndexType j = 0; j < DomainSize; j++) {
+                if (fix_displacements[j] == false) {
+                            r_current_displacement[j] = (mDeltaTime*r_current_impulse[j] + (nodal_mass -
+                                                        mDeltaTime*(1.0-mTheta2)*nodal_damping)*r_current_displacement[j]) /
+                                                        (nodal_mass + mDeltaTime*mTheta2*nodal_damping);
+                }
+            }
+        } else{
+            for (IndexType j = 0; j < DomainSize; j++) {
+                if (fix_displacements[j] == false) {
+                    r_current_displacement[j] = 0.0;
+                }
+            }
+        }
+
+        const array_1d<double, 3>& r_previous_displacement = itCurrentNode->FastGetSolutionStepValue(DISPLACEMENT,1);
+        const array_1d<double, 3>& r_previous_velocity = itCurrentNode->FastGetSolutionStepValue(VELOCITY,1);
+        array_1d<double, 3>& r_current_velocity = itCurrentNode->FastGetSolutionStepValue(VELOCITY);
+        array_1d<double, 3>& r_current_acceleration = itCurrentNode->FastGetSolutionStepValue(ACCELERATION);
+
+        noalias(r_current_velocity) = (1.0/mDeltaTime) * (r_current_displacement - r_previous_displacement);
+        noalias(r_current_acceleration) = (1.0/mDeltaTime) * (r_current_velocity - r_previous_velocity);
     }
 
     void CheckStopCriterion(ModelPart& rModelPart)
@@ -414,6 +448,54 @@ public:
     }
 
     /**
+     * @brief Performing the update of the solution
+     * @param rModelPart The model of the problem to solve
+     * @param rDofSet Set of all primary variables
+     * @param rA LHS matrix
+     * @param rDx incremental update of primary variables
+     * @param rb RHS Vector
+     */
+    void Update(
+        ModelPart& rModelPart,
+        DofsArrayType& rDofSet,
+        TSystemMatrixType& rA,
+        TSystemVectorType& rDx,
+        TSystemVectorType& rb
+        ) override
+    {
+        KRATOS_TRY
+        // The current process info
+        const ProcessInfo& r_current_process_info = rModelPart.GetProcessInfo();
+
+        // The array of nodes
+        NodesArrayType& r_nodes = rModelPart.Nodes();
+
+        /// Working in 2D/3D (the definition of DOMAIN_SIZE is check in the Check method)
+        const SizeType dim = r_current_process_info[DOMAIN_SIZE];
+
+        // Step Update
+        // The first step is time =  initial_time ( 0.0) + delta time
+        // mTime.Current = r_current_process_info[TIME];
+        // mDeltaTime = r_current_process_info[DELTA_TIME];
+
+        // The iterator of the first node
+        const auto it_node_begin = rModelPart.NodesBegin();
+
+        // Getting dof position
+        const IndexType disppos = it_node_begin->GetDofPosition(DISPLACEMENT_X);
+
+        #pragma omp parallel for schedule(guided,512)
+        for (int i = 0; i < static_cast<int>(r_nodes.size()); ++i) {
+            // Current step information "N+1" (before step update).
+            this->UpdateTranslationalDegreesOfFreedom(it_node_begin + i, disppos, dim);
+        } // for Node parallel
+
+        KRATOS_CATCH("")
+    }
+
+
+
+    /**
      * @brief This method updates the translation DoF
      * @param itCurrentNode The iterator of the current node
      * @param DisplacementPosition The position of the displacement dof on the database
@@ -425,53 +507,17 @@ public:
         const SizeType DomainSize = 3
         )
     {
-        array_1d<double, 3>& r_current_aux_velocity = itCurrentNode->FastGetSolutionStepValue(NODAL_DISPLACEMENT_STIFFNESS);
-        const array_1d<double, 3>& r_current_residual = itCurrentNode->FastGetSolutionStepValue(FORCE_RESIDUAL);
-        const double nodal_mass = itCurrentNode->GetValue(NODAL_MASS);
-        const double nodal_damping = itCurrentNode->GetValue(NODAL_DISPLACEMENT_DAMPING);
-        // const array_1d<double, 3>& r_current_inertial_residual = itCurrentNode->FastGetSolutionStepValue(NODAL_INERTIA);
+        array_1d<double, 3>& r_current_impulse = itCurrentNode->FastGetSolutionStepValue(NODAL_DISPLACEMENT_STIFFNESS);
+        const array_1d<double, 3>& r_current_velocity = itCurrentNode->FastGetSolutionStepValue(VELOCITY);
+        const array_1d<double, 3>& r_external_forces = itCurrentNode->FastGetSolutionStepValue(FORCE_RESIDUAL);
+        const array_1d<double, 3>& r_current_internal_force = itCurrentNode->FastGetSolutionStepValue(NODAL_INERTIA);
+        const array_1d<double, 3>& r_previous_internal_force = itCurrentNode->FastGetSolutionStepValue(NODAL_INERTIA,1);
+        const double nodal_stiffness = itCurrentNode->GetValue(NODAL_PAUX);
 
         // Solution of the explicit equation:
-        if (nodal_mass > numerical_limit){
-            // TODO: check algorithm
-            // noalias(r_current_aux_velocity) += mDeltaTime * r_current_residual / nodal_mass + mDeltaTime * nodal_damping * r_current_inertial_residual / (nodal_mass * nodal_mass);
-            noalias(r_current_aux_velocity) += mDeltaTime * r_current_residual / nodal_mass;
-        }
-        else{
-            noalias(r_current_aux_velocity) = ZeroVector(3);
-        }
-
-        array_1d<double, 3>& r_current_displacement = itCurrentNode->FastGetSolutionStepValue(DISPLACEMENT);
-        const array_1d<double, 3>& r_previous_displacement = itCurrentNode->FastGetSolutionStepValue(DISPLACEMENT,1);
-
-        std::array<bool, 3> fix_displacements = {false, false, false};
-        fix_displacements[0] = (itCurrentNode->GetDof(DISPLACEMENT_X, DisplacementPosition).IsFixed());
-        fix_displacements[1] = (itCurrentNode->GetDof(DISPLACEMENT_Y, DisplacementPosition + 1).IsFixed());
-        if (DomainSize == 3)
-            fix_displacements[2] = (itCurrentNode->GetDof(DISPLACEMENT_Z, DisplacementPosition + 2).IsFixed());
-
-        // Solution of the explicit equation:
-        if (nodal_mass > numerical_limit){
-            for (IndexType j = 0; j < DomainSize; j++) {
-                if (fix_displacements[j] == false) {
-                    r_current_displacement[j] = (mDeltaTime * r_current_aux_velocity[j] + r_previous_displacement[j]) / (1.0 + mDeltaTime * nodal_damping/nodal_mass);
-                }
-            }
-        }
-        else{
-            for (IndexType j = 0; j < DomainSize; j++) {
-                if (fix_displacements[j] == false) {
-                    r_current_displacement[j] = 0.0;
-                }
-            }
-        }
-
-        const array_1d<double, 3>& r_previous_velocity = itCurrentNode->FastGetSolutionStepValue(VELOCITY,1);
-        array_1d<double, 3>& r_current_velocity = itCurrentNode->FastGetSolutionStepValue(VELOCITY);
-        array_1d<double, 3>& r_current_acceleration = itCurrentNode->FastGetSolutionStepValue(ACCELERATION);
-
-        noalias(r_current_velocity) = (1.0/mDeltaTime) * (r_current_displacement - r_previous_displacement);
-        noalias(r_current_acceleration) = (1.0/mDeltaTime) * (r_current_velocity - r_previous_velocity);
+        noalias(r_current_impulse) += mDeltaTime*r_external_forces - (mBeta+mDeltaTime*mTheta1)*r_current_internal_force +
+                                      (mBeta-mDeltaTime*(1.0-mTheta1))*r_previous_internal_force +
+                                      mDeltaTime*mBeta*nodal_stiffness*r_current_velocity;
     }
 
     /**
@@ -606,6 +652,10 @@ protected:
     // TimeVariables mTime;            /// This struct contains the details of the time variables
     // DeltaTimeParameters mDeltaTime; /// This struct contains the information related with the increment od time step
     double mDeltaTime;
+    double mAlpha;
+    double mBeta;
+    double mTheta1;
+    double mTheta2;
 
     ///@}
     ///@name Protected member Variables

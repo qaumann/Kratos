@@ -228,15 +228,15 @@ protected:
         const ProcessInfo& rCurrentProcessInfo
         );
 
-    virtual void CalculateNoDiagonalDampingMatrix(
-        MatrixType& rNoDiagonalDampingMatrix,
-        const ProcessInfo& rCurrentProcessInfo
-        );
-
-    // virtual void CalculateInternalForces(
-    //     VectorType& rInternalForces,
+    // virtual void CalculateNoDiagonalDampingMatrix(
+    //     MatrixType& rNoDiagonalDampingMatrix,
     //     const ProcessInfo& rCurrentProcessInfo
     //     );
+
+    virtual void CalculateInternalForces(
+        VectorType& rInternalForces,
+        const ProcessInfo& rCurrentProcessInfo
+        );
 
     /**
      * @brief This method computes directly the lumped mass vector

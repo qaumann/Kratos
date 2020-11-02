@@ -107,21 +107,28 @@ void SmallDisplacementExplicitSplitScheme::AddExplicitContribution(
     // Compiting the nodal mass
     if (rDestinationVariable == NODAL_MASS ) {
 
-        VectorType element_damping_vector(mat_size);
-        CalculateLumpedDampingVector(element_damping_vector, rCurrentProcessInfo);
-
         VectorType element_mass_vector(mat_size);
         this->CalculateLumpedMassVector(element_mass_vector);
 
+        VectorType element_stiffness_vector(mat_size);
+        CalculateLumpedStiffnessVector(element_stiffness_vector, rCurrentProcessInfo);
+
+        VectorType element_damping_vector(mat_size);
+        CalculateLumpedDampingVector(element_damping_vector, rCurrentProcessInfo);
+
         for (IndexType i = 0; i < number_of_nodes; ++i) {
+            double& r_nodal_stiffness = r_geom[i].GetValue(NODAL_PAUX);
             double& r_nodal_damping = r_geom[i].GetValue(NODAL_DISPLACEMENT_DAMPING);
             const IndexType index = i * dimension;
 
             #pragma omp atomic
-            r_nodal_damping += element_damping_vector[index];
+            r_geom[i].GetValue(NODAL_MASS) += element_mass_vector[index];
 
             #pragma omp atomic
-            r_geom[i].GetValue(NODAL_MASS) += element_mass_vector[index];
+            r_nodal_stiffness += element_stiffness_vector[index];
+
+            #pragma omp atomic
+            r_nodal_damping += element_damping_vector[index];
         }
     }
 
@@ -146,37 +153,22 @@ void SmallDisplacementExplicitSplitScheme::AddExplicitContribution(
     const SizeType number_of_nodes = r_geom.size();
     const SizeType element_size = dimension * number_of_nodes;
 
-    Matrix non_diagonal_damping_matrix;
-    CalculateNoDiagonalDampingMatrix(non_diagonal_damping_matrix, rCurrentProcessInfo);
-    Vector current_nodal_velocities = ZeroVector(element_size);
-    this->GetFirstDerivativesVector(current_nodal_velocities);
-    Vector damping_residual_contribution = ZeroVector(element_size);
-    noalias(damping_residual_contribution) = prod(non_diagonal_damping_matrix, current_nodal_velocities);
-
-    // Vector internal_forces = ZeroVector(element_size);
-    // this->CalculateInternalForces(internal_forces,rCurrentProcessInfo);
-
-    // Vector damping_residual_contribution = ZeroVector(element_size);
-    // // Calculate damping contribution to residual -->
-    // if (r_prop.Has(RAYLEIGH_ALPHA) || r_prop.Has(RAYLEIGH_BETA)) {
-    //     Vector current_nodal_velocities = ZeroVector(element_size);
-    //     this->GetFirstDerivativesVector(current_nodal_velocities);
-    //     Matrix damping_matrix(element_size, element_size);
-    //     this->CalculateDampingMatrixWithLumpedMass(damping_matrix, rCurrentProcessInfo);
-    //     // Current residual contribution due to damping
-    //     noalias(damping_residual_contribution) = prod(damping_matrix, current_nodal_velocities);
-    // }
+    Vector internal_forces = ZeroVector(element_size);
+    this->CalculateInternalForces(internal_forces,rCurrentProcessInfo);
 
     // Computing the force residual
     if (rRHSVariable == RESIDUAL_VECTOR && rDestinationVariable == FORCE_RESIDUAL) {
         for (IndexType i = 0; i < number_of_nodes; ++i) {
             const IndexType index = dimension * i;
-            array_1d<double, 3>& r_force_residual = r_geom[i].FastGetSolutionStepValue(FORCE_RESIDUAL);
+            array_1d<double, 3>& r_external_forces = GetGeometry()[i].FastGetSolutionStepValue(FORCE_RESIDUAL);
+            array_1d<double, 3>& r_internal_forces = GetGeometry()[i].FastGetSolutionStepValue(NODAL_INERTIA);
 
             for (IndexType j = 0; j < dimension; ++j) {
+                #pragma omp atomic
+                r_external_forces[j] += rRHSVector[index + j] + internal_forces[index + j];
 
                 #pragma omp atomic
-                r_force_residual[j] += rRHSVector[index + j] - damping_residual_contribution[index + j];
+                r_internal_forces[j] += internal_forces[index + j];
             }
         }
     }
@@ -329,105 +321,105 @@ void SmallDisplacementExplicitSplitScheme::CalculateLumpedStiffnessVector(
 /***********************************************************************************/
 /***********************************************************************************/
 
-void SmallDisplacementExplicitSplitScheme::CalculateNoDiagonalDampingMatrix(
-    MatrixType& rNoDiagonalDampingMatrix,
+void SmallDisplacementExplicitSplitScheme::CalculateInternalForces(
+    VectorType& rInternalForces,
     const ProcessInfo& rCurrentProcessInfo
     )
 {
-    KRATOS_TRY
+    KRATOS_TRY;
 
-    auto& r_geom = this->GetGeometry();
-    const SizeType dimension = r_geom.WorkingSpaceDimension();
-    const SizeType number_of_nodes = r_geom.size();
+    auto& r_geometry = this->GetGeometry();
+    const SizeType number_of_nodes = r_geometry.size();
+    const SizeType dimension = r_geometry.WorkingSpaceDimension();
+    const SizeType strain_size = GetProperties().GetValue( CONSTITUTIVE_LAW )->GetStrainSize();
+
+    KinematicVariables this_kinematic_variables(strain_size, dimension, number_of_nodes);
+    ConstitutiveVariables this_constitutive_variables(strain_size);
+
+    // Resizing as needed the LHS
     const SizeType mat_size = number_of_nodes * dimension;
 
-    // Clear matrix
-    if (rNoDiagonalDampingMatrix.size1() != mat_size || rNoDiagonalDampingMatrix.size2() != mat_size) {
-        rNoDiagonalDampingMatrix.resize(mat_size, mat_size, false);
+    // Resizing as needed the RHS
+    if ( rInternalForces.size() != mat_size )
+        rInternalForces.resize( mat_size, false );
+
+    rInternalForces = ZeroVector( mat_size ); //resetting RHS
+
+    // Reading integration points and local gradients
+    const GeometryType::IntegrationPointsArrayType& integration_points = r_geometry.IntegrationPoints(this->GetIntegrationMethod());
+
+    ConstitutiveLaw::Parameters Values(r_geometry,GetProperties(),rCurrentProcessInfo);
+    // Set constitutive law flags:
+    Flags& ConstitutiveLawOptions=Values.GetOptions();
+    ConstitutiveLawOptions.Set(ConstitutiveLaw::USE_ELEMENT_PROVIDED_STRAIN, UseElementProvidedStrain());
+    ConstitutiveLawOptions.Set(ConstitutiveLaw::COMPUTE_STRESS, true);
+    ConstitutiveLawOptions.Set(ConstitutiveLaw::COMPUTE_CONSTITUTIVE_TENSOR, false);
+
+    // If strain has to be computed inside of the constitutive law with PK2
+    Values.SetStrainVector(this_constitutive_variables.StrainVector); //this is the input  parameter
+
+    // Some declarations
+    double int_to_reference_weight;
+
+    // Computing in all integrations points
+    for ( IndexType point_number = 0; point_number < integration_points.size(); ++point_number ) {
+
+        // Compute element kinematics B, F, DN_DX ...
+        CalculateKinematicVariables(this_kinematic_variables, point_number, this->GetIntegrationMethod());
+
+        // Compute material reponse
+        CalculateConstitutiveVariables(this_kinematic_variables, this_constitutive_variables, Values, point_number, integration_points, GetStressMeasure());
+
+        // Calculating weights for integration on the reference configuration
+        int_to_reference_weight = GetIntegrationWeight(integration_points, point_number, this_kinematic_variables.detJ0);
+
+        if ( dimension == 2 && GetProperties().Has( THICKNESS ))
+            int_to_reference_weight *= GetProperties()[THICKNESS];
+
+        noalias( rInternalForces ) += int_to_reference_weight * prod( trans( this_kinematic_variables.B ), this_constitutive_variables.StressVector );
     }
-    rNoDiagonalDampingMatrix = ZeroMatrix(mat_size, mat_size);
 
-    double beta  = 0.0;
-    if( GetProperties().Has(RAYLEIGH_BETA) )
-        beta = GetProperties()[RAYLEIGH_BETA];
-    else if( rCurrentProcessInfo.Has(RAYLEIGH_BETA) )
-        beta = rCurrentProcessInfo[RAYLEIGH_BETA];
-
-    if (beta > std::numeric_limits<double>::epsilon()) {
-        MatrixType non_diagonal_stiffness_matrix( mat_size, mat_size );
-        noalias(non_diagonal_stiffness_matrix) = ZeroMatrix(mat_size,mat_size);
-        this->CalculateLeftHandSide(non_diagonal_stiffness_matrix, rCurrentProcessInfo);
-        for (IndexType i = 0; i < mat_size; ++i) {
-            non_diagonal_stiffness_matrix(i,i) = 0.0;
-        }
-        noalias(rNoDiagonalDampingMatrix) = beta * non_diagonal_stiffness_matrix;
-    }
-
-    KRATOS_CATCH("")
+    KRATOS_CATCH("");
 }
 
 /***********************************************************************************/
 /***********************************************************************************/
 
-// void SmallDisplacementExplicitSplitScheme::CalculateInternalForces(
-//     VectorType& rInternalForces,
+// void SmallDisplacementExplicitSplitScheme::CalculateNoDiagonalDampingMatrix(
+//     MatrixType& rNoDiagonalDampingMatrix,
 //     const ProcessInfo& rCurrentProcessInfo
 //     )
 // {
-//     KRATOS_TRY;
+//     KRATOS_TRY
 
-//     auto& r_geometry = this->GetGeometry();
-//     const SizeType number_of_nodes = r_geometry.size();
-//     const SizeType dimension = r_geometry.WorkingSpaceDimension();
-//     const SizeType strain_size = GetProperties().GetValue( CONSTITUTIVE_LAW )->GetStrainSize();
-
-//     KinematicVariables this_kinematic_variables(strain_size, dimension, number_of_nodes);
-//     ConstitutiveVariables this_constitutive_variables(strain_size);
-
-//     // Resizing as needed the LHS
+//     auto& r_geom = this->GetGeometry();
+//     const SizeType dimension = r_geom.WorkingSpaceDimension();
+//     const SizeType number_of_nodes = r_geom.size();
 //     const SizeType mat_size = number_of_nodes * dimension;
 
-//     // Resizing as needed the RHS
-//     if ( rInternalForces.size() != mat_size )
-//         rInternalForces.resize( mat_size, false );
+//     // Clear matrix
+//     if (rNoDiagonalDampingMatrix.size1() != mat_size || rNoDiagonalDampingMatrix.size2() != mat_size) {
+//         rNoDiagonalDampingMatrix.resize(mat_size, mat_size, false);
+//     }
+//     rNoDiagonalDampingMatrix = ZeroMatrix(mat_size, mat_size);
 
-//     rInternalForces = ZeroVector( mat_size ); //resetting RHS
+//     double beta  = 0.0;
+//     if( GetProperties().Has(RAYLEIGH_BETA) )
+//         beta = GetProperties()[RAYLEIGH_BETA];
+//     else if( rCurrentProcessInfo.Has(RAYLEIGH_BETA) )
+//         beta = rCurrentProcessInfo[RAYLEIGH_BETA];
 
-//     // Reading integration points and local gradients
-//     const GeometryType::IntegrationPointsArrayType& integration_points = r_geometry.IntegrationPoints(this->GetIntegrationMethod());
-
-//     ConstitutiveLaw::Parameters Values(r_geometry,GetProperties(),rCurrentProcessInfo);
-//     // Set constitutive law flags:
-//     Flags& ConstitutiveLawOptions=Values.GetOptions();
-//     ConstitutiveLawOptions.Set(ConstitutiveLaw::USE_ELEMENT_PROVIDED_STRAIN, UseElementProvidedStrain());
-//     ConstitutiveLawOptions.Set(ConstitutiveLaw::COMPUTE_STRESS, true);
-//     ConstitutiveLawOptions.Set(ConstitutiveLaw::COMPUTE_CONSTITUTIVE_TENSOR, false);
-
-//     // If strain has to be computed inside of the constitutive law with PK2
-//     Values.SetStrainVector(this_constitutive_variables.StrainVector); //this is the input  parameter
-
-//     // Some declarations
-//     double int_to_reference_weight;
-
-//     // Computing in all integrations points
-//     for ( IndexType point_number = 0; point_number < integration_points.size(); ++point_number ) {
-
-//         // Compute element kinematics B, F, DN_DX ...
-//         CalculateKinematicVariables(this_kinematic_variables, point_number, this->GetIntegrationMethod());
-
-//         // Compute material reponse
-//         CalculateConstitutiveVariables(this_kinematic_variables, this_constitutive_variables, Values, point_number, integration_points, GetStressMeasure());
-
-//         // Calculating weights for integration on the reference configuration
-//         int_to_reference_weight = GetIntegrationWeight(integration_points, point_number, this_kinematic_variables.detJ0);
-
-//         if ( dimension == 2 && GetProperties().Has( THICKNESS ))
-//             int_to_reference_weight *= GetProperties()[THICKNESS];
-
-//         noalias( rInternalForces ) += int_to_reference_weight * prod( trans( this_kinematic_variables.B ), this_constitutive_variables.StressVector );
+//     if (beta > std::numeric_limits<double>::epsilon()) {
+//         MatrixType non_diagonal_stiffness_matrix( mat_size, mat_size );
+//         noalias(non_diagonal_stiffness_matrix) = ZeroMatrix(mat_size,mat_size);
+//         this->CalculateLeftHandSide(non_diagonal_stiffness_matrix, rCurrentProcessInfo);
+//         for (IndexType i = 0; i < mat_size; ++i) {
+//             non_diagonal_stiffness_matrix(i,i) = 0.0;
+//         }
+//         noalias(rNoDiagonalDampingMatrix) = beta * non_diagonal_stiffness_matrix;
 //     }
 
-//     KRATOS_CATCH("");
+//     KRATOS_CATCH("")
 // }
 
 /***********************************************************************************/
