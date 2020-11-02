@@ -85,6 +85,7 @@ class EmpireIO(CoSimulationIO):
 
     def ImportData(self, data_config):
         data_type = data_config["type"]
+
         if data_type == "coupling_interface_data":
             interface_data = data_config["interface_data"]
             model_part = self.__GetModelPartForAPICalls(interface_data)
@@ -98,6 +99,7 @@ class EmpireIO(CoSimulationIO):
 
     def ExportData(self, data_config):
         data_type = data_config["type"]
+
         if data_type == "coupling_interface_data":
             interface_data = data_config["interface_data"]
 
