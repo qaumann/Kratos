@@ -141,7 +141,7 @@ private:
 
     ModelPart& mrSkinPart;
     ModelPart& mrVolumePart;
-    //std::size_t mNumEdges = (TDim -1) * 3; //TODO: declare here?
+    constexpr static unsigned int mNumEdges = (TDim -1) * 3;
 
     ///@}
     ///@name Private Operations

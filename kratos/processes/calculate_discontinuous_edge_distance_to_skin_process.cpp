@@ -45,9 +45,9 @@ namespace Kratos
 		for (unsigned int i_node = 0; i_node < num_nodes; ++i_node) {
 			init_dist_vect[i_node] = initial_distance;
 		}
-		constexpr std::size_t num_edges = (TDim -1) * 3;
-		array_1d<double,num_edges> init_edge_dist_vect;
-		for (unsigned int i_node = 0; i_node < num_edges; ++i_node) {
+
+		array_1d<double,mNumEdges> init_edge_dist_vect;
+		for (unsigned int i_node = 0; i_node < mNumEdges; ++i_node) {
 			init_edge_dist_vect[i_node] = -1;
 		}
 
@@ -134,20 +134,19 @@ namespace Kratos
 		}
 
 		// This function assumes tetrahedra element and triangle intersected object as input at this moment
-		constexpr int num_edges = (TDim - 1) * 3;
 		constexpr double epsilon = std::numeric_limits<double>::epsilon();
 		Vector& edge_distances = rElement1.GetValue(ELEMENTAL_EDGE_DISTANCES);
 		//std::vector<double>&
 
-		if(edge_distances.size() != num_edges){
-			edge_distances.resize(num_edges, false);
+		if(edge_distances.size() != mNumEdges){
+			edge_distances.resize(mNumEdges, false);
 		}
 
 		// Compute the number of intersected edges
 		std::vector<double> intersect_ratio_vector;
 		const unsigned int num_cut_edges = ComputeEdgeIntersectionRatios(rElement1, rIntersectedObjects, intersect_ratio_vector);
 
-		for (unsigned int i = 0; i < num_edges; i++) {
+		for (unsigned int i = 0; i < mNumEdges; i++) {
 			edge_distances[i] = intersect_ratio_vector[i];
 		}
 
@@ -158,7 +157,7 @@ namespace Kratos
 		//       like this, we have almost the same definition of a split element as for CalculateDiscontinuousDistanceToSkinProcess??
 		// Check if the element is split and set the TO_SPLIT flag accordingly
 		unsigned int n_greater_epsilon = 0;
-		for (unsigned int i = 0; i < num_edges; i++) {
+		for (unsigned int i = 0; i < mNumEdges; i++) {
 			if (edge_distances[i] > epsilon){
 				n_greater_epsilon++;
 			}
@@ -270,11 +269,10 @@ namespace Kratos
 		// Get edge-based elemental distances of the element in order to calculate node-based ones
 		const Vector r_edge_distances = rElement1.GetValue(ELEMENTAL_EDGE_DISTANCES);
 		//KRATOS_WATCH(r_edge_distances);
-		constexpr int num_edges = (TDim - 1) * 3;
 
 		// Check for valid (complete) intersections
 		unsigned int num_cut_edges = 0;
-		for (unsigned int i = 0; i < num_edges; i++) {
+		for (unsigned int i = 0; i < mNumEdges; i++) {
 			if (r_edge_distances[i] >= 0){
 				num_cut_edges++;
 			}
