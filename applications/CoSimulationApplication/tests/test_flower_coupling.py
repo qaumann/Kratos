@@ -33,13 +33,13 @@ class TestFLOWerCoupling(KratosUnittest.TestCase):
             KM.Logger.GetDefaultOutput().SetSeverity(KM.Logger.Severity.INFO)
 
     def _runTest(self):
-        p = subprocess.Popen(
-            ["python3", os.path.join(self.problem_dir_name,"dummy_flower_solver.py"), self.ext_parameter_file_name],
-            cwd=os.path.dirname(os.path.abspath(__file__)))
+        # p = subprocess.Popen(
+        #     ["python3", os.path.join(self.problem_dir_name,"dummy_flower_solver.py"), self.ext_parameter_file_name],
+        #     cwd=os.path.dirname(os.path.abspath(__file__)))
 
         CoSimulationAnalysis(self.cosim_parameters).Run()
 
-        p.communicate()
+        # p.communicate()
 
         kratos_utils.DeleteTimeFiles(self.problem_dir_name)
 

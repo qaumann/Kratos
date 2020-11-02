@@ -3,7 +3,7 @@ import KratosMultiphysics as KM
 from KratosMultiphysics import kratos_utilities
 default_data_comm = KM.DataCommunicator.GetDefault()
 if default_data_comm.IsDistributed():
-    from KratosMultiphysics.mpi import GatherModelPartUtility
+    import KratosMultiphysics.mpi as KratosMPI
 
 # Importing the base class
 from KratosMultiphysics.CoSimulationApplication.base_classes.co_simulation_io import CoSimulationIO
@@ -27,7 +27,7 @@ class EmpireIO(CoSimulationIO):
     def __init__(self, settings, model, solver_name):
         super().__init__(settings, model, solver_name)
         self.rank = default_data_comm.Rank()
-        self.is_distributed = default_data_comm.Rank()
+        self.is_distributed = default_data_comm.IsDistributed()
         if self.rank == 0:
             # Note: calling "EMPIRE_API_Connect" is NOT necessary, it is replaced by the next two lines
             KratosCoSim.EMPIRE_API.EMPIRE_API_SetEchoLevel(self.echo_level)
@@ -37,9 +37,11 @@ class EmpireIO(CoSimulationIO):
             kratos_utilities.DeleteDirectoryIfExisting(communication_folder)
             os.mkdir(communication_folder)
 
+        default_data_comm.Barrier()
+
+        self.aux_model = KM.Model()
         if self.is_distributed:
             # creating auxiliar Model for gathering ModelParts on rank 0
-            self.aux_model = KM.Model()
             self.gather_utilities = {}
 
     def Finalize(self):
@@ -47,6 +49,7 @@ class EmpireIO(CoSimulationIO):
 
     def __del__(self):
         # make sure no communication files are left even if simulation is terminated prematurely
+        default_data_comm.Barrier()
         if os.path.isdir(communication_folder):
             kratos_utilities.DeleteDirectoryIfExisting(communication_folder)
             if self.echo_level > 0:
@@ -61,8 +64,19 @@ class EmpireIO(CoSimulationIO):
             model_part_utilities.RecursiveCreateModelParts(self.model[main_model_part_name], ".".join(sub_model_part_names))
 
         model_part = self.model[model_part_name]
+        print("before all")
+        if default_data_comm.IsDistributed():
+            KratosMPI.ModelPartCommunicatorUtilities.SetMPICommunicator(model_part)
+        print("after setting Comm")
         if self.rank == 0:
             KratosCoSim.EMPIRE_API.EMPIRE_API_recvMesh(model_part, comm_name)
+
+        model_part.GetCommunicator().LocalMesh().Nodes = model_part.Nodes
+
+
+        print("received:", model_part_name, model_part.NumberOfNodes(), flush=True)
+        print("received global:", model_part_name, model_part.GetCommunicator().GlobalNumberOfNodes(), flush=True)
+        default_data_comm.Barrier()
 
     def ExportCouplingInterface(self, interface_config):
         model_part_name = interface_config["model_part_name"]
@@ -71,7 +85,7 @@ class EmpireIO(CoSimulationIO):
 
         if model_part_to_export.IsDistributed():
             gathered_model_part = self.aux_model.CreateModelPart(model_part_to_export.Name+"_gather_mesh_export")
-            GatherModelPartUtility(0, model_part_to_export, gathered_model_part)
+            KratosMPI.GatherModelPartUtility(0, model_part_to_export, 0, gathered_model_part)
             model_part_for_api = gathered_model_part
         else:
             model_part_for_api = model_part_to_export
@@ -103,8 +117,8 @@ class EmpireIO(CoSimulationIO):
         if data_type == "coupling_interface_data":
             interface_data = data_config["interface_data"]
 
-            self.__GatherData(interface_data)
             model_part = self.__GetModelPartForAPICalls(interface_data)
+            self.__GatherData(interface_data)
 
             if self.rank == 0:
                 KratosCoSim.EMPIRE_API.EMPIRE_API_sendDataField(model_part, self.solver_name+"_"+interface_data.name, interface_data.variable)
@@ -141,10 +155,14 @@ class EmpireIO(CoSimulationIO):
         else:
             cs_tools.cs_print_info(self._ClassName(), 'Creating gathered modelpart for "{}"'.format(model_part.FullName()))
             gather_mp = self.aux_model.CreateModelPart(aux_mp_name)
+            gather_mp.AddNodalSolutionStepVariable(KM.PARTITION_INDEX)
             if interface_data.location != "node_historical":
                 raise Exception("Currently only nodal historical values are supported!")
+            print("11")
             gather_mp.AddNodalSolutionStepVariable(interface_data.variable)
-            self.gather_utilities[aux_mp_name] = GatherModelPartUtility(0, model_part, gather_mp)
+            print("22", model_part)
+            self.gather_utilities[aux_mp_name] = KratosMPI.GatherModelPartUtility(0, model_part, 0, gather_mp)
+            print("33")
             return gather_mp
 
     def __ScatterData(self, interface_data):

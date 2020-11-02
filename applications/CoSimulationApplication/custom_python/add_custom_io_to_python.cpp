@@ -261,7 +261,9 @@ static void createModelPartFromReceivedMesh(const int numNodes, const int numEle
 {
     KRATOS_ERROR_IF(rModelPart.NumberOfNodes() > 0) << "ModelPart is not empty, it has nodes!" << std::endl;
     KRATOS_ERROR_IF(rModelPart.NumberOfProperties() > 0) << "ModelPart is not empty, it has properties!" << std::endl;
-    KRATOS_ERROR_IF(rModelPart.IsDistributed()) << "ModelPart cannot be distributed!" << std::endl;
+    // KRATOS_ERROR_IF(rModelPart.IsDistributed()) << "ModelPart cannot be distributed!" << std::endl;
+
+    rModelPart.AddNodalSolutionStepVariable(PARTITION_INDEX);
 
     const std::unordered_map<int, std::string> element_name_map = {
         // {1 , "Element3D1N"}, // does not yet exist
@@ -276,9 +278,12 @@ static void createModelPartFromReceivedMesh(const int numNodes, const int numEle
         {4 , "SurfaceCondition3D4N"}
     };
 
+    KRATOS_WATCH("dddddddsdsfsdfsqqqqq")
+
     // fill ModelPart with received entities
     for (int i=0; i<numNodes; ++i) {
-        rModelPart.CreateNewNode((*nodeIDs)[i], (*nodes)[i*3], (*nodes)[i*3+1], (*nodes)[i*3+2]);
+        auto node = rModelPart.CreateNewNode((*nodeIDs)[i], (*nodes)[i*3], (*nodes)[i*3+1], (*nodes)[i*3+2]);
+        node->FastGetSolutionStepValue(PARTITION_INDEX) = 0;
     }
 
     auto p_props = rModelPart.CreateNewProperties(0);
@@ -296,6 +301,18 @@ static void createModelPartFromReceivedMesh(const int numNodes, const int numEle
             rModelPart.CreateNewElement(element_name_map.at(num_nodes_elem), i+1, elem_node_ids, p_props);
         }
     }
+
+    // auto& local_mesh = rModelPart.GetCommunicator().LocalMesh();
+
+    // local_mesh.Nodes().clear();
+    // local_mesh.Elements().clear();
+    // local_mesh.Conditions().clear();
+
+    // local_mesh.Nodes() = rModelPart.Nodes();
+    // local_mesh.Elements() = rModelPart.Elements();
+    // local_mesh.Conditions() = rModelPart.Conditions();
+
+    // KRATOS_WATCH(rModelPart.GetCommunicator().IsDistributed())
 }
 
 void recvMesh(ModelPart& rModelPart, const std::string& rName, const bool UseConditions, const bool UseRawPointers)

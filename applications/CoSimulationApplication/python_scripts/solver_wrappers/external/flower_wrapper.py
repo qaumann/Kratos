@@ -1,11 +1,15 @@
 # Importing the Kratos Library
 import KratosMultiphysics as KM
+default_data_comm = KM.DataCommunicator.GetDefault()
+if default_data_comm.IsDistributed():
+    import KratosMultiphysics.mpi as KratosMPI
 
 # Importing the base class
 from KratosMultiphysics.CoSimulationApplication.base_classes.co_simulation_solver_wrapper import CoSimulationSolverWrapper
 
 # Other imports
 from KratosMultiphysics.CoSimulationApplication.utilities import model_part_utilities
+from KratosMultiphysics.testing.utilities import ReadModelPart
 
 def Create(settings, model, solver_name):
     return FLOWerWrapper(settings, model, solver_name)
@@ -32,8 +36,11 @@ class FLOWerWrapper(CoSimulationSolverWrapper):
     def Initialize(self):
         super().Initialize()
 
+
         for main_model_part_name, mdpa_file_name in self.settings["solver_wrapper_settings"]["model_parts_read"].items():
-            KM.ModelPartIO(mdpa_file_name.GetString()).ReadModelPart(self.model[main_model_part_name])
+            model_part_read = self.model[main_model_part_name]
+            model_part_read.ProcessInfo[KM.DOMAIN_SIZE] = 3
+            ReadModelPart(mdpa_file_name.GetString(), model_part_read)
 
         for model_part_name, comm_name in self.settings["solver_wrapper_settings"]["model_parts_send"].items():
             interface_config = {
