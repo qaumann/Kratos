@@ -29,14 +29,13 @@ EmbeddedFluidElementDiscontinuousEdge<TBaseElement>::EmbeddedFluidElementDiscont
     : EmbeddedFluidElementDiscontinuous<TBaseElement>(NewId,ThisNodes)
 {}
 
-
 template< class TBaseElement >
-EmbeddedFluidElementDiscontinuousEdge<TBaseElement>::EmbeddedFluidElementDiscontinuousEdge(IndexType NewId, Geometry<NodeType>::Pointer pGeometry)
+EmbeddedFluidElementDiscontinuousEdge<TBaseElement>::EmbeddedFluidElementDiscontinuousEdge(IndexType NewId, typename Geometry<NodeType>::Pointer pGeometry)
     : EmbeddedFluidElementDiscontinuous<TBaseElement>(NewId,pGeometry)
 {}
 
 template< class TBaseElement >
-EmbeddedFluidElementDiscontinuousEdge<TBaseElement>::EmbeddedFluidElementDiscontinuousEdge(IndexType NewId, Geometry<NodeType>::Pointer pGeometry, Properties::Pointer pProperties)
+EmbeddedFluidElementDiscontinuousEdge<TBaseElement>::EmbeddedFluidElementDiscontinuousEdge(IndexType NewId, typename Geometry<NodeType>::Pointer pGeometry, Properties::Pointer pProperties)
     : EmbeddedFluidElementDiscontinuous<TBaseElement>(NewId,pGeometry,pProperties)
 {}
 

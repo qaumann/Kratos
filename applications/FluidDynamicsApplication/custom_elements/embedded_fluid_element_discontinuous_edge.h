@@ -62,44 +62,44 @@ public:
     KRATOS_CLASS_INTRUSIVE_POINTER_DEFINITION(EmbeddedFluidElementDiscontinuousEdge);
 
     /// Node type (default is: Node<3>)
-    typedef Node<3> NodeType;
+    using typename EmbeddedFluidElementDiscontinuous<TBaseElement>::NodeType;
 
     /// Definition of nodes container type, redefined from GeometryType
-    typedef Geometry<NodeType>::PointsArrayType NodesArrayType;
+    using typename EmbeddedFluidElementDiscontinuous<TBaseElement>::NodesArrayType;
 
     /// Vector type for local contributions to the linear system
-    typedef Vector VectorType;
+    using typename EmbeddedFluidElementDiscontinuous<TBaseElement>::VectorType;
 
     /// Matrix type for local contributions to the linear system
-    typedef Matrix MatrixType;
+    using typename EmbeddedFluidElementDiscontinuous<TBaseElement>::MatrixType;
 
-    typedef std::size_t IndexType;
+    using typename EmbeddedFluidElementDiscontinuous<TBaseElement>::IndexType;
 
-    typedef std::size_t SizeType;
+    using typename EmbeddedFluidElementDiscontinuous<TBaseElement>::SizeType;
 
-    typedef std::vector<std::size_t> EquationIdVectorType;
+    using typename EmbeddedFluidElementDiscontinuous<TBaseElement>::EquationIdVectorType;
 
-    typedef std::vector< Dof<double>::Pointer > DofsVectorType;
+    using typename EmbeddedFluidElementDiscontinuous<TBaseElement>::DofsVectorType;
 
-    typedef PointerVectorSet<Dof<double>, IndexedObject> DofsArrayType;
+    using typename EmbeddedFluidElementDiscontinuous<TBaseElement>::DofsArrayType;
 
     /// Type for shape function values container
-    typedef Kratos::Vector ShapeFunctionsType;
+    using typename EmbeddedFluidElementDiscontinuous<TBaseElement>::ShapeFunctionsType;
 
     /// Type for a matrix containing the shape function gradients
-    typedef Kratos::Matrix ShapeFunctionDerivativesType;
+    using typename EmbeddedFluidElementDiscontinuous<TBaseElement>::ShapeFunctionDerivativesType;
 
     /// Type for an array of shape function gradient matrices
-    typedef Geometry<NodeType>::ShapeFunctionsGradientsType ShapeFunctionDerivativesArrayType;
+    using typename EmbeddedFluidElementDiscontinuous<TBaseElement>::ShapeFunctionDerivativesArrayType;
 
-    constexpr static unsigned int Dim = TBaseElement::Dim;
-    constexpr static unsigned int NumNodes = TBaseElement::NumNodes;
-    constexpr static unsigned int BlockSize = TBaseElement::BlockSize;
-    constexpr static unsigned int LocalSize = TBaseElement::LocalSize;
-    constexpr static unsigned int StrainSize = TBaseElement::StrainSize;
+    using EmbeddedFluidElementDiscontinuous<TBaseElement>::Dim;
+    using EmbeddedFluidElementDiscontinuous<TBaseElement>::NumNodes;
+    using EmbeddedFluidElementDiscontinuous<TBaseElement>::BlockSize;
+    using EmbeddedFluidElementDiscontinuous<TBaseElement>::LocalSize;
+    using EmbeddedFluidElementDiscontinuous<TBaseElement>::StrainSize;
 
-    using BaseElementData = typename TBaseElement::ElementData;
-    using EmbeddedDiscontinuousElementData = EmbeddedDiscontinuousData< BaseElementData >;
+    using typename EmbeddedFluidElementDiscontinuous<TBaseElement>::BaseElementData;
+    using typename EmbeddedFluidElementDiscontinuous<TBaseElement>::EmbeddedDiscontinuousElementData;
 
     ///@}
     ///@name Life Cycle
@@ -125,7 +125,7 @@ public:
      * @param NewId Index of the new element
      * @param pGeometry Pointer to a geometry object
      */
-    EmbeddedFluidElementDiscontinuousEdge(IndexType NewId, Geometry<NodeType>::Pointer pGeometry);
+    EmbeddedFluidElementDiscontinuousEdge(IndexType NewId, typename Geometry<NodeType>::Pointer pGeometry);
 
     /// Constuctor using geometry and properties.
     /**
@@ -133,7 +133,7 @@ public:
      * @param pGeometry Pointer to a geometry object
      * @param pProperties Pointer to the element's properties
      */
-    EmbeddedFluidElementDiscontinuousEdge(IndexType NewId, Geometry<NodeType>::Pointer pGeometry, Properties::Pointer pProperties);
+    EmbeddedFluidElementDiscontinuousEdge(IndexType NewId, typename Geometry<NodeType>::Pointer pGeometry, Properties::Pointer pProperties);
 
     /// Destructor.
     ~EmbeddedFluidElementDiscontinuousEdge() override;
