@@ -47,6 +47,106 @@ EmbeddedFluidElementDiscontinuousEdge<TBaseElement>::~EmbeddedFluidElementDiscon
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Public Operations TODO
 
+template <class TBaseElement>
+void EmbeddedFluidElementDiscontinuousEdge<TBaseElement>::Initialize()
+{
+    KRATOS_TRY;
+
+    // Call the base element initialize method to set the constitutive law
+    TBaseElement::Initialize();
+
+    // Initialize the ELEMENTAL_DISTANCES variable (make it threadsafe)
+    if (!this->Has(ELEMENTAL_DISTANCES)) {
+        Vector zero_vector(NumNodes, 0.0);
+        this->SetValue(ELEMENTAL_DISTANCES, zero_vector);
+    }
+
+    // NEW: Initialize the ELEMENTAL_EDGE_DISTANCES variable
+    if (!this->Has(ELEMENTAL_EDGE_DISTANCES)) {
+        Vector zero_vector(NumEdges, 0.0);
+        this->SetValue(ELEMENTAL_EDGE_DISTANCES, zero_vector);
+    }
+
+    // Initialize the nodal EMBEDDED_VELOCITY variable (make it threadsafe)
+    const array_1d<double,3> zero_vel = ZeroVector(3);
+    for (auto &r_node : this->GetGeometry()) {
+        r_node.SetLock();
+        if (!r_node.Has(EMBEDDED_VELOCITY)) {
+            r_node.SetValue(EMBEDDED_VELOCITY, zero_vel);
+        }
+        r_node.UnSetLock();
+    }
+
+    KRATOS_CATCH("");
+}
+
+template <class TBaseElement>
+void EmbeddedFluidElementDiscontinuousEdge<TBaseElement>::CalculateLocalSystem(
+    MatrixType& rLeftHandSideMatrix,
+    VectorType& rRightHandSideVector,
+    ProcessInfo& rCurrentProcessInfo)
+{
+    // Resize and intialize output
+    if (rLeftHandSideMatrix.size1() != LocalSize){
+        rLeftHandSideMatrix.resize(LocalSize, LocalSize, false);
+    }
+
+    if (rRightHandSideVector.size() != LocalSize){
+        rRightHandSideVector.resize(LocalSize, false);
+    }
+
+    noalias(rLeftHandSideMatrix) = ZeroMatrix(LocalSize, LocalSize);
+    noalias(rRightHandSideVector) = ZeroVector(LocalSize);
+
+    EmbeddedDiscontinuousEdgeElementData data;
+    data.Initialize(*this, rCurrentProcessInfo);
+    this->InitializeGeometryData(data);
+
+    // Iterate over the positive side volume integration points
+    const unsigned int number_of_positive_gauss_points = data.PositiveSideWeights.size();
+    for (unsigned int g = 0; g < number_of_positive_gauss_points; ++g){
+        const size_t gauss_pt_index = g;
+        this->UpdateIntegrationPointData(data, gauss_pt_index, data.PositiveSideWeights[g], row(data.PositiveSideN, g), data.PositiveSideDNDX[g]);
+        this->AddTimeIntegratedSystem(data, rLeftHandSideMatrix, rRightHandSideVector);
+    }
+
+    // Iterate over the negative side volume integration points
+    const unsigned int number_of_negative_gauss_points = data.NegativeSideWeights.size();
+    for (unsigned int g = 0; g < number_of_negative_gauss_points; ++g){
+        const size_t gauss_pt_index = g + number_of_positive_gauss_points;
+        this->UpdateIntegrationPointData(data, gauss_pt_index, data.NegativeSideWeights[g], row(data.NegativeSideN, g), data.NegativeSideDNDX[g]);
+        this->AddTimeIntegratedSystem(data, rLeftHandSideMatrix, rRightHandSideVector);
+    }
+
+    // If the element is cut, add the interface contributions
+    if (data.IsCut()) {
+        // Add the base element boundary contribution on the positive interface
+        const size_t volume_gauss_points = number_of_positive_gauss_points + number_of_negative_gauss_points;
+        const unsigned int number_of_positive_interface_gauss_points = data.PositiveInterfaceWeights.size();
+        for (unsigned int g = 0; g < number_of_positive_interface_gauss_points; ++g){
+            const size_t gauss_pt_index = g + volume_gauss_points;
+            this->UpdateIntegrationPointData(data, gauss_pt_index, data.PositiveInterfaceWeights[g], row(data.PositiveInterfaceN, g), data.PositiveInterfaceDNDX[g]);
+            this->AddBoundaryTraction(data, data.PositiveInterfaceUnitNormals[g], rLeftHandSideMatrix, rRightHandSideVector);
+        }
+
+        // Add the base element boundary contribution on the negative interface
+        const unsigned int number_of_negative_interface_gauss_points = data.NegativeInterfaceWeights.size();
+        for (unsigned int g = 0; g < number_of_negative_interface_gauss_points; ++g){
+            const size_t gauss_pt_index = g + volume_gauss_points + number_of_positive_interface_gauss_points;
+            this->UpdateIntegrationPointData(data, gauss_pt_index, data.NegativeInterfaceWeights[g], row(data.NegativeInterfaceN, g), data.NegativeInterfaceDNDX[g]);
+            this->AddBoundaryTraction(data, data.NegativeInterfaceUnitNormals[g], rLeftHandSideMatrix, rRightHandSideVector);
+        }
+
+        // Add the Nitsche Navier boundary condition implementation (Winter, 2018)
+        data.InitializeBoundaryConditionData(rCurrentProcessInfo);
+        this->AddNormalPenaltyContribution(rLeftHandSideMatrix, rRightHandSideVector, data);
+        this->AddNormalSymmetricCounterpartContribution(rLeftHandSideMatrix, rRightHandSideVector, data); // NOTE: IMPLEMENT THE SKEW-SYMMETRIC ADJOINT IF IT IS NEEDED IN THE FUTURE. CREATE A IS_SKEW_SYMMETRIC ELEMENTAL FLAG.
+        this->AddTangentialPenaltyContribution(rLeftHandSideMatrix, rRightHandSideVector, data);
+        this->AddTangentialSymmetricCounterpartContribution(rLeftHandSideMatrix, rRightHandSideVector, data); // NOTE: IMPLEMENT THE SKEW-SYMMETRIC ADJOINT IF IT IS NEEDED IN THE FUTURE. CREATE A IS_SKEW_SYMMETRIC ELEMENTAL FLAG.
+    } else if (data.IsIncised()) {
+        // TODO: do stuff
+    }
+}
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Inquiry
@@ -54,7 +154,7 @@ EmbeddedFluidElementDiscontinuousEdge<TBaseElement>::~EmbeddedFluidElementDiscon
 template <class TBaseElement>
 int EmbeddedFluidElementDiscontinuousEdge<TBaseElement>::Check(const ProcessInfo& rCurrentProcessInfo)
 {
-    int out = EmbeddedDiscontinuousElementData::Check(*this, rCurrentProcessInfo);
+    int out = EmbeddedDiscontinuousEdgeElementData::Check(*this, rCurrentProcessInfo);
     KRATOS_ERROR_IF_NOT(out == 0)
         << "Something is wrong with the elemental data of Element "
         << this->Info() << std::endl;
@@ -89,6 +189,37 @@ void EmbeddedFluidElementDiscontinuousEdge<TBaseElement>::PrintInfo(std::ostream
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Operations
 
+template <class TBaseElement>
+void EmbeddedFluidElementDiscontinuousEdge<TBaseElement>::InitializeGeometryData(EmbeddedDiscontinuousEdgeElementData& rData) const
+{
+    rData.PositiveIndices.clear();
+    rData.NegativeIndices.clear();
+
+    // Number of positive and negative distance function values
+    for (size_t i = 0; i < EmbeddedDiscontinuousEdgeElementData::NumNodes; ++i){
+        if (rData.ElementalDistances[i] > 0.0){
+            rData.NumPositiveNodes++;
+            rData.PositiveIndices.push_back(i);
+        } else {
+            rData.NumNegativeNodes++;
+            rData.NegativeIndices.push_back(i);
+        }
+    }
+
+    if (rData.IsCut()){
+        this->DefineCutGeometryData(rData);
+    } else if (rData.IsIncised()) {
+        this->DefineIncisedGeometryData(rData);
+    } else {
+        this->DefineStandardGeometryData(rData);
+    }
+}
+
+template <class TBaseElement>
+void EmbeddedFluidElementDiscontinuousEdge<TBaseElement>::DefineIncisedGeometryData(EmbeddedDiscontinuousEdgeElementData& rData) const
+{
+    //TODO
+}
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Private functions TODO
@@ -96,7 +227,7 @@ void EmbeddedFluidElementDiscontinuousEdge<TBaseElement>::PrintInfo(std::ostream
 
 template <class TBaseElement>
 void EmbeddedFluidElementDiscontinuousEdge<TBaseElement>::CalculateDragForce(
-    EmbeddedDiscontinuousElementData& rData,
+    EmbeddedDiscontinuousEdgeElementData& rData,
     array_1d<double,3>& rDragForce) const
 {
     // Initialize the embedded element data
@@ -162,12 +293,14 @@ void EmbeddedFluidElementDiscontinuousEdge<TBaseElement>::CalculateDragForce(
             }
             rDragForce += rData.Weight * p_gauss * aux_unit_normal;
         }
+    } else if (rData.IsIncised()) {
+        // TODO: do stuff
     }
 }
 
 template <class TBaseElement>
 void EmbeddedFluidElementDiscontinuousEdge<TBaseElement>::CalculateDragForceCenter(
-    EmbeddedDiscontinuousElementData& rData,
+    EmbeddedDiscontinuousEdgeElementData& rData,
     array_1d<double,3>& rDragForceLocation) const
 {
     const auto &r_geometry = this->GetGeometry();
@@ -182,7 +315,7 @@ void EmbeddedFluidElementDiscontinuousEdge<TBaseElement>::CalculateDragForceCent
         // Note that we take advantage of the fact that the positive and negative interface Gauss pt. coincide
         Vector pos_int_continuous_weights;
         Matrix pos_int_continuous_N;
-        typename EmbeddedDiscontinuousElementData::ShapeFunctionsGradientsType pos_int_continuous_DN_DX;
+        typename EmbeddedDiscontinuousEdgeElementData::ShapeFunctionsGradientsType pos_int_continuous_DN_DX;
         auto p_continuous_sh_func_calculator = EmbeddedDiscontinuousInternals::GetContinuousShapeFunctionCalculator<Dim, NumNodes>(*this, rData.ElementalDistances);
         p_continuous_sh_func_calculator->ComputeInterfacePositiveSideShapeFunctionsAndGradientsValues(
             pos_int_continuous_N,
@@ -274,6 +407,8 @@ void EmbeddedFluidElementDiscontinuousEdge<TBaseElement>::CalculateDragForceCent
         if (Dim == 3) {
             rDragForceLocation(2) /= tot_drag(2);
         }
+    } else if (rData.IsIncised()) {
+        // TODO: do stuff
     }
 }
 
@@ -283,12 +418,14 @@ template <class TBaseElement>
 void EmbeddedFluidElementDiscontinuousEdge<TBaseElement>::save(Serializer& rSerializer) const
 {
     KRATOS_SERIALIZE_SAVE_BASE_CLASS(rSerializer, TBaseElement);
+    // TODO save member variables? e.g. rSerializer.save("NU",mNU);
 }
 
 template <class TBaseElement>
 void EmbeddedFluidElementDiscontinuousEdge<TBaseElement>::load(Serializer& rSerializer)
 {
     KRATOS_SERIALIZE_LOAD_BASE_CLASS(rSerializer, TBaseElement);
+    // TODO load member variables? e.g. rSerializer.load("NU",mNU);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////

@@ -24,7 +24,7 @@
 #include "custom_elements/fluid_element.h"*/
 #include "custom_elements/embedded_fluid_element_discontinuous.h"
 
-//#include "custom_utilities/embedded_discontinuous_data.h"
+#include "custom_utilities/embedded_discontinuous_edge_data.h"
 
 namespace Kratos
 {
@@ -99,7 +99,7 @@ public:
     using EmbeddedFluidElementDiscontinuous<TBaseElement>::StrainSize;
 
     using typename EmbeddedFluidElementDiscontinuous<TBaseElement>::BaseElementData;
-    using typename EmbeddedFluidElementDiscontinuous<TBaseElement>::EmbeddedDiscontinuousElementData;
+    using EmbeddedDiscontinuousEdgeElementData = EmbeddedDiscontinuousEdgeData< BaseElementData >;
 
     ///@}
     ///@name Life Cycle
@@ -147,6 +147,11 @@ public:
     ///@name Operations
     ///@{
 
+    /// Set up the element for solution.  NEW
+    /** For EmbeddedFluidElementDiscontinuous, this initializes the discontinuous
+     * level set (ELEMENTAL_DISTANCES) and the nodal imposed velocity (EMBEDDED_VELOCITY)
+     */
+    void Initialize() override;
 
     ///@}
     ///@name Access
@@ -169,6 +174,18 @@ public:
     /// Print information about this object.
     void PrintInfo(std::ostream& rOStream) const override;
 
+    /// Calculates both LHS and RHS contributions TODO: if Is_Incised
+    /**
+     * Computes the LHS and RHS elementar matrices. If the element is split
+     * includes the contribution of the level set boundary condition imposition.
+     * TODO NEW incised element
+     * @param rLeftHandSideMatrix reference to the LHS matrix
+     * @param rRightHandSideVector reference to the RHS vector
+     * @param rCurrentProcessInfo reference to the ProcessInfo
+     */
+    void CalculateLocalSystem(MatrixType& rLeftHandSideMatrix,
+        VectorType& rRightHandSideVector,
+        ProcessInfo& rCurrentProcessInfo) override;
 
     ///@}
     ///@name Friends
@@ -182,6 +199,7 @@ protected:
     ///@name Protected static Member Variables
     ///@{
 
+    constexpr static unsigned int NumEdges = (Dim -1) *3;
 
     ///@}
     ///@name Protected member Variables
@@ -197,6 +215,21 @@ protected:
     ///@name Protected Operations
     ///@{
 
+    /** INFO: no override, because use of different element data type
+     * @brief Current element data structure initialization
+     * This method checks if the element is intersected or incised and calls the elemental data filling methods accordingly.
+     * @param rData reference to the element data structure
+     */
+    void InitializeGeometryData(EmbeddedDiscontinuousEdgeElementData& rData) const;
+
+    /** TODO: fill method
+     * @brief Incised element geometry data fill
+     * This method sets the data structure geometry fields (shape functions, gradients, interface normals, ...) for an
+     * incised element. To do that, the modified shape functions utility is firstly created and then called to perform
+     * all operations in both the positive and negative sides of the element.
+     * @param rData reference to the element data structure
+     */
+    void DefineIncisedGeometryData(EmbeddedDiscontinuousEdgeElementData& rData) const;
 
     ///@}
     ///@name Protected  Access
@@ -242,7 +275,7 @@ private:
     ///@name Private Operations
     ///@{
 
-    /**
+    /** TODO: if Is_Incised
      * @brief Calculates the drag force
      * For an intersected element, this method calculates the drag force.
      * Note that the drag force includes both the shear and the pressure contributions.
@@ -250,10 +283,10 @@ private:
      * @param rDragForce reference to the computed drag force
      */
     void CalculateDragForce(
-        EmbeddedDiscontinuousElementData& rData,
+        EmbeddedDiscontinuousEdgeElementData& rData,
         array_1d<double,3>& rDragForce) const;
 
-    /**
+    /** TODO: if Is_Incised
      * @brief Calculates the location of the drag force
      * For an intersected element, this method calculates the drag force location.
      * Note that the drag force includes both the shear and the pressure contributions.
@@ -261,7 +294,7 @@ private:
      * @param rDragForce reference to the computed drag force
      */
     void CalculateDragForceCenter(
-        EmbeddedDiscontinuousElementData& rData,
+        EmbeddedDiscontinuousEdgeElementData& rData,
         array_1d<double,3>& rDragForceLocation) const;
 
 
