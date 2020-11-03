@@ -22,6 +22,61 @@ namespace Kratos {
 
     void DEM_KDEM_Beam::Check(Properties::Pointer pProp) const {
         DEMContinuumConstitutiveLaw::Check(pProp);
+
+        if(!pProp->Has(BEAM_CROSS_SECTION)) {
+            KRATOS_WARNING("DEM")<<std::endl;
+            KRATOS_WARNING("DEM")<<"WARNING: Variable BEAM_CROSS_SECTION should be present in the properties when using DEM_KDEM_Beam. 1.0 value assigned by default."<<std::endl;
+            KRATOS_WARNING("DEM")<<std::endl;
+            pProp->GetValue(BEAM_CROSS_SECTION) = 1.0;
+        }
+
+        if(!pProp->Has(BEAM_LENGTH)) {
+            KRATOS_WARNING("DEM")<<std::endl;
+            KRATOS_WARNING("DEM")<<"WARNING: Variable BEAM_LENGTH should be present in the properties when using DEM_KDEM_Beam. 1.0 value assigned by default."<<std::endl;
+            KRATOS_WARNING("DEM")<<std::endl;
+            pProp->GetValue(BEAM_LENGTH) = 1.0;
+        }
+
+        if(!pProp->Has(BEAM_ELEMENTS_DISTANCE)) {
+            KRATOS_WARNING("DEM")<<std::endl;
+            KRATOS_WARNING("DEM")<<"WARNING: Variable BEAM_ELEMENTS_DISTANCE should be present in the properties when using DEM_KDEM_Beam. 1.0 value assigned by default."<<std::endl;
+            KRATOS_WARNING("DEM")<<std::endl;
+            pProp->GetValue(BEAM_ELEMENTS_DISTANCE) = 0.0;
+        }
+
+        if(!pProp->Has(BEAM_PLANAR_MOMENT_OF_INERTIA_XX)) {
+            KRATOS_WARNING("DEM")<<std::endl;
+            KRATOS_WARNING("DEM")<<"WARNING: Variable BEAM_PLANAR_MOMENT_OF_INERTIA_XX should be present in the properties when using DEM_KDEM_Beam. 1.0 value assigned by default."<<std::endl;
+            KRATOS_WARNING("DEM")<<std::endl;
+            pProp->GetValue(BEAM_PLANAR_MOMENT_OF_INERTIA_XX) = 1.0;
+        }
+
+        if(!pProp->Has(BEAM_PLANAR_MOMENT_OF_INERTIA_YY)) {
+            KRATOS_WARNING("DEM")<<std::endl;
+            KRATOS_WARNING("DEM")<<"WARNING: Variable BEAM_PLANAR_MOMENT_OF_INERTIA_YY should be present in the properties when using DEM_KDEM_Beam. 1.0 value assigned by default."<<std::endl;
+            KRATOS_WARNING("DEM")<<std::endl;
+            pProp->GetValue(BEAM_PLANAR_MOMENT_OF_INERTIA_YY) = 1.0;
+        }
+
+        if(!pProp->Has(BEAM_MOMENT_OF_INERTIA_PER_METER_X)) {
+            KRATOS_WARNING("DEM")<<std::endl;
+            KRATOS_WARNING("DEM")<<"WARNING: Variable BEAM_MOMENT_OF_INERTIA_PER_METER_X should be present in the properties when using DEM_KDEM_Beam. 1.0 value assigned by default."<<std::endl;
+            KRATOS_WARNING("DEM")<<std::endl;
+            pProp->GetValue(BEAM_MOMENT_OF_INERTIA_PER_METER_X) = 0.0;
+        }
+
+        if(!pProp->Has(BEAM_MOMENT_OF_INERTIA_PER_METER_Y)) {
+            KRATOS_WARNING("DEM")<<std::endl;
+            KRATOS_WARNING("DEM")<<"WARNING: Variable BEAM_MOMENT_OF_INERTIA_PER_METER_Y should be present in the properties when using DEM_KDEM_Beam. 1.0 value assigned by default."<<std::endl;
+            KRATOS_WARNING("DEM")<<std::endl;
+            pProp->GetValue(BEAM_MOMENT_OF_INERTIA_PER_METER_Y) = 1.0;
+        }
+
+        if(!pProp->Has(BEAM_MOMENT_OF_INERTIA_PER_METER_Z)) {
+            KRATOS_WARNING("DEM")<<std::endl;
+            KRATOS_WARNING("DEM")<<"WARNING: Variable BEAM_MOMENT_OF_INERTIA_PER_METER_Z should be present in the properties when using DEM_KDEM_Beam. 1.0 value assigned by default."<<std::endl;
+            KRATOS_WARNING("DEM")<<std::endl;
+            pProp->GetValue(BEAM_MOMENT_OF_INERTIA_PER_METER_Z) = 1.0;
     }
 
     void DEM_KDEM_Beam::CalculateElasticConstants(double& kn_el,
@@ -38,15 +93,15 @@ namespace Kratos {
 
         kn_el = equiv_young * calculation_area / initial_dist;
 
-        const double Inertia_Ix = 0.5 * (element1->GetProperties()[BEAM_PLANAR_MOMENT_OF_INERTIA_X] + element2->GetProperties()[BEAM_PLANAR_MOMENT_OF_INERTIA_X]);
-        const double Inertia_Iy = 0.5 * (element1->GetProperties()[BEAM_PLANAR_MOMENT_OF_INERTIA_Y] + element2->GetProperties()[BEAM_PLANAR_MOMENT_OF_INERTIA_Y]);
+        const double Inertia_Ixx = 0.5 * (element1->GetProperties()[BEAM_PLANAR_MOMENT_OF_INERTIA_XX] + element2->GetProperties()[BEAM_PLANAR_MOMENT_OF_INERTIA_XX]);
+        const double Inertia_Iyy = 0.5 * (element1->GetProperties()[BEAM_PLANAR_MOMENT_OF_INERTIA_YY] + element2->GetProperties()[BEAM_PLANAR_MOMENT_OF_INERTIA_YY]);
 
-        kt_el_0 = 3.0 * equiv_young * Inertia_Iy / (calculation_area * initial_dist);
-        kt_el_1 = 3.0 * equiv_young * Inertia_Ix / (calculation_area * initial_dist);
+        kt_el_0 = 3.0 * equiv_young * Inertia_Iyy / (calculation_area * initial_dist);
+        kt_el_1 = 3.0 * equiv_young * Inertia_Ixx / (calculation_area * initial_dist);
 
         // 2013 Bourrier. Discrete modeling of granular soils reinforcement by plant roots FOR CYLINDERS!!! CHECK!!!
-        // kt_el_0 = 12.0 * equiv_young * Inertia_Iy / (initial_dist * initial_dist * initial_dist);
-        // kt_el_1 = 12.0 * equiv_young * Inertia_Ix / (initial_dist * initial_dist * initial_dist);
+        // kt_el_0 = 12.0 * equiv_young * Inertia_Iyy / (initial_dist * initial_dist * initial_dist);
+        // kt_el_1 = 12.0 * equiv_young * Inertia_Ixx / (initial_dist * initial_dist * initial_dist);
 
         KRATOS_CATCH("")
     }
@@ -253,12 +308,12 @@ namespace Kratos {
 
         const double equiv_shear   = equiv_young / (2.0 * (1 + equiv_poisson));
 
-        const double Inertia_Ix = 0.5 * (element->GetProperties()[BEAM_PLANAR_MOMENT_OF_INERTIA_X] + neighbor->GetProperties()[BEAM_PLANAR_MOMENT_OF_INERTIA_X]);
-        const double Inertia_Iy = 0.5 * (element->GetProperties()[BEAM_PLANAR_MOMENT_OF_INERTIA_Y] + neighbor->GetProperties()[BEAM_PLANAR_MOMENT_OF_INERTIA_Y]);
-        const double Inertia_J  = Inertia_Ix + Inertia_Iy;
+        const double Inertia_Ixx = 0.5 * (element->GetProperties()[BEAM_PLANAR_MOMENT_OF_INERTIA_XX] + neighbor->GetProperties()[BEAM_PLANAR_MOMENT_OF_INERTIA_XX]);
+        const double Inertia_Iyy = 0.5 * (element->GetProperties()[BEAM_PLANAR_MOMENT_OF_INERTIA_YY] + neighbor->GetProperties()[BEAM_PLANAR_MOMENT_OF_INERTIA_YY]);
+        const double Inertia_J  = Inertia_Ixx + Inertia_Iyy;
 
-        const double k_rot_x = equiv_young * Inertia_Ix * norm_distance / distance;
-        const double k_rot_y = equiv_young * Inertia_Iy * norm_distance / distance;
+        const double k_rot_x = equiv_young * Inertia_Ixx * norm_distance / distance;
+        const double k_rot_y = equiv_young * Inertia_Iyy * norm_distance / distance;
         const double k_tor   = equiv_shear * Inertia_J  / distance;
 
         ElasticLocalRotationalMoment[0] = -k_rot_x * LocalDeltaRotatedAngle[0];
@@ -269,13 +324,16 @@ namespace Kratos {
 
         const double equiv_gamma = 0.5 * (element->GetProperties()[DAMPING_GAMMA] + neighbor->GetProperties()[DAMPING_GAMMA]);
 
-        const double equiv_moment_of_inertiaX = 0.5 * (element->GetGeometry()[0].FastGetSolutionStepValue(PRINCIPAL_MOMENTS_OF_INERTIA)[1] + neighbor->GetGeometry()[0].FastGetSolutionStepValue(PRINCIPAL_MOMENTS_OF_INERTIA)[1]);
-        const double equiv_moment_of_inertiaY = 0.5 * (element->GetGeometry()[0].FastGetSolutionStepValue(PRINCIPAL_MOMENTS_OF_INERTIA)[2] + neighbor->GetGeometry()[0].FastGetSolutionStepValue(PRINCIPAL_MOMENTS_OF_INERTIA)[2]);
-        const double equiv_moment_of_inertiaZ = 0.5 * (element->GetGeometry()[0].FastGetSolutionStepValue(PRINCIPAL_MOMENTS_OF_INERTIA)[0] + neighbor->GetGeometry()[0].FastGetSolutionStepValue(PRINCIPAL_MOMENTS_OF_INERTIA)[0]);
+        const double a = std::sqrt(12.0 * element->GetProperties()[BEAM_MOMENT_OF_INERTIA_PER_METER_Y] - 1.0);
+        const double b = std::sqrt(12.0 * element->GetProperties()[BEAM_MOMENT_OF_INERTIA_PER_METER_Z] - 1.0);
 
         const double equiv_mass  = 0.5 * (element->GetMass() + neighbor->GetMass());
         const double beam_total_mass = element->GetProperties()[BEAM_LENGTH] * element->GetProperties()[BEAM_CROSS_SECTION] * element->GetDensity();
         const double aux_mass = beam_total_mass / equiv_mass;
+
+        const double equiv_moment_of_inertiaX = 0.083333333 * (a * a + distance * distance) * equiv_mass;
+        const double equiv_moment_of_inertiaY = 0.083333333 * (b * b + distance * distance) * equiv_mass;
+        const double equiv_moment_of_inertiaZ = element->GetProperties()[BEAM_MOMENT_OF_INERTIA_PER_METER_X] * equiv_mass;
 
         const double visc_param_rot_x = equiv_gamma * aux_mass * norm_length * sqrt(equiv_moment_of_inertiaX * k_rot_x);
         const double visc_param_rot_y = equiv_gamma * aux_mass * norm_length * sqrt(equiv_moment_of_inertiaY * k_rot_y);

@@ -77,9 +77,12 @@ namespace Kratos {
             SetMass(GetDensity() * distance * contact_area);
 
             if (this->Is(DEMFlags::HAS_ROTATION)) {
-                GetGeometry()[0].FastGetSolutionStepValue(PRINCIPAL_MOMENTS_OF_INERTIA)[0] = GetProperties()[BEAM_PRINCIPAL_MOMENTS_OF_INERTIA_X] * GetDensity() * distance * contact_area;
-                GetGeometry()[0].FastGetSolutionStepValue(PRINCIPAL_MOMENTS_OF_INERTIA)[1] = GetProperties()[BEAM_PRINCIPAL_MOMENTS_OF_INERTIA_Y] * GetDensity() * distance * contact_area;
-                GetGeometry()[0].FastGetSolutionStepValue(PRINCIPAL_MOMENTS_OF_INERTIA)[2] = GetProperties()[BEAM_PRINCIPAL_MOMENTS_OF_INERTIA_Z] * GetDensity() * distance * contact_area;
+                const double a = std::sqrt(12.0 * GetProperties()[BEAM_MOMENT_OF_INERTIA_PER_METER_Y] - 1.0);
+                const double b = std::sqrt(12.0 * GetProperties()[BEAM_MOMENT_OF_INERTIA_PER_METER_Z] - 1.0);
+
+                GetGeometry()[0].FastGetSolutionStepValue(PRINCIPAL_MOMENTS_OF_INERTIA)[0] = GetProperties()[BEAM_MOMENT_OF_INERTIA_PER_METER_X] * GetDensity() * distance * contact_area;
+                GetGeometry()[0].FastGetSolutionStepValue(PRINCIPAL_MOMENTS_OF_INERTIA)[1] = 0.083333333 * (a * a + distance * distance) * GetDensity() * distance * contact_area;
+                GetGeometry()[0].FastGetSolutionStepValue(PRINCIPAL_MOMENTS_OF_INERTIA)[2] = 0.083333333 * (b * b + distance * distance) * GetDensity() * distance * contact_area;
             }
         }
         else
