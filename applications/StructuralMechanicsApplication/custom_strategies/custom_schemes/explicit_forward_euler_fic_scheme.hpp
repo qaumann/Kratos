@@ -322,6 +322,7 @@ public:
             // TODO
             // KRATOS_WATCH((it_node_begin+i)->GetValue(NODAL_MASS))
             // KRATOS_WATCH((it_node_begin+i)->GetValue(NODAL_DISPLACEMENT_DAMPING))
+            // KRATOS_WATCH((it_node_begin+i)->GetValue(NODAL_PAUX))
         } // for Node parallel
 
         this->CalculateAndAddRHS(rModelPart);
@@ -438,6 +439,7 @@ public:
             // l2_error_file.close();
 
             if (l2_rel_error <= r_current_process_info[ERROR_RATIO] && l2_abs_error <= r_current_process_info[ERROR_INTEGRATION_POINT]) {
+            // if (l2_rel_error <= r_current_process_info[ERROR_RATIO]) {
                 KRATOS_INFO("STOP CRITERION") << "The simulation is completed at step: " << r_current_process_info[STEP] << std::endl;
                 KRATOS_INFO("STOP CRITERION") << "L2 Relative Error is: " << l2_rel_error << std::endl;
                 KRATOS_INFO("STOP CRITERION") << "L2 Absolute Error is: " << l2_abs_error << std::endl;
