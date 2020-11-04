@@ -394,7 +394,7 @@ namespace Kratos {
         GeometryFunctions::VectorGlobal2Local(LocalCoordSystem, GlobalDeltaAngularVelocity, LocalDeltaAngularVelocity);
         //GeometryFunctions::VectorGlobal2Local(LocalCoordSystem, mContactMoment, LocalRotationalMoment);
 
-        const double equivalent_radius = sqrt(calculation_area / Globals::Pi);
+        const double equivalent_radius = std::sqrt(calculation_area / Globals::Pi);
 
         const double element_mass  = element->GetMass();
         const double neighbor_mass = neighbor->GetMass();
