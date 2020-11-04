@@ -77,6 +77,7 @@ namespace Kratos {
             KRATOS_WARNING("DEM")<<"WARNING: Variable BEAM_MOMENT_OF_INERTIA_PER_METER_Z should be present in the properties when using DEM_KDEM_Beam. 1.0 value assigned by default."<<std::endl;
             KRATOS_WARNING("DEM")<<std::endl;
             pProp->GetValue(BEAM_MOMENT_OF_INERTIA_PER_METER_Z) = 1.0;
+        }
     }
 
     void DEM_KDEM_Beam::CalculateElasticConstants(double& kn_el,
