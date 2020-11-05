@@ -45,8 +45,11 @@ using typename EmbeddedDiscontinuousData<TFluidData>::InterfaceNormalsType;
 ///@name Public Members
 ///@{
 
+constexpr static unsigned int NumEdges = (TFluidData::Dim - 1) * 3;
+
 EdgeScalarData EdgeDistances;
 size_t NumPositiveEdges;
+std::vector< size_t > PositiveEdgeIndices;
 
 ///@}
 ///@name Public Operations
@@ -102,7 +105,7 @@ static int Check(
  */
 bool IsIncised()
 {
-    return (NumPositiveEdges > 0);
+    return (0 < NumPositiveEdges && NumPositiveEdges < TFluidData::Dim);
 }
 
 ///@}
