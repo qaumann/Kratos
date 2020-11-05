@@ -97,26 +97,6 @@ public:
      */
     virtual void CalculateDistances(std::vector<PointerVector<GeometricalObject>>& rIntersectedObjects) override;
 
-     /**
-     * @brief
-     * @param rElement1 reference to the element of interest
-     * @return bool true if element partly cut
-     *
-     * TODO: remove?
-     */
-    bool CheckIfIncised(
-        Element& rElement1);
-
-    /**
-     * @brief
-     * @param rElement1 reference to the element of interest
-     * @return bool true if element completely intersected
-     *
-     * TODO: remove?
-     */
-    bool CheckIfIntersected(
-        Element& rElement1);
-
     ///@}
     ///@name Access
     ///@{
