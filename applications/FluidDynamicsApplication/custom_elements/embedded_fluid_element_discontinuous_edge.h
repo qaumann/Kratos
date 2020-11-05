@@ -187,6 +187,20 @@ public:
         VectorType& rRightHandSideVector,
         ProcessInfo& rCurrentProcessInfo) override;
 
+    /// Computes an elemental 3 components array value
+    /**
+     * Given a 3 components array variable, this function computes its value inside the element.
+     * If the function has not implemented this variable computation, calls the base class one.
+     * Drag force and drag center calculation implemented.
+     * @param rVariable Variable to be computed
+     * @param rOutput Reference to the output array
+     * @param rCurrentProcessInfo Reference to the process info
+     */
+    void Calculate(
+        const Variable<array_1d<double, 3>> &rVariable,
+        array_1d<double, 3> &rOutput,
+        const ProcessInfo &rCurrentProcessInfo) override;
+
     ///@}
     ///@name Friends
     ///@{
@@ -222,12 +236,14 @@ protected:
      */
     void InitializeGeometryData(EmbeddedDiscontinuousEdgeElementData& rData) const;
 
-    /** TODO: fill method
+    /**
      * @brief Incised element geometry data fill
      * This method sets the data structure geometry fields (shape functions, gradients, interface normals, ...) for an
      * incised element. To do that, the modified shape functions utility is firstly created and then called to perform
      * all operations in both the positive and negative sides of the element.
      * @param rData reference to the element data structure
+     *
+     * TODO: fill method
      */
     void DefineIncisedGeometryData(EmbeddedDiscontinuousEdgeElementData& rData) const;
 

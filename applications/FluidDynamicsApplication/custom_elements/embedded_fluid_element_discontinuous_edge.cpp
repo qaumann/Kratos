@@ -144,7 +144,34 @@ void EmbeddedFluidElementDiscontinuousEdge<TBaseElement>::CalculateLocalSystem(
         this->AddTangentialPenaltyContribution(rLeftHandSideMatrix, rRightHandSideVector, data);
         this->AddTangentialSymmetricCounterpartContribution(rLeftHandSideMatrix, rRightHandSideVector, data); // NOTE: IMPLEMENT THE SKEW-SYMMETRIC ADJOINT IF IT IS NEEDED IN THE FUTURE. CREATE A IS_SKEW_SYMMETRIC ELEMENTAL FLAG.
     } else if (data.IsIncised()) {
-        // TODO: do stuff
+        // TODO: do extra stuff
+    }
+}
+
+template <class TBaseElement>
+void EmbeddedFluidElementDiscontinuousEdge<TBaseElement>::Calculate(
+    const Variable<array_1d<double, 3>> &rVariable,
+    array_1d<double, 3> &rOutput,
+    const ProcessInfo &rCurrentProcessInfo)
+{
+    rOutput = ZeroVector(3);
+
+    // If the element is split, integrate sigma.n over the interface
+    // Note that in the ausas formulation, both interface sides need to be integrated
+    if (rVariable == DRAG_FORCE) {
+        EmbeddedDiscontinuousEdgeElementData data;
+        data.Initialize(*this, rCurrentProcessInfo);
+        this->InitializeGeometryData(data);
+        // Calculate the drag force
+        this->CalculateDragForce(data, rOutput);
+    } else if (rVariable == DRAG_FORCE_CENTER) {
+        EmbeddedDiscontinuousEdgeElementData data;
+        data.Initialize(*this, rCurrentProcessInfo);
+        this->InitializeGeometryData(data);
+        // Calculate the drag force location
+        this->CalculateDragForceCenter(data, rOutput);
+    } else {
+        TBaseElement::Calculate(rVariable, rOutput, rCurrentProcessInfo);
     }
 }
 
@@ -206,6 +233,14 @@ void EmbeddedFluidElementDiscontinuousEdge<TBaseElement>::InitializeGeometryData
         }
     }
 
+    // Number of positive edge distance ratios
+    for (size_t i = 0; i < EmbeddedDiscontinuousEdgeElementData::NumEdges; ++i){
+        if (rData.EdgeDistances[i] > 0.0){
+            rData.NumPositiveEdges++;
+            rData.PositiveEdgeIndices.push_back(i);
+        }
+    }
+
     if (rData.IsCut()){
         this->DefineCutGeometryData(rData);
     } else if (rData.IsIncised()) {
@@ -218,7 +253,65 @@ void EmbeddedFluidElementDiscontinuousEdge<TBaseElement>::InitializeGeometryData
 template <class TBaseElement>
 void EmbeddedFluidElementDiscontinuousEdge<TBaseElement>::DefineIncisedGeometryData(EmbeddedDiscontinuousEdgeElementData& rData) const
 {
-    //TODO
+    // call standard geometry definition to make element work like EmbeddedFluidElementDiscontinuous
+    this->DefineStandardGeometryData(rData);
+
+    /* TODO
+    For intersected element:
+    // Auxiliary distance vector for the element subdivision utility
+    Vector elemental_distances = rData.ElementalDistances;
+
+    ModifiedShapeFunctions::Pointer p_calculator =
+        EmbeddedDiscontinuousInternals::GetShapeFunctionCalculator<EmbeddedDiscontinuousElementData::Dim, EmbeddedDiscontinuousElementData::NumNodes>(
+            *this,
+            elemental_distances);
+
+    // Positive side volume
+    p_calculator->ComputePositiveSideShapeFunctionsAndGradientsValues(
+        rData.PositiveSideN,
+        rData.PositiveSideDNDX,
+        rData.PositiveSideWeights,
+        GeometryData::GI_GAUSS_2);
+
+    // Negative side volume
+    p_calculator->ComputeNegativeSideShapeFunctionsAndGradientsValues(
+        rData.NegativeSideN,
+        rData.NegativeSideDNDX,
+        rData.NegativeSideWeights,
+        GeometryData::GI_GAUSS_2);
+
+    // Positive side interface
+    p_calculator->ComputeInterfacePositiveSideShapeFunctionsAndGradientsValues(
+        rData.PositiveInterfaceN,
+        rData.PositiveInterfaceDNDX,
+        rData.PositiveInterfaceWeights,
+        GeometryData::GI_GAUSS_2);
+
+    // Negative side interface
+    p_calculator->ComputeInterfaceNegativeSideShapeFunctionsAndGradientsValues(
+        rData.NegativeInterfaceN,
+        rData.NegativeInterfaceDNDX,
+        rData.NegativeInterfaceWeights,
+        GeometryData::GI_GAUSS_2);
+
+    // Positive side interface normals
+    p_calculator->ComputePositiveSideInterfaceAreaNormals(
+        rData.PositiveInterfaceUnitNormals,
+        GeometryData::GI_GAUSS_2);
+
+    // Negative side interface normals
+    p_calculator->ComputeNegativeSideInterfaceAreaNormals(
+        rData.NegativeInterfaceUnitNormals,
+        GeometryData::GI_GAUSS_2);
+
+    // Normalize the normals
+    // Note: we calculate h here (and we don't use the value in rData.ElementSize)
+    // because rData.ElementSize might still be uninitialized: some data classes define it at the Gauss point.
+    double h = ElementSizeCalculator<Dim,NumNodes>::MinimumElementSize(this->GetGeometry());
+    const double tolerance = std::pow(1e-3 * h, Dim-1);
+    this->NormalizeInterfaceNormals(rData.PositiveInterfaceUnitNormals, tolerance);
+    this->NormalizeInterfaceNormals(rData.NegativeInterfaceUnitNormals, tolerance);
+    */
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
