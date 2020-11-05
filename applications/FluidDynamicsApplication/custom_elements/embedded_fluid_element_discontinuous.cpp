@@ -33,7 +33,9 @@ EmbeddedFluidElementDiscontinuous<TBaseElement>::EmbeddedFluidElementDiscontinuo
 template< class TBaseElement >
 EmbeddedFluidElementDiscontinuous<TBaseElement>::EmbeddedFluidElementDiscontinuous(IndexType NewId, Geometry<NodeType>::Pointer pGeometry):
     TBaseElement(NewId,pGeometry)
-{}
+{
+    KRATOS_WATCH("NO edge element constructor");
+}
 
 template< class TBaseElement >
 EmbeddedFluidElementDiscontinuous<TBaseElement>::EmbeddedFluidElementDiscontinuous(IndexType NewId, Geometry<NodeType>::Pointer pGeometry, Properties::Pointer pProperties):
@@ -90,6 +92,7 @@ void EmbeddedFluidElementDiscontinuous<TBaseElement>::Initialize()
         }
         r_node.UnSetLock();
     }
+    KRATOS_WATCH("Initialize no edge element");
 
     KRATOS_CATCH("");
 }
@@ -131,6 +134,8 @@ void EmbeddedFluidElementDiscontinuous<TBaseElement>::CalculateLocalSystem(
         this->UpdateIntegrationPointData(data, gauss_pt_index, data.NegativeSideWeights[g], row(data.NegativeSideN, g), data.NegativeSideDNDX[g]);
         this->AddTimeIntegratedSystem(data, rLeftHandSideMatrix, rRightHandSideVector);
     }
+
+    KRATOS_WATCH("CalculateLocalSystem no edge element");
 
     // If the element is cut, add the interface contributions
     if ( data.IsCut() ) {

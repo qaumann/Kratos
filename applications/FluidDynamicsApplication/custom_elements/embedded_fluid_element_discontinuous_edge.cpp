@@ -1,11 +1,11 @@
-//#include "includes/kratos_flags.h"
+#include "includes/kratos_flags.h"
 
 #include "custom_elements/embedded_fluid_element_discontinuous_edge.h"
 #include "custom_elements/qs_vms.h"
 #include "custom_elements/symbolic_navier_stokes.h"
 
-//#include "utilities/element_size_calculator.h"
-//#include "custom_utilities/embedded_discontinuous_data.h"
+#include "utilities/element_size_calculator.h"
+#include "custom_utilities/embedded_discontinuous_edge_data.h"
 #include "custom_utilities/symbolic_navier_stokes_data.h"
 #include "custom_utilities/time_integrated_qsvms_data.h"
 
@@ -22,22 +22,30 @@ namespace Kratos {
 template< class TBaseElement >
 EmbeddedFluidElementDiscontinuousEdge<TBaseElement>::EmbeddedFluidElementDiscontinuousEdge(IndexType NewId)
     : EmbeddedFluidElementDiscontinuous<TBaseElement>(NewId)
-{}
+{
+    //KRATOS_WATCH("Create edge element");
+}
 
 template< class TBaseElement >
 EmbeddedFluidElementDiscontinuousEdge<TBaseElement>::EmbeddedFluidElementDiscontinuousEdge(IndexType NewId, const NodesArrayType& ThisNodes)
     : EmbeddedFluidElementDiscontinuous<TBaseElement>(NewId,ThisNodes)
-{}
+{
+    //KRATOS_WATCH("Create edge element");
+}
 
 template< class TBaseElement >
 EmbeddedFluidElementDiscontinuousEdge<TBaseElement>::EmbeddedFluidElementDiscontinuousEdge(IndexType NewId, typename Geometry<NodeType>::Pointer pGeometry)
     : EmbeddedFluidElementDiscontinuous<TBaseElement>(NewId,pGeometry)
-{}
+{
+    KRATOS_WATCH("edge element constructor");
+}
 
 template< class TBaseElement >
 EmbeddedFluidElementDiscontinuousEdge<TBaseElement>::EmbeddedFluidElementDiscontinuousEdge(IndexType NewId, typename Geometry<NodeType>::Pointer pGeometry, Properties::Pointer pProperties)
     : EmbeddedFluidElementDiscontinuous<TBaseElement>(NewId,pGeometry,pProperties)
-{}
+{
+    //KRATOS_WATCH("Create edge element");
+}
 
 
 template< class TBaseElement >
@@ -76,6 +84,7 @@ void EmbeddedFluidElementDiscontinuousEdge<TBaseElement>::Initialize()
         }
         r_node.UnSetLock();
     }
+    KRATOS_WATCH("Initialize edge element");
 
     KRATOS_CATCH("");
 }
@@ -118,6 +127,9 @@ void EmbeddedFluidElementDiscontinuousEdge<TBaseElement>::CalculateLocalSystem(
         this->AddTimeIntegratedSystem(data, rLeftHandSideMatrix, rRightHandSideVector);
     }
 
+    rRightHandSideVector[0] = data.EdgeDistances[0];
+    //rRightHandSideVector[0] = data.NumPositiveEdges;
+
     // If the element is cut, add the interface contributions
     if (data.IsCut()) {
         // Add the base element boundary contribution on the positive interface
@@ -145,6 +157,13 @@ void EmbeddedFluidElementDiscontinuousEdge<TBaseElement>::CalculateLocalSystem(
         this->AddTangentialSymmetricCounterpartContribution(rLeftHandSideMatrix, rRightHandSideVector, data); // NOTE: IMPLEMENT THE SKEW-SYMMETRIC ADJOINT IF IT IS NEEDED IN THE FUTURE. CREATE A IS_SKEW_SYMMETRIC ELEMENTAL FLAG.
     } else if (data.IsIncised()) {
         // TODO: do extra stuff
+
+        // for testing:
+        double test_value = -2.2;
+        for (int i = 0; i < 9; ++i)
+        {
+            rRightHandSideVector[i] = test_value++;
+        }
     }
 }
 
@@ -221,9 +240,10 @@ void EmbeddedFluidElementDiscontinuousEdge<TBaseElement>::InitializeGeometryData
 {
     rData.PositiveIndices.clear();
     rData.NegativeIndices.clear();
+    rData.PositiveEdgeIndices.clear();
 
     // Number of positive and negative distance function values
-    for (size_t i = 0; i < EmbeddedDiscontinuousEdgeElementData::NumNodes; ++i){
+    for (uint8_t i = 0; i < EmbeddedDiscontinuousEdgeElementData::NumNodes; ++i){
         if (rData.ElementalDistances[i] > 0.0){
             rData.NumPositiveNodes++;
             rData.PositiveIndices.push_back(i);
@@ -234,7 +254,7 @@ void EmbeddedFluidElementDiscontinuousEdge<TBaseElement>::InitializeGeometryData
     }
 
     // Number of positive edge distance ratios
-    for (size_t i = 0; i < EmbeddedDiscontinuousEdgeElementData::NumEdges; ++i){
+    for (uint8_t i = 0; i < EmbeddedDiscontinuousEdgeElementData::NumEdges; ++i){
         if (rData.EdgeDistances[i] > 0.0){
             rData.NumPositiveEdges++;
             rData.PositiveEdgeIndices.push_back(i);
@@ -254,7 +274,8 @@ template <class TBaseElement>
 void EmbeddedFluidElementDiscontinuousEdge<TBaseElement>::DefineIncisedGeometryData(EmbeddedDiscontinuousEdgeElementData& rData) const
 {
     // call standard geometry definition to make element work like EmbeddedFluidElementDiscontinuous
-    this->DefineStandardGeometryData(rData);
+    //this->DefineStandardGeometryData(rData);
+    this->DefineCutGeometryData(rData);
 
     /* TODO
     For intersected element:
@@ -388,6 +409,7 @@ void EmbeddedFluidElementDiscontinuousEdge<TBaseElement>::CalculateDragForce(
         }
     } else if (rData.IsIncised()) {
         // TODO: do stuff
+        KRATOS_WATCH("in incised CalculateDragForce");
     }
 }
 

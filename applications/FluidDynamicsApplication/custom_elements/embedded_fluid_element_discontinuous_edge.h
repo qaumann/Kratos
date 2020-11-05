@@ -14,14 +14,14 @@
 #ifndef KRATOS_EMBEDDED_FLUID_ELEMENT_DISCONTINUOUS_EDGE_H
 #define KRATOS_EMBEDDED_FLUID_ELEMENT_DISCONTINUOUS_EDGE_H
 
-/*#include "includes/define.h"
+#include "includes/define.h"
 #include "includes/element.h"
 #include "includes/serializer.h"
 #include "geometries/geometry.h"
 #include "modified_shape_functions/modified_shape_functions.h"
 
 #include "includes/cfd_variables.h"
-#include "custom_elements/fluid_element.h"*/
+#include "custom_elements/fluid_element.h"
 #include "custom_elements/embedded_fluid_element_discontinuous.h"
 
 #include "custom_utilities/embedded_discontinuous_edge_data.h"
