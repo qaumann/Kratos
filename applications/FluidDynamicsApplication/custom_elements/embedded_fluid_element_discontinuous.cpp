@@ -33,9 +33,7 @@ EmbeddedFluidElementDiscontinuous<TBaseElement>::EmbeddedFluidElementDiscontinuo
 template< class TBaseElement >
 EmbeddedFluidElementDiscontinuous<TBaseElement>::EmbeddedFluidElementDiscontinuous(IndexType NewId, Geometry<NodeType>::Pointer pGeometry):
     TBaseElement(NewId,pGeometry)
-{
-    KRATOS_WATCH("NO edge element constructor");
-}
+{}
 
 template< class TBaseElement >
 EmbeddedFluidElementDiscontinuous<TBaseElement>::EmbeddedFluidElementDiscontinuous(IndexType NewId, Geometry<NodeType>::Pointer pGeometry, Properties::Pointer pProperties):
