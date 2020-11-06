@@ -29,6 +29,8 @@ class EmbeddedFormulation(object):
                 self._SetUpClassicEmbeddedAusasNavierStokes(formulation_settings)
             elif element_type == "embedded_symbolic_navier_stokes_discontinuous":
                 self._SetUpEmbeddedSymbolicNavierStokesDiscontinuous(formulation_settings)
+            elif element_type == "embedded_symbolic_navier_stokes_discontinuous_edge":
+                self._SetUpEmbeddedSymbolicNavierStokesDiscontinuousEdge(formulation_settings)
         else:
             raise RuntimeError("Argument \'element_type\' not found in stabilization settings.")
 
@@ -111,6 +113,30 @@ class EmbeddedFormulation(object):
         formulation_settings.ValidateAndAssignDefaults(default_settings)
 
         self.element_name = "EmbeddedSymbolicNavierStokesDiscontinuous"
+        self.condition_name = "NavierStokesWallCondition"
+        self.level_set_type = formulation_settings["level_set_type"].GetString()
+        self.element_integrates_in_time = True
+        self.element_has_nodal_properties = False
+
+        self.process_info_data[KratosMultiphysics.DYNAMIC_TAU] = formulation_settings["dynamic_tau"].GetDouble()
+        self.process_info_data[KratosCFD.PENALTY_COEFFICIENT] = formulation_settings["penalty_coefficient"].GetDouble()
+        if formulation_settings["is_slip"].GetBool():
+            self.process_info_data[KratosCFD.SLIP_LENGTH] = formulation_settings["slip_length"].GetDouble()
+        else:
+            self.process_info_data[KratosCFD.SLIP_LENGTH] = 0.0
+
+    def _SetUpEmbeddedSymbolicNavierStokesDiscontinuousEdge(self, formulation_settings):
+        default_settings = KratosMultiphysics.Parameters(r"""{
+            "element_type": "embedded_symbolic_navier_stokes_discontinuous_edge",
+            "is_slip": true,
+            "slip_length": 1.0e8,
+            "penalty_coefficient": 10.0,
+            "dynamic_tau": 1.0,
+            "level_set_type": "discontinuous"
+        }""")
+        formulation_settings.ValidateAndAssignDefaults(default_settings)
+
+        self.element_name = "EmbeddedSymbolicNavierStokesDiscontinuousEdge"
         self.condition_name = "NavierStokesWallCondition"
         self.level_set_type = formulation_settings["level_set_type"].GetString()
         self.element_integrates_in_time = True
