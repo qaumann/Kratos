@@ -94,7 +94,6 @@ namespace Kratos
 		}
 
 		// Get reference to ELEMENTAL_EDGE_DISTANCES and resize if necessary
-		constexpr double epsilon = std::numeric_limits<double>::epsilon();
 		Vector& r_edge_distances = rElement1.GetValue(ELEMENTAL_EDGE_DISTANCES);  //INFO: Vector equals std::vector<double>
 		if(r_edge_distances.size() != mNumEdges){
 			r_edge_distances.resize(mNumEdges, false);
@@ -109,15 +108,17 @@ namespace Kratos
 
 		// Check for vaild/ complete cut of the element and set TO_SPLIT flag accordingly
 		const bool is_intersection = (num_cut_edges < rElement1.GetGeometry().WorkingSpaceDimension()) ? false : true;
-		// TODO: TO_SPLIT only for completely intersected elements?
-		//       like this, we have almost the same definition of TO_SPLIT as for CalculateDiscontinuousDistanceToSkinProcess??
+		/*constexpr double epsilon = std::numeric_limits<double>::epsilon();
 		uint8_t num_greater_epsilon = 0;
 		for (uint8_t i = 0; i < mNumEdges; i++) {
 			if (r_edge_distances[i] > epsilon){
 				num_greater_epsilon++;
 			}
 		}
-		rElement1.Set(TO_SPLIT, is_intersection && num_greater_epsilon > 0);
+		// INFO: comparable definition of TO_SPLIT as for CalculateDiscontinuousDistanceToSkinProcess.
+		rElement1.Set(TO_SPLIT, is_intersection && num_greater_epsilon > 0);*/
+		// INFO: same definition of TO_SPLIT as IsCut() of EmbedddedFluidElementDiscontinuous
+		rElement1.Set(TO_SPLIT, is_intersection);
 	}
 
 	template<std::size_t TDim>
