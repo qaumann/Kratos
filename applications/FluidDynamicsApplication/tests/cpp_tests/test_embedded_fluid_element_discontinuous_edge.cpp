@@ -80,10 +80,8 @@ KRATOS_TEST_CASE_IN_SUITE(EmbeddedElementDiscontinuousEdge2D3N, FluidDynamicsApp
     }
 
     std::vector<ModelPart::IndexType> element_nodes {1, 2, 3};
-    Kratos::Element::Pointer p_elem = model_part.CreateNewElement("EmbeddedSymbolicNavierStokes2D3N", 1, element_nodes, p_properties);
-    model_part.CreateNewElement("EmbeddedQSVMS2D3N", 2, element_nodes, p_properties);
-
-    KRATOS_WATCH(p_elem->Info());
+    model_part.CreateNewElement("EmbeddedSymbolicNavierStokesDiscontinuousEdge2D3N", 1, element_nodes, p_properties);
+    model_part.CreateNewElement("EmbeddedQSVMSDiscontinuousEdge2D3N", 2, element_nodes, p_properties);
 
     // Call the elements Initialize()
     for (auto &r_elem : model_part.Elements()) {
@@ -133,7 +131,7 @@ KRATOS_TEST_CASE_IN_SUITE(EmbeddedElementDiscontinuousEdge2D3N, FluidDynamicsApp
     edge_dist[2] = -1.0;
     for (auto it_elem = model_part.ElementsBegin(); it_elem != model_part.ElementsEnd(); ++it_elem) {
         it_elem->SetValue(ELEMENTAL_DISTANCES, elem_dist);
-        //it_elem->SetValue(ELEMENTAL_EDGE_DISTANCES, edge_dist);
+        it_elem->SetValue(ELEMENTAL_EDGE_DISTANCES, edge_dist);
     }
 
     for (ModelPart::ElementIterator i = model_part.ElementsBegin(); i != model_part.ElementsEnd(); i++) {
@@ -204,19 +202,19 @@ KRATOS_TEST_CASE_IN_SUITE(EmbeddedElementDiscontinuousEdge2D3N, FluidDynamicsApp
     // --> right now: should print and get same values as uncut element
     //output_incised[0] = output_uncut[0]; // EmbeddedSymbolicNavierStokesDiscontinuous
     //output_incised[1] = output_uncut[1]; // EmbeddedQSVMSDiscontinuous
-    output_incised[0] = {-2.2, -1.2, 0.2, 1.2, 2.2, 3.2, 4.2, 5.2, 6.2}; // EmbeddedSymbolicNavierStokesDiscontinuous
-    output_incised[1] = {-2.2, -1.2, 0.2, 1.2, 2.2, 3.2, 4.2, 5.2, 6.2}; // EmbeddedQSVMSDiscontinuous
+    output_incised[0] = {-2.2, -1.2, -0.2, 0.8, 1.8, 2.8, 3.8, 4.8, 5.8}; // EmbeddedSymbolicNavierStokesDiscontinuous
+    output_incised[1] = {-2.2, -1.2, -0.2, 0.8, 1.8, 2.8, 3.8, 4.8, 5.8}; // EmbeddedQSVMSDiscontinuous
     counter = 0;
 
     counter = 0;
 
     // Test incised element
-    elem_dist[0] =  1.0;
-    elem_dist[1] =  1.0;
+    elem_dist[0] =  0.2;
+    elem_dist[1] =  0.5;
     elem_dist[2] =  1.0;
-    edge_dist[0] =  0.5;
-    edge_dist[1] =  0.2;
-    edge_dist[2] =  0.9;
+    edge_dist[0] = -1.0;
+    edge_dist[1] = -1.0;
+    edge_dist[2] =  0.2;
     for (auto it_elem = model_part.ElementsBegin(); it_elem != model_part.ElementsEnd(); ++it_elem) {
         it_elem->SetValue(ELEMENTAL_DISTANCES, elem_dist);
         it_elem->SetValue(ELEMENTAL_EDGE_DISTANCES, edge_dist);
