@@ -2,6 +2,7 @@ from __future__ import print_function, absolute_import, division  # makes Kratos
 
 # Importing Kratos
 import KratosMultiphysics
+import KratosMultiphysics.StructuralMechanicsApplication as SMA
 from KratosMultiphysics.process_factory import KratosProcessFactory
 from KratosMultiphysics.kratos_utilities import IssueDeprecationWarning
 
@@ -75,6 +76,9 @@ class AnalysisStage(object):
         This function has to be implemented in deriving classes!
         """
         # Modelers:
+        self.PlotFile = open("Disp_Force.txt","w")
+        self.PlotFile.close()
+
         self._CreateModelers()
         self._ModelersSetupGeometryModel()
         self._ModelersPrepareGeometryModel()
@@ -150,6 +154,44 @@ class AnalysisStage(object):
         for process in self._GetListOfProcesses():
             process.ExecuteFinalizeSolutionStep()
 
+        time = self.time
+        total_reaction_x     = 0.0
+        total_displacement_x = 0.0
+        interval = 0
+
+        nodes_reaction = [4566, 4567, 4568, 4569, 4570, 4571, 4572, 4573, 4574, 4575, 4576, 4577, 4578, 4579, 4580, 4581, 4582, 4583, 4584, 4585, 4586, 4587, 4588, 4589, 4590, 4591, 4592, 4593, 4594, 4595, 4596, 4597, 4598, 4599, 4600, 4601, 4602, 4603, 4604, 4605, 4606, 4607, 4608, 4609, 4610, 4611, 4612, 4613, 4614, 4615, 4616, 4617, 4618, 4619, 4620]
+        nodes_displacement = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 26, 27, 28, 29, 30, 41, 42, 43, 44, 45, 60, 61, 63, 64, 65, 81, 82, 83, 84, 85, 100, 101, 103, 104, 105, 136, 137, 138, 139, 140, 161, 162, 163, 164, 165, 196, 197, 198, 199, 200]
+
+        if self._GetSolver().GetComputingModelPart().ProcessInfo[KratosMultiphysics.STEP] == 1:
+            self.TimePreviousPlotting=0
+
+        if self.time - self.TimePreviousPlotting >= interval:
+            self.main_model_part = self.model.GetModelPart(self.project_parameters["solver_settings"]["model_part_name"].GetString())
+
+            if self.TimePreviousPlotting == 0:
+                first_code_line = True
+            else:
+                first_code_line = False
+
+            for index in range(0, len(nodes_displacement)):
+                id_node = nodes_displacement[index]
+                node = self.main_model_part.GetNode(id_node)
+                total_displacement_x = node.GetSolutionStepValue(KratosMultiphysics.DISPLACEMENT_X)
+            for index in range(0, len(nodes_reaction)):
+                id_node = nodes_reaction[index]
+                node = self.main_model_part.GetNode(id_node)
+                total_reaction_x += node.GetSolutionStepValue(KratosMultiphysics.REACTION_X)
+
+            self.PlotFile = open("Disp_Force.txt","a")
+
+            if first_code_line == True:
+                        self.PlotFile.write("    " + "Time Step".rjust(20) + "    " +"Total disp_X".rjust(20) + "    " + "Total reaction_X".rjust(20) + "\n")
+
+            self.PlotFile.write("    " + "{0:.4e}".format(time).rjust(11) + "    " + "{0:.4e}".format(total_displacement_x).rjust(11) +
+                    "    " + "{0:.4e}".format(total_reaction_x).rjust(11) +  "\n")
+            self.PlotFile.close()
+
+            self.TimePreviousPlotting = self.time
     def OutputSolutionStep(self):
         """This function printed / writes output files after the solution of a step
         """
