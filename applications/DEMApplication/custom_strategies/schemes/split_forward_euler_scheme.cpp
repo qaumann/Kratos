@@ -26,7 +26,7 @@ namespace Kratos {
             const double mass,
             const double delta_t,
             const bool Fix_vel[3]) {
-        
+
         if(StepFlag == 1) //PREDICT
         {
             const array_1d<double, 3 >& aux_impulse = i.GetValue(AUX_IMPULSE);
@@ -35,7 +35,7 @@ namespace Kratos {
 
             for (int k = 0; k < 3; k++) {
                 if (Fix_vel[k] == false) {
-                    delta_displ[k] = (delta_t*aux_impulse[k] + (mass - delta_t*(1.0-theta_2)*nodal_damping)*displ[k]) / 
+                    delta_displ[k] = (delta_t*aux_impulse[k] + (mass - delta_t*(1.0-theta_2)*nodal_damping)*displ[k]) /
                                      (mass + delta_t*theta_2*nodal_damping) - displ[k];
                     displ[k] += delta_displ[k];
                     coor[k] = initial_coor[k] + displ[k];
@@ -59,7 +59,7 @@ namespace Kratos {
 
             for (int k = 0; k < 3; k++) {
                 aux_impulse[k] += delta_t*external_forces[k] - (beta+delta_t*theta_1)*internal_forces[k] +
-                                  (beta-delta_t*(1.0-mTheta1))*internal_forces_old[k] +
+                                  (beta-delta_t*(1.0-theta_1))*internal_forces_old[k] +
                                   delta_t*beta*nodal_stiffness*vel[k];
             }
         }
@@ -86,7 +86,7 @@ namespace Kratos {
 
             for (int k = 0; k < 3; k++) {
                 if (Fix_Ang_vel[k] == false) {
-                    delta_rotation[k] = (delta_t*rotational_aux_impulse[k] + (moment_of_inertia - delta_t*(1.0-theta_2)*rotational_nodal_damping)*rotated_angle[k]) / 
+                    delta_rotation[k] = (delta_t*rotational_aux_impulse[k] + (moment_of_inertia - delta_t*(1.0-theta_2)*rotational_nodal_damping)*rotated_angle[k]) /
                                         (moment_of_inertia + delta_t*theta_2*rotational_nodal_damping) - rotated_angle[k];
                     rotated_angle[k] += delta_rotation[k];
                     angular_velocity[k] = delta_rotation[k] / delta_t;
@@ -108,7 +108,7 @@ namespace Kratos {
 
             for (int k = 0; k < 3; k++) {
                 rotational_aux_impulse[k] += delta_t*rotational_external_forces[k] - (beta+delta_t*theta_1)*rotational_internal_forces[k] +
-                                             (beta-delta_t*(1.0-mTheta1))*rotational_internal_forces_old[k] +
+                                             (beta-delta_t*(1.0-theta_1))*rotational_internal_forces_old[k] +
                                              delta_t*beta*rotational_nodal_stiffness*angular_velocity[k];
             }
         }
