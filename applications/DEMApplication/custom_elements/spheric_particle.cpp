@@ -267,14 +267,18 @@ void SphericParticle::CalculateRightHandSide(const ProcessInfo& r_process_info, 
     // double nodal_damping = 0.0;
     // double nodal_rotational_stiffness = 0.0;
     // double nodal_rotational_damping = 0.0;
+    // const double& mass = this_node.FastGetSolutionStepValue(NODAL_MASS);
+    // const double& moment_of_inertia = this_node.FastGetSolutionStepValue(PARTICLE_MOMENT_OF_INERTIA);
 
     // ComputeBallToBallStiffnessAndDamping(data_buffer, nodal_stiffness, nodal_damping, nodal_rotational_stiffness, nodal_rotational_damping);
 
     // ComputeBallToRigidFaceStiffnessAndDamping(data_buffer, nodal_stiffness, nodal_damping, nodal_rotational_stiffness, nodal_rotational_damping);
 
     // KRATOS_WATCH(this->Id())
+    // KRATOS_WATCH(mass)
     // KRATOS_WATCH(nodal_stiffness)
     // KRATOS_WATCH(nodal_damping)
+    // KRATOS_WATCH(moment_of_inertia)
     // KRATOS_WATCH(nodal_rotational_stiffness)
     // KRATOS_WATCH(nodal_rotational_damping)
     // TODO
