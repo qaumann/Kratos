@@ -151,6 +151,7 @@ public:
         mBeta = r_current_process_info[RAYLEIGH_BETA];
         mTheta1 = r_current_process_info[THETA_1];
         mTheta2 = r_current_process_info[THETA_2];
+        mTheta3 = r_current_process_info[THETA_3];
 
         /// Working in 2D/3D (the definition of DOMAIN_SIZE is check in the Check method)
         const SizeType dim = r_current_process_info[DOMAIN_SIZE];
@@ -349,6 +350,9 @@ public:
         const array_1d<double, 3>& r_current_impulse = itCurrentNode->FastGetSolutionStepValue(NODAL_DISPLACEMENT_STIFFNESS);
         const double nodal_mass = itCurrentNode->GetValue(NODAL_MASS);
         const double nodal_damping = itCurrentNode->GetValue(NODAL_DISPLACEMENT_DAMPING);
+        const array_1d<double, 3>& r_current_internal_force = itCurrentNode->FastGetSolutionStepValue(NODAL_INERTIA);
+        // const array_1d<double, 3>& r_previous_internal_force = itCurrentNode->FastGetSolutionStepValue(NODAL_INERTIA,1);
+        const double nodal_stiffness = itCurrentNode->GetValue(NODAL_PAUX);
 
         std::array<bool, 3> fix_displacements = {false, false, false};
         fix_displacements[0] = (itCurrentNode->GetDof(DISPLACEMENT_X, DisplacementPosition).IsFixed());
@@ -360,8 +364,9 @@ public:
         if ( (nodal_mass + mDeltaTime*mTheta2*nodal_damping) > numerical_limit){
             for (IndexType j = 0; j < DomainSize; j++) {
                 if (fix_displacements[j] == false) {
-                            r_current_displacement[j] = (mDeltaTime*r_current_impulse[j] + (nodal_mass -
-                                                        mDeltaTime*(1.0-mTheta2)*nodal_damping)*r_current_displacement[j]) /
+                            r_current_displacement[j] = (mDeltaTime*r_current_impulse[j] + (nodal_mass-mDeltaTime*(1.0-mTheta2)*nodal_damping+
+                                                        mDeltaTime*mTheta3*mBeta*nodal_stiffness)*r_current_displacement[j] -
+                                                        mDeltaTime*mTheta3*mBeta*r_current_internal_force[j]) /
                                                         (nodal_mass + mDeltaTime*mTheta2*nodal_damping);
                 }
             }
@@ -517,9 +522,9 @@ public:
         const double nodal_stiffness = itCurrentNode->GetValue(NODAL_PAUX);
 
         // Solution of the explicit equation:
-        noalias(r_current_impulse) += mDeltaTime*r_external_forces - (mBeta+mDeltaTime*mTheta1)*r_current_internal_force +
-                                      (mBeta-mDeltaTime*(1.0-mTheta1))*r_previous_internal_force +
-                                      mDeltaTime*mBeta*nodal_stiffness*r_current_velocity;
+        noalias(r_current_impulse) += mDeltaTime*r_external_forces - ((1.0-mTheta3)*mBeta+mDeltaTime*mTheta1)*r_current_internal_force +
+                                      ((1.0-mTheta3)*mBeta-mDeltaTime*(1.0-mTheta1))*r_previous_internal_force +
+                                      mDeltaTime*(1.0-mTheta3)*mBeta*nodal_stiffness*r_current_velocity;
     }
 
     /**
@@ -658,6 +663,7 @@ protected:
     double mBeta;
     double mTheta1;
     double mTheta2;
+    double mTheta3;
 
     ///@}
     ///@name Protected member Variables

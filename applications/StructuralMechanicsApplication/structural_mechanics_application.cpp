@@ -393,6 +393,7 @@ void KratosStructuralMechanicsApplication::Register() {
 
     KRATOS_REGISTER_VARIABLE(THETA_1)
     KRATOS_REGISTER_VARIABLE(THETA_2)
+    KRATOS_REGISTER_VARIABLE(THETA_3)
     KRATOS_REGISTER_VARIABLE(XI_DAMPING)
 
     // System damping
