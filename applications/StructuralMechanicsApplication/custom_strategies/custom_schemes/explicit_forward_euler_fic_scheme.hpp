@@ -293,43 +293,43 @@ public:
     {
         KRATOS_TRY;
 
-        // The current process info
-        const ProcessInfo& r_current_process_info = rModelPart.GetProcessInfo();
+        // // The current process info
+        // const ProcessInfo& r_current_process_info = rModelPart.GetProcessInfo();
 
-        // The array of nodes
-        NodesArrayType& r_nodes = rModelPart.Nodes();
+        // // The array of nodes
+        // NodesArrayType& r_nodes = rModelPart.Nodes();
 
-        /// Working in 2D/3D (the definition of DOMAIN_SIZE is check in the Check method)
-        const SizeType dim = r_current_process_info[DOMAIN_SIZE];
+        // /// Working in 2D/3D (the definition of DOMAIN_SIZE is check in the Check method)
+        // const SizeType dim = r_current_process_info[DOMAIN_SIZE];
 
-        // Step Update
-        // The first step is time =  initial_time ( 0.0) + delta time
-        // mTime.Current = r_current_process_info[TIME];
-        mDeltaTime = r_current_process_info[DELTA_TIME];
-        mAlpha = r_current_process_info[RAYLEIGH_ALPHA];
-        mBeta = r_current_process_info[RAYLEIGH_BETA];
+        // // Step Update
+        // // The first step is time =  initial_time ( 0.0) + delta time
+        // // mTime.Current = r_current_process_info[TIME];
+        // mDeltaTime = r_current_process_info[DELTA_TIME];
+        // mAlpha = r_current_process_info[RAYLEIGH_ALPHA];
+        // mBeta = r_current_process_info[RAYLEIGH_BETA];
 
-        // The iterator of the first node
-        const auto it_node_begin = rModelPart.NodesBegin();
+        // // The iterator of the first node
+        // const auto it_node_begin = rModelPart.NodesBegin();
 
-        // Getting dof position
-        const IndexType disppos = it_node_begin->GetDofPosition(DISPLACEMENT_X);
+        // // Getting dof position
+        // const IndexType disppos = it_node_begin->GetDofPosition(DISPLACEMENT_X);
 
-        #pragma omp parallel for schedule(guided,512)
-        for (int i = 0; i < static_cast<int>(r_nodes.size()); ++i) {
-            // Current step information "N+1" (before step update).
-            this->PredictTranslationalDegreesOfFreedom(it_node_begin + i, disppos, dim);
+        // #pragma omp parallel for schedule(guided,512)
+        // for (int i = 0; i < static_cast<int>(r_nodes.size()); ++i) {
+        //     // Current step information "N+1" (before step update).
+        //     this->PredictTranslationalDegreesOfFreedom(it_node_begin + i, disppos, dim);
 
-            // TODO
-            // KRATOS_WATCH((it_node_begin+i)->GetValue(NODAL_MASS))
-            // KRATOS_WATCH((it_node_begin+i)->GetValue(NODAL_DISPLACEMENT_DAMPING))
-            // KRATOS_WATCH((it_node_begin+i)->GetValue(NODAL_PAUX))
-        } // for Node parallel
+        //     // TODO
+        //     // KRATOS_WATCH((it_node_begin+i)->GetValue(NODAL_MASS))
+        //     // KRATOS_WATCH((it_node_begin+i)->GetValue(NODAL_DISPLACEMENT_DAMPING))
+        //     // KRATOS_WATCH((it_node_begin+i)->GetValue(NODAL_PAUX))
+        // } // for Node parallel
 
         this->CalculateAndAddRHS(rModelPart);
 
-        // TODO: STOP CRITERION
-        this->CheckStopCriterion(rModelPart);
+        // // TODO: STOP CRITERION
+        // this->CheckStopCriterion(rModelPart);
 
         KRATOS_CATCH("")
     }
@@ -379,6 +379,123 @@ public:
         }
 
         const array_1d<double, 3>& r_previous_displacement = itCurrentNode->FastGetSolutionStepValue(DISPLACEMENT,1);
+        const array_1d<double, 3>& r_previous_velocity = itCurrentNode->FastGetSolutionStepValue(VELOCITY,1);
+        array_1d<double, 3>& r_current_velocity = itCurrentNode->FastGetSolutionStepValue(VELOCITY);
+        array_1d<double, 3>& r_current_acceleration = itCurrentNode->FastGetSolutionStepValue(ACCELERATION);
+
+        noalias(r_current_velocity) = (1.0/mDeltaTime) * (r_current_displacement - r_previous_displacement);
+        noalias(r_current_acceleration) = (1.0/mDeltaTime) * (r_current_velocity - r_previous_velocity);
+    }
+
+
+
+    /**
+     * @brief Performing the update of the solution
+     * @param rModelPart The model of the problem to solve
+     * @param rDofSet Set of all primary variables
+     * @param rA LHS matrix
+     * @param rDx incremental update of primary variables
+     * @param rb RHS Vector
+     */
+    void Update(
+        ModelPart& rModelPart,
+        DofsArrayType& rDofSet,
+        TSystemMatrixType& rA,
+        TSystemVectorType& rDx,
+        TSystemVectorType& rb
+        ) override
+    {
+        KRATOS_TRY
+        // The current process info
+        const ProcessInfo& r_current_process_info = rModelPart.GetProcessInfo();
+
+        // The array of nodes
+        NodesArrayType& r_nodes = rModelPart.Nodes();
+
+        /// Working in 2D/3D (the definition of DOMAIN_SIZE is check in the Check method)
+        const SizeType dim = r_current_process_info[DOMAIN_SIZE];
+
+        // Step Update
+        // The first step is time =  initial_time ( 0.0) + delta time
+        // mTime.Current = r_current_process_info[TIME];
+        mDeltaTime = r_current_process_info[DELTA_TIME];
+        mAlpha = r_current_process_info[RAYLEIGH_ALPHA];
+        mBeta = r_current_process_info[RAYLEIGH_BETA];
+
+        // The iterator of the first node
+        const auto it_node_begin = rModelPart.NodesBegin();
+
+        // Getting dof position
+        const IndexType disppos = it_node_begin->GetDofPosition(DISPLACEMENT_X);
+
+        #pragma omp parallel for schedule(guided,512)
+        for (int i = 0; i < static_cast<int>(r_nodes.size()); ++i) {
+            // Current step information "N+1" (before step update).
+            this->UpdateTranslationalDegreesOfFreedom(it_node_begin + i, disppos, dim);
+        } // for Node parallel
+
+        // TODO: STOP CRITERION
+        this->CheckStopCriterion(rModelPart);
+
+        KRATOS_CATCH("")
+    }
+
+
+
+    /**
+     * @brief This method updates the translation DoF
+     * @param itCurrentNode The iterator of the current node
+     * @param DisplacementPosition The position of the displacement dof on the database
+     * @param DomainSize The current dimention of the problem
+     */
+    virtual void UpdateTranslationalDegreesOfFreedom(
+        NodeIterator itCurrentNode,
+        const IndexType DisplacementPosition,
+        const SizeType DomainSize = 3
+        )
+    {
+        array_1d<double, 3>& r_current_displacement = itCurrentNode->FastGetSolutionStepValue(DISPLACEMENT);
+        const array_1d<double, 3>& r_previous_displacement = itCurrentNode->FastGetSolutionStepValue(DISPLACEMENT,1);
+        const array_1d<double, 3>& r_actual_previous_displacement = itCurrentNode->FastGetSolutionStepValue(DISPLACEMENT,2);
+        // KRATOS_WATCH(r_current_displacement)
+        // KRATOS_WATCH(r_previous_displacement)
+        // KRATOS_WATCH(r_actual_previous_displacement)
+        // const array_1d<double, 3>& r_current_impulse = itCurrentNode->FastGetSolutionStepValue(NODAL_DISPLACEMENT_STIFFNESS);
+        const double nodal_mass = itCurrentNode->GetValue(NODAL_MASS);
+        const double nodal_damping = itCurrentNode->GetValue(NODAL_DISPLACEMENT_DAMPING);
+        const array_1d<double, 3>& r_external_forces = itCurrentNode->FastGetSolutionStepValue(FORCE_RESIDUAL);
+        const array_1d<double, 3>& r_current_internal_force = itCurrentNode->FastGetSolutionStepValue(NODAL_INERTIA);
+        const array_1d<double, 3>& r_previous_internal_force = itCurrentNode->FastGetSolutionStepValue(NODAL_INERTIA,1);
+        // KRATOS_WATCH(r_current_internal_force)
+        // KRATOS_WATCH(r_previous_internal_force)
+        const double nodal_stiffness = itCurrentNode->GetValue(NODAL_PAUX);
+
+        std::array<bool, 3> fix_displacements = {false, false, false};
+        fix_displacements[0] = (itCurrentNode->GetDof(DISPLACEMENT_X, DisplacementPosition).IsFixed());
+        fix_displacements[1] = (itCurrentNode->GetDof(DISPLACEMENT_Y, DisplacementPosition + 1).IsFixed());
+        if (DomainSize == 3)
+            fix_displacements[2] = (itCurrentNode->GetDof(DISPLACEMENT_Z, DisplacementPosition + 2).IsFixed());
+
+        // Solution of the explicit equation:
+        if ( (nodal_mass + mDeltaTime*nodal_damping) > numerical_limit){
+            for (IndexType j = 0; j < DomainSize; j++) {
+                if (fix_displacements[j] == false) {
+                            r_current_displacement[j] = ((2.0*nodal_mass+mDeltaTime*nodal_damping+mDeltaTime*mBeta*nodal_stiffness)*r_current_displacement[j] -
+                                                         mDeltaTime*(mBeta+mDeltaTime)*r_current_internal_force[j] + mDeltaTime*mBeta*r_previous_internal_force[j] -
+                                                         (mDeltaTime*mBeta*nodal_stiffness+nodal_mass)*r_actual_previous_displacement[j] +
+                                                         mDeltaTime*mDeltaTime*r_external_forces[j]) /
+                                                        (nodal_mass + mDeltaTime*nodal_damping);
+                }
+            }
+        } else{
+            for (IndexType j = 0; j < DomainSize; j++) {
+                if (fix_displacements[j] == false) {
+                    r_current_displacement[j] = 0.0;
+                }
+            }
+        }
+
+
         const array_1d<double, 3>& r_previous_velocity = itCurrentNode->FastGetSolutionStepValue(VELOCITY,1);
         array_1d<double, 3>& r_current_velocity = itCurrentNode->FastGetSolutionStepValue(VELOCITY);
         array_1d<double, 3>& r_current_acceleration = itCurrentNode->FastGetSolutionStepValue(ACCELERATION);
@@ -452,79 +569,6 @@ public:
                 // KRATOS_ERROR << "L2 Error is: " << l2_rel_error << " . The simulation is completed at step: " << r_current_process_info[STEP] << std::endl;
             }
         }
-    }
-
-    /**
-     * @brief Performing the update of the solution
-     * @param rModelPart The model of the problem to solve
-     * @param rDofSet Set of all primary variables
-     * @param rA LHS matrix
-     * @param rDx incremental update of primary variables
-     * @param rb RHS Vector
-     */
-    void Update(
-        ModelPart& rModelPart,
-        DofsArrayType& rDofSet,
-        TSystemMatrixType& rA,
-        TSystemVectorType& rDx,
-        TSystemVectorType& rb
-        ) override
-    {
-        KRATOS_TRY
-        // The current process info
-        const ProcessInfo& r_current_process_info = rModelPart.GetProcessInfo();
-
-        // The array of nodes
-        NodesArrayType& r_nodes = rModelPart.Nodes();
-
-        /// Working in 2D/3D (the definition of DOMAIN_SIZE is check in the Check method)
-        const SizeType dim = r_current_process_info[DOMAIN_SIZE];
-
-        // Step Update
-        // The first step is time =  initial_time ( 0.0) + delta time
-        // mTime.Current = r_current_process_info[TIME];
-        // mDeltaTime = r_current_process_info[DELTA_TIME];
-
-        // The iterator of the first node
-        const auto it_node_begin = rModelPart.NodesBegin();
-
-        // Getting dof position
-        const IndexType disppos = it_node_begin->GetDofPosition(DISPLACEMENT_X);
-
-        #pragma omp parallel for schedule(guided,512)
-        for (int i = 0; i < static_cast<int>(r_nodes.size()); ++i) {
-            // Current step information "N+1" (before step update).
-            this->UpdateTranslationalDegreesOfFreedom(it_node_begin + i, disppos, dim);
-        } // for Node parallel
-
-        KRATOS_CATCH("")
-    }
-
-
-
-    /**
-     * @brief This method updates the translation DoF
-     * @param itCurrentNode The iterator of the current node
-     * @param DisplacementPosition The position of the displacement dof on the database
-     * @param DomainSize The current dimention of the problem
-     */
-    virtual void UpdateTranslationalDegreesOfFreedom(
-        NodeIterator itCurrentNode,
-        const IndexType DisplacementPosition,
-        const SizeType DomainSize = 3
-        )
-    {
-        array_1d<double, 3>& r_current_impulse = itCurrentNode->FastGetSolutionStepValue(NODAL_DISPLACEMENT_STIFFNESS);
-        const array_1d<double, 3>& r_current_velocity = itCurrentNode->FastGetSolutionStepValue(VELOCITY);
-        const array_1d<double, 3>& r_external_forces = itCurrentNode->FastGetSolutionStepValue(FORCE_RESIDUAL);
-        const array_1d<double, 3>& r_current_internal_force = itCurrentNode->FastGetSolutionStepValue(NODAL_INERTIA);
-        const array_1d<double, 3>& r_previous_internal_force = itCurrentNode->FastGetSolutionStepValue(NODAL_INERTIA,1);
-        const double nodal_stiffness = itCurrentNode->GetValue(NODAL_PAUX);
-
-        // Solution of the explicit equation:
-        noalias(r_current_impulse) += mDeltaTime*r_external_forces - ((1.0-mTheta3)*mBeta+mDeltaTime*mTheta1)*r_current_internal_force +
-                                      ((1.0-mTheta3)*mBeta-mDeltaTime*(1.0-mTheta1))*r_previous_internal_force +
-                                      mDeltaTime*(1.0-mTheta3)*mBeta*nodal_stiffness*r_current_velocity;
     }
 
     /**
