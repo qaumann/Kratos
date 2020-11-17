@@ -222,7 +222,7 @@ public:
         NodeIterator itCurrentNode,
         const IndexType DisplacementPosition,
         const SizeType DomainSize = 3
-        )
+        ) override
     {
         const double nodal_mass = itCurrentNode->GetValue(NODAL_MASS);
         const array_1d<double, 3>& r_current_residual = itCurrentNode->FastGetSolutionStepValue(FORCE_RESIDUAL);
