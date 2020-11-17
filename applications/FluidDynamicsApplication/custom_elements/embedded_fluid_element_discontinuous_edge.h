@@ -101,6 +101,8 @@ public:
     using typename EmbeddedFluidElementDiscontinuous<TBaseElement>::BaseElementData;
     using EmbeddedDiscontinuousEdgeElementData = EmbeddedDiscontinuousEdgeData< BaseElementData >;
 
+    static constexpr unsigned int NumEdges = (Dim -1) *3;
+
     ///@}
     ///@name Life Cycle
     ///@{
@@ -237,7 +239,6 @@ protected:
     ///@name Protected static Member Variables
     ///@{
 
-    constexpr static unsigned int NumEdges = (Dim -1) *3;
 
     ///@}
     ///@name Protected member Variables

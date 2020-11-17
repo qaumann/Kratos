@@ -237,7 +237,7 @@ void EmbeddedFluidElementDiscontinuousEdge<TBaseElement>::PrintInfo(std::ostream
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// Protected functions TODO
+// Protected functions
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -345,7 +345,7 @@ void EmbeddedFluidElementDiscontinuousEdge<TBaseElement>::DefineIncisedGeometryD
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// Private functions TODO
+// Private functions
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 template <class TBaseElement>
@@ -542,14 +542,14 @@ template <class TBaseElement>
 void EmbeddedFluidElementDiscontinuousEdge<TBaseElement>::save(Serializer& rSerializer) const
 {
     KRATOS_SERIALIZE_SAVE_BASE_CLASS(rSerializer, TBaseElement);
-    // TODO save member variables? e.g. rSerializer.save("NU",mNU);
+    // TODO save member variables? e.g. rSerializer.save("NU",mNU); - none right now
 }
 
 template <class TBaseElement>
 void EmbeddedFluidElementDiscontinuousEdge<TBaseElement>::load(Serializer& rSerializer)
 {
     KRATOS_SERIALIZE_LOAD_BASE_CLASS(rSerializer, TBaseElement);
-    // TODO load member variables? e.g. rSerializer.load("NU",mNU);
+    // TODO load member variables? e.g. rSerializer.load("NU",mNU); - none right now
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
