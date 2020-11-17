@@ -457,17 +457,21 @@ public:
         array_1d<double, 3>& r_current_displacement = itCurrentNode->FastGetSolutionStepValue(DISPLACEMENT);
         const array_1d<double, 3>& r_previous_displacement = itCurrentNode->FastGetSolutionStepValue(DISPLACEMENT,1);
         const array_1d<double, 3>& r_actual_previous_displacement = itCurrentNode->FastGetSolutionStepValue(DISPLACEMENT,2);
-        // KRATOS_WATCH(r_current_displacement)
-        // KRATOS_WATCH(r_previous_displacement)
-        // KRATOS_WATCH(r_actual_previous_displacement)
+        // if(itCurrentNode->Id()==19) {
+        //     KRATOS_WATCH(r_current_displacement)
+        //     KRATOS_WATCH(r_previous_displacement)
+        //     KRATOS_WATCH(r_actual_previous_displacement)
+        // }
         // const array_1d<double, 3>& r_current_impulse = itCurrentNode->FastGetSolutionStepValue(NODAL_DISPLACEMENT_STIFFNESS);
         const double nodal_mass = itCurrentNode->GetValue(NODAL_MASS);
         const double nodal_damping = itCurrentNode->GetValue(NODAL_DISPLACEMENT_DAMPING);
         const array_1d<double, 3>& r_external_forces = itCurrentNode->FastGetSolutionStepValue(FORCE_RESIDUAL);
         const array_1d<double, 3>& r_current_internal_force = itCurrentNode->FastGetSolutionStepValue(NODAL_INERTIA);
         const array_1d<double, 3>& r_previous_internal_force = itCurrentNode->FastGetSolutionStepValue(NODAL_INERTIA,1);
-        // KRATOS_WATCH(r_current_internal_force)
-        // KRATOS_WATCH(r_previous_internal_force)
+        // if(itCurrentNode->Id()==19) {
+        //     KRATOS_WATCH(r_current_internal_force)
+        //     KRATOS_WATCH(r_previous_internal_force)
+        // }
         const double nodal_stiffness = itCurrentNode->GetValue(NODAL_PAUX);
 
         std::array<bool, 3> fix_displacements = {false, false, false};
