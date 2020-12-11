@@ -131,7 +131,7 @@ class FrequencyResponseAnalysisStrategy
      * @param rModelPart The model part of the problem
      * @param pScheme The integration schemed
      * @param MoveMeshFlag The flag that allows to move the mesh
-     * @param UseModalDamping The flag if modal damping is used
+     * @param UseModalDamping True if modal damping is used
      */
     FrequencyResponseAnalysisStrategy(
         ModelPart& rModelPart,
@@ -274,6 +274,16 @@ class FrequencyResponseAnalysisStrategy
     {
         BaseType::mEchoLevel = Level;
         GetBuilderAndSolver()->SetEchoLevel(Level);
+    }
+
+    /**
+     * @brief Define the model part contating the Biot material
+     * @param rBiotModelPart The model part
+     */
+    void SetBiotMaterialModelPart(ModelPart& rBiotModelPart)
+    {
+        mpBiotMaterialModelPart = &rBiotModelPart;
+        mUseBiotMaterial = true;
     }
 
     /**
@@ -445,6 +455,11 @@ class FrequencyResponseAnalysisStrategy
                 r_model_part.GetProcessInfo()[BUILD_LEVEL] = 201;
                 p_builder_and_solver->Build(p_scheme, BaseType::GetModelPart(), r_M, tmp);
                 DirichletUtility::ApplyDirichletConditions<TSparseSpace>(r_M, tmp, fixed_dofs, 0.0);
+
+                //if required, set up porous Biot material matrices
+                if( mUseBiotMaterial ) {
+                    InitializeBiotMaterialMatrices(fixed_dofs);
+                }
 
                 p_scheme->FinalizeNonLinIteration(BaseType::GetModelPart(), r_K, tmp, tmp);
 
@@ -733,6 +748,23 @@ class FrequencyResponseAnalysisStrategy
     ///@name Protected Operations
     ///@{
 
+    void InitializeBiotMaterialMatrices(const std::vector<unsigned int>& FixedDofSet)
+    {
+        typename TSchemeType::Pointer p_scheme = GetScheme();
+        typename TBuilderAndSolverType::Pointer p_builder_and_solver = GetBuilderAndSolver();
+        ModelPart& r_model_part = BaseType::GetModelPart();
+        TSystemVectorPointerType tmp = TSparseSpace::CreateEmptyVectorPointer();
+
+        // build on provided model part
+        TSystemMatrixType& r_Ki  = *mpKi;
+
+        p_builder_and_solver->ResizeAndInitializeVectors(p_scheme, mpKi, tmp, tmp,
+                                                        BaseType::GetModelPart());
+        r_model_part.GetProcessInfo()[BUILD_LEVEL] = 111;
+        p_builder_and_solver->Build(p_scheme, BaseType::GetModelPart(), r_Ki, *tmp);
+        DirichletUtility::ApplyDirichletConditions<TSparseSpace>(r_Ki, *tmp, FixedDofSet, 0.0);
+    }
+
     ///@}
     ///@name Protected  Access
     ///@{
@@ -768,13 +800,25 @@ class FrequencyResponseAnalysisStrategy
     TSystemMatrixPointerType mpMi; /// The mass matrix (imaginary part)
     TSystemMatrixPointerType mpC; /// The damping matrix
 
+    TSystemMatrixPointerType mpBiotK1; // The first Biot stiffness matrix
+    TSystemMatrixPointerType mpBiotK2; // The second Biot stiffness matrix
+    TSystemMatrixPointerType mpBiotK3; // The third Biot stiffness matrix
+    TSystemMatrixPointerType mpBiotK4; // The fourth Biot stiffness matrix
+    TSystemMatrixPointerType mpBiotM1; // The first Biot mass matrix
+    TSystemMatrixPointerType mpBiotM2; // The second Biot mass matrix
+    TSystemMatrixPointerType mpBiotM3; // The third Biot mass matrix
+    TSystemMatrixPointerType mpBiotM4; // The fourth Biot mass matrix
+
     bool mReformDofSetAtEachStep;
 
     bool mSolutionStepIsInitialized; /// Flag to set as initialized the solution step
 
     bool mInitializeWasPerformed; /// Flag to set as initialized the strategy
 
-    bool mUseModalDamping;
+    bool mUseModalDamping; // Flag to set if modal damping is used
+
+    bool mUseBiotMaterial = false; // Flag to set if Biot material is used
+    ModelPart* mpBiotMaterialModelPart = nullptr; // Model part containing the Biot material
 
     ///@}
     ///@name Private Operators
