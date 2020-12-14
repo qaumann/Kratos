@@ -25,6 +25,7 @@
 #include "includes/kratos_application.h"
 
 #include "custom_elements/acoustic_element.h"
+#include "custom_elements/porous_element.h"
 
 #include "custom_conditions/acoustic_load_condition.h"
 #include "custom_conditions/acoustic_robin_condition.h"
@@ -187,6 +188,11 @@ private:
     const AcousticElement mAcousticElement2D4N;
     const AcousticElement mAcousticElement3D4N;
     const AcousticElement mAcousticElement3D8N;
+	const PorousElement mPorousElement2D2N;
+	const PorousElement mPorousElement2D4N;
+	const PorousElement mPorousElement3D4N;
+	const PorousElement mPorousElement3D8N;
+
 
     // Conditions
     const AcousticLoadCondition mAcousticLoadConcition2D2N;
