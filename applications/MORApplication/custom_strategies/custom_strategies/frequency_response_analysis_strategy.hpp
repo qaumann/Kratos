@@ -29,6 +29,21 @@
 namespace Kratos
 {
 
+namespace { // settings namespace
+    template<class SpaceType>
+    struct FrequencyDependentSettings
+    {
+        FrequencyDependentSettings(ModelPart& rModelPart, int buildLevel) :
+            model_part(&rModelPart), build_level(buildLevel) {};
+
+        int build_level = -1;
+        std::complex<double> factor = std::complex<double>(0,0);
+        typename SpaceType::MatrixPointerType matrix = SpaceType::CreateEmptyMatrixPointer();;
+        ModelPart* model_part = nullptr;
+        bool initialized = false;
+    };
+}
+
 ///@name Kratos Globals
 ///@{
 
@@ -276,14 +291,10 @@ class FrequencyResponseAnalysisStrategy
         GetBuilderAndSolver()->SetEchoLevel(Level);
     }
 
-    /**
-     * @brief Define the model part contating the Biot material
-     * @param rBiotModelPart The model part
-     */
-    void SetBiotMaterialModelPart(ModelPart& rBiotModelPart)
+    void SetFrequencyDependentMaterial(FrequencyDependentSettings<TSparseSpace>* settings)
     {
-        mpBiotMaterialModelPart = &rBiotModelPart;
-        mUseBiotMaterial = true;
+        mFrequencyDependentSettings.push_back(settings);
+        mUseFrequencyDependentMaterials = true;
     }
 
     /**
@@ -457,8 +468,10 @@ class FrequencyResponseAnalysisStrategy
                 DirichletUtility::ApplyDirichletConditions<TSparseSpace>(r_M, tmp, fixed_dofs, 0.0);
 
                 //if required, set up porous Biot material matrices
-                if( mUseBiotMaterial ) {
-                    InitializeBiotMaterialMatrices(fixed_dofs);
+                if( mUseFrequencyDependentMaterials ) {
+                    for( auto& setting : mFrequencyDependentSettings ) {
+                        InitializeFrequencyDependentMatrices(*setting, fixed_dofs);
+                    }
                 }
 
                 p_scheme->FinalizeNonLinIteration(BaseType::GetModelPart(), r_K, tmp, tmp);
@@ -516,6 +529,12 @@ class FrequencyResponseAnalysisStrategy
             TSolutionSpace::Clear(mpRHS);
             TSolutionSpace::Clear(mpDx);
 
+            if( mUseFrequencyDependentMaterials ) {
+                for( auto& setting : mFrequencyDependentSettings ) {
+                    SparseSpaceType::Clear(setting->matrix);
+                }
+            }
+
             this->Clear();
         }
 
@@ -544,6 +563,7 @@ class FrequencyResponseAnalysisStrategy
 
         auto& r_process_info = BaseType::GetModelPart().GetProcessInfo();
         const double excitation_frequency = r_process_info[FREQUENCY];
+        KRATOS_ERROR_IF(excitation_frequency <= 0) << "Invalid excitation frequency" << std::endl;
         const double excitation_frequency2 = std::pow(excitation_frequency, 2);
 
         TSolutionSpace::SetToZero(r_A);
@@ -554,6 +574,7 @@ class FrequencyResponseAnalysisStrategy
             // row(r_A, i) = row(r_Ki, i) + excitation_frequency * row(r_C, i) - excitation_frequency2 * row(r_Mi, i);
             row(r_A, i) += excitation_frequency * row(r_C, i);
         }
+
         if( mUseModalDamping ) {
             #pragma omp parallel for schedule(static)
             for( int i=0; i<static_cast<int>(r_A.size2()); ++i ) {
@@ -561,6 +582,19 @@ class FrequencyResponseAnalysisStrategy
                 row(r_A, i) -= excitation_frequency2 * row(r_Mi, i);
             }
         }
+
+        if( mUseFrequencyDependentMaterials ) {
+            double factor;
+            for( auto& setting : mFrequencyDependentSettings ) {
+                KRATOS_WATCH(setting->factor)
+                TSystemMatrixType& r_Mat = *(setting->matrix);
+                factor = std::imag(setting->factor);
+                for( int i=0; i<static_cast<int>(r_A.size2()); ++i ) {
+                    row(r_A, i) += factor * row(r_Mat, i);
+                }
+            }
+        }
+
         r_A *= complex(0,1);
 
         #pragma omp parallel for schedule(static)// nowait
@@ -569,6 +603,19 @@ class FrequencyResponseAnalysisStrategy
             row(r_A, i) += row(r_K, i);
             row(r_A, i) -= excitation_frequency2 * row(r_M, i);
         }
+
+        if( mUseFrequencyDependentMaterials ) {
+            double factor;
+            for( auto& setting : mFrequencyDependentSettings ) {
+                KRATOS_WATCH(setting->factor)
+                TSystemMatrixType& r_Mat = *(setting->matrix);
+                factor = std::real(setting->factor);
+                for( int i=0; i<static_cast<int>(r_A.size2()); ++i ) {
+                    row(r_A, i) += factor * row(r_Mat, i);
+                }
+            }
+        }
+
         KRATOS_INFO_IF("Dynamic Stiffness Matrix Build Time", BaseType::GetEchoLevel() > 0 && rank == 0)
                 << build_time.ElapsedSeconds() << std::endl;
 
@@ -726,6 +773,15 @@ class FrequencyResponseAnalysisStrategy
         SparseSpaceType::WriteMatrixMarketVector((char *)(matrix_market_name.str()).c_str(), vector);
     }
 
+    void MaterialSettingsInfo()
+    {
+        for( auto& setting : mFrequencyDependentSettings ) {
+            auto rsetting = *setting;
+            KRATOS_INFO("Frequency dependent material") << "BUILD_LEVEL=" << rsetting.build_level <<
+                ", FACTOR=" << rsetting.factor << " , Initialized? " << rsetting.initialized << std::endl;
+        }
+    }
+
     ///@}
     ///@name Friends
     ///@{
@@ -748,21 +804,24 @@ class FrequencyResponseAnalysisStrategy
     ///@name Protected Operations
     ///@{
 
-    void InitializeBiotMaterialMatrices(const std::vector<unsigned int>& FixedDofSet)
+    void InitializeFrequencyDependentMatrices(FrequencyDependentSettings<TSparseSpace>& setting,
+        const std::vector<unsigned int>& FixedDofSet)
     {
         typename TSchemeType::Pointer p_scheme = GetScheme();
         typename TBuilderAndSolverType::Pointer p_builder_and_solver = GetBuilderAndSolver();
-        ModelPart& r_model_part = BaseType::GetModelPart();
         TSystemVectorPointerType tmp = TSparseSpace::CreateEmptyVectorPointer();
 
         // build on provided model part
-        TSystemMatrixType& r_Ki  = *mpKi;
+        ModelPart& r_model_part = *setting.model_part;
+        TSystemMatrixType& r_matrix  = *setting.matrix;
 
-        p_builder_and_solver->ResizeAndInitializeVectors(p_scheme, mpKi, tmp, tmp,
-                                                        BaseType::GetModelPart());
-        r_model_part.GetProcessInfo()[BUILD_LEVEL] = 111;
-        p_builder_and_solver->Build(p_scheme, BaseType::GetModelPart(), r_Ki, *tmp);
-        DirichletUtility::ApplyDirichletConditions<TSparseSpace>(r_Ki, *tmp, FixedDofSet, 0.0);
+        p_builder_and_solver->ResizeAndInitializeVectors(p_scheme, setting.matrix, tmp, tmp,
+            r_model_part);
+        r_model_part.GetProcessInfo()[BUILD_LEVEL] = setting.build_level;
+        p_builder_and_solver->Build(p_scheme, r_model_part, r_matrix, *tmp);
+        DirichletUtility::ApplyDirichletConditions<TSparseSpace>(r_matrix, *tmp, FixedDofSet, 0.0);
+        setting.initialized = true;
+        std::cout << "initialized frequency dependent matrix\n";
     }
 
     ///@}
@@ -817,13 +876,13 @@ class FrequencyResponseAnalysisStrategy
 
     bool mUseModalDamping; // Flag to set if modal damping is used
 
-    bool mUseBiotMaterial = false; // Flag to set if Biot material is used
-    ModelPart* mpBiotMaterialModelPart = nullptr; // Model part containing the Biot material
+    bool mUseFrequencyDependentMaterials = false; // Flag to set if Biot material is used
+
+    std::list<FrequencyDependentSettings<TSparseSpace>*> mFrequencyDependentSettings;
 
     ///@}
     ///@name Private Operators
     ///@{
-
 
     ///@}
     ///@name Private Operations
