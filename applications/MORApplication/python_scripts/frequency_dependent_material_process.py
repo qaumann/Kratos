@@ -69,6 +69,9 @@ class FrequencyDependentMaterialProcess(KratosMultiphysics.Process):
             sqrt(1 + 4j*omega*tortuosity**2*viscosity_fluid*density_fluid / \
             (flow_resistivity**2 * viscous_length**2 * porosity**2))
         apparent_mass_density = porosity * density_fluid * (tortuosity-1)
+        alpha = lambda omega: 1+8*viscosity_fluid / (1j*omega*prandtl_number_fluid * \
+            thermal_length**2 * density_fluid) * sqrt(1+1j*omega*prandtl_number_fluid * \
+            thermal_length**2 * density_fluid / (16*viscosity_fluid))
 
         self.settings['k1'] = MOR.FrequencyDependentMaterialSettings(self.model_part, 91)
         self.functions['k1'] = \
@@ -76,25 +79,22 @@ class FrequencyDependentMaterialProcess(KratosMultiphysics.Process):
             (porosity*density_fluid + apparent_mass_density - 1j*viscous_drag(omega)/omega)
         self.strategy.SetFrequencyDependentMaterial(self.settings['k1'])
 
+        self.settings['k2'] = MOR.FrequencyDependentMaterialSettings(self.model_part, 92)
+        self.functions['k2'] = \
+            lambda omega: porosity**2 / (porosity*density_fluid + apparent_mass_density - \
+            1j*viscous_drag(omega)/omega)
+        self.strategy.SetFrequencyDependentMaterial(self.settings['k2'])
 
-        #omega = 12
-        #k1 = 0.959999543740704 - 0.000453749531958i
-        #k2 = 3.770737987069413e-07 + 3.749996131886144e-04i
-        #m1 = 0.348479447926251 - 0.000549036933535i
-        #m2 = -1.285547435461915e-11 - 5.393778514838125e-09i
+        self.settings['m1'] = MOR.FrequencyDependentMaterialSettings(self.model_part, 93)
+        self.functions['m1'] = \
+            lambda omega: -1j*viscous_drag(omega)/omega - \
+            (-apparent_mass_density+1j*viscous_drag(omega)/omega)**2 / \
+            (porosity*density_fluid + apparent_mass_density - 1j*viscous_drag(omega)/omega)
+        self.strategy.SetFrequencyDependentMaterial(self.settings['m1'])
 
-        # VISCOUS_DRAG = FLOW_RESISTIVITY * POROSITY^2 * (1 + ...
-        #     4 * 1j * omega * TORTUOSITY^2 * VISCOSITY_FLUID * DENSITY_FLUID / (FLOW_RESISTIVITY^2 * VISCOUS_LENGHT^2 * POROSITY^2))^0.5;
-        # APPARENT_MASS_DENSITY = POROSITY * DENSITY_FLUID * (TORTUOSITY -1)
-
-        # alpha = (1 + 8 * VISCOSITY_FLUID/(1j * omega * PRANDTL_NUMBER_FLUID * THERMAL_LENGTH^2 * DENSITY_FLUID)* ...
-        #     (1 + 1i * omega * PRANDTL_NUMBER_FLUID * THERMAL_LENGTH^2 * DENSITY_FLUID /(16 * VISCOSITY_FLUID))^0.5);
-
-        # k1=-POROSITY*(-APPARENT_MASS_DENSITY+1i*VISCOUS_DRAG/omega)/(POROSITY*DENSITY_FLUID+APPARENT_MASS_DENSITY-1i*VISCOUS_DRAG/omega);
-        # k2=(POROSITY^2)/(POROSITY*DENSITY_FLUID+APPARENT_MASS_DENSITY-1i*VISCOUS_DRAG/omega);
-
-        # m1=-1i*VISCOUS_DRAG/omega-(-APPARENT_MASS_DENSITY+1i*VISCOUS_DRAG/omega)^2/(POROSITY*DENSITY_FLUID+APPARENT_MASS_DENSITY-1i*VISCOUS_DRAG/omega);
-        # m2=-(HEAT_CAPACITY_FLUID-1)*alpha^(-1)/(HEAT_CAPACITY_FLUID*STANDARD_PRESSURE_FLUID);
+        self.settings['m2'] = MOR.FrequencyDependentMaterialSettings(self.model_part, 94)
+        self.functions['m2'] = \
+            lambda omega: -(heat_capacity_fluid-1) / (alpha(omega) * heat_capacity_fluid*standard_pressure_fluid)
 
     def _RetrieveProperty(self, property_type):
         for prop in self.model_part.GetProperties():
