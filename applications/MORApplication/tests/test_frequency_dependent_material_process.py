@@ -37,15 +37,13 @@ class TestFrequencyDependentMaterialProcess(KratosUnittest.TestCase):
         complex_linear_solver = LinearSolversApplication.ComplexSparseLUSolver()
         scheme = MOR.MatrixBuilderScheme()
         builder_and_solver = KratosMultiphysics.ResidualBasedBlockBuilderAndSolver(KratosMultiphysics.LinearSolver())
-        reform_dofs_flag = False
-        use_modal_damping_flag = True
         strategy = MOR.FrequencyResponseAnalysisStrategy(
             mp,
             scheme,
             builder_and_solver,
             complex_linear_solver,
             False,
-            use_modal_damping_flag)
+            False)
 
         from KratosMultiphysics.MORApplication.frequency_dependent_material_process import FrequencyDependentMaterialProcess
         process_settings = KratosMultiphysics.Parameters(
@@ -64,8 +62,9 @@ class TestFrequencyDependentMaterialProcess(KratosUnittest.TestCase):
 
         self.assertAlmostEqual(process.settings['k1'].factor, 0.959999543740704 - 0.000453749531958j)
         self.assertAlmostEqual(process.settings['k2'].factor, 3.770737987069413e-07 + 3.749996131886144e-04j)
-        self.assertAlmostEqual(process.settings['m1'].factor, 0.348479447926251 - 0.000549036933535j)
-        self.assertAlmostEqual(process.settings['m2'].factor, -1.285547435461915e-11 - 5.393778514838125e-09j)
+        self.assertAlmostEqual(process.settings['m1'].factor, 50.181040501380200 - 0.079061318429012j)
+        self.assertAlmostEqual(process.settings['m2'].factor, -1.851188307065158e-09 - 7.767041061366900e-07j)
+        self.assertAlmostEqual(process.settings['m3'].factor, 1.382399342986613e+02 - 6.533993260198417e-02j)
 
 if __name__ == '__main__':
     KratosUnittest.main()

@@ -40,7 +40,7 @@ class FrequencyDependentMaterialProcess(KratosMultiphysics.Process):
         elif self.contribution_type == "ghm":
             pass
         else:
-            err_msg  = 'Unknown contribution type "{}".'.format(contribution_type)
+            err_msg  = 'Unknown contribution type "{}".'.format(self.contribution_type)
             err_msg += 'Possible choices are "biot" and "ghm".'
             raise Exception(err_msg)
 
@@ -73,28 +73,37 @@ class FrequencyDependentMaterialProcess(KratosMultiphysics.Process):
             thermal_length**2 * density_fluid) * sqrt(1+1j*omega*prandtl_number_fluid * \
             thermal_length**2 * density_fluid / (16*viscosity_fluid))
 
-        self.settings['k1'] = MOR.FrequencyDependentMaterialSettings(self.model_part, 91)
+        # global stiffness matrix
+        # K_glob = K1 + k1*K2 + k2*K3 - omega^2 * M1 + m3*M2 + m1*M3 + m2*M4;
+
+        self.settings['k1'] = MOR.FrequencyDependentMaterialSettings(self.model_part, 401)
         self.functions['k1'] = \
             lambda omega: -porosity * (-apparent_mass_density + 1j*viscous_drag(omega)/omega) / \
             (porosity*density_fluid + apparent_mass_density - 1j*viscous_drag(omega)/omega)
         self.strategy.SetFrequencyDependentMaterial(self.settings['k1'])
 
-        self.settings['k2'] = MOR.FrequencyDependentMaterialSettings(self.model_part, 92)
+        self.settings['k2'] = MOR.FrequencyDependentMaterialSettings(self.model_part, 402)
         self.functions['k2'] = \
             lambda omega: porosity**2 / (porosity*density_fluid + apparent_mass_density - \
             1j*viscous_drag(omega)/omega)
         self.strategy.SetFrequencyDependentMaterial(self.settings['k2'])
 
-        self.settings['m1'] = MOR.FrequencyDependentMaterialSettings(self.model_part, 93)
+        self.settings['m1'] = MOR.FrequencyDependentMaterialSettings(self.model_part, 403)
         self.functions['m1'] = \
-            lambda omega: -1j*viscous_drag(omega)/omega - \
+            lambda omega: omega**2 * (-1j*viscous_drag(omega)/omega - \
             (-apparent_mass_density+1j*viscous_drag(omega)/omega)**2 / \
-            (porosity*density_fluid + apparent_mass_density - 1j*viscous_drag(omega)/omega)
+            (porosity*density_fluid + apparent_mass_density - 1j*viscous_drag(omega)/omega))
         self.strategy.SetFrequencyDependentMaterial(self.settings['m1'])
 
-        self.settings['m2'] = MOR.FrequencyDependentMaterialSettings(self.model_part, 94)
+        self.settings['m2'] = MOR.FrequencyDependentMaterialSettings(self.model_part, 404)
         self.functions['m2'] = \
-            lambda omega: -(heat_capacity_fluid-1) / (alpha(omega) * heat_capacity_fluid*standard_pressure_fluid)
+            lambda omega: omega**2 * (-(heat_capacity_fluid-1) / (alpha(omega) * heat_capacity_fluid*standard_pressure_fluid))
+
+        self.settings['m3'] = MOR.FrequencyDependentMaterialSettings(self.model_part, 405)
+        self.functions['m3'] = \
+            lambda omega: omega**2 * (-porosity * (-apparent_mass_density + 1j*viscous_drag(omega)/omega) / \
+            (porosity*density_fluid + apparent_mass_density - 1j*viscous_drag(omega)/omega))
+        self.strategy.SetFrequencyDependentMaterial(self.settings['m3'])
 
     def _RetrieveProperty(self, property_type):
         for prop in self.model_part.GetProperties():
