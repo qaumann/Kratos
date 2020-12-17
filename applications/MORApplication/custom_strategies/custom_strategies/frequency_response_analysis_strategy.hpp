@@ -619,6 +619,17 @@ class FrequencyResponseAnalysisStrategy
         KRATOS_INFO_IF("Dynamic Stiffness Matrix Build Time", BaseType::GetEchoLevel() > 0 && rank == 0)
                 << build_time.ElapsedSeconds() << std::endl;
 
+        // if required, write dynamic stiffness and rhs
+        if( BaseType::GetEchoLevel() > 4 ) {
+            std::stringstream matrix_market_name;
+            matrix_market_name << "A_" << excitation_frequency << ".mm";
+            TSparseSpace::WriteMatrixMarketMatrix((char *)(matrix_market_name.str()).c_str(), r_A, false);
+
+            std::stringstream matrix_market_vectname;
+            matrix_market_vectname << "RHS_" << excitation_frequency << ".mm.rhs";
+            TSparseSpace::WriteMatrixMarketVector((char *)(matrix_market_vectname.str()).c_str(), r_RHS);
+        }
+
         //Solve the system
         BuiltinTimer solve_time;
         mpComplexLinearSolver->Solve(r_A, r_Dx, r_RHS);
