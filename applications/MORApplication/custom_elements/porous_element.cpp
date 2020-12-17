@@ -8,10 +8,6 @@
 //
 
 // System includes
-#include <cmath>
-#include <iostream>
-#include <complex>
-using namespace std::complex_literals;
 
 // External includes
 #include "includes/ublas_complex_interface.h"
@@ -371,9 +367,9 @@ void PorousElement::CalculateLeftHandSide(MatrixType& rLeftHandSideMatrix, Proce
 
 		// Determine relevant densities
 		std::complex<double> VISCOUS_DRAG = FLOW_RESISTIVITY * pow(POROSITY, 2.0) * pow(1.0 +
-			4i * OMEGA * pow(TORTUOSITY, 2.0) * VISCOSITY_FLUID * DENSITY_FLUID / ( pow(FLOW_RESISTIVITY, 2.0) * pow(VISCOUS_LENGTH, 2) * pow(POROSITY, 2)), 0.5);
+			std::complex<double>(0,4) * OMEGA * pow(TORTUOSITY, 2.0) * VISCOSITY_FLUID * DENSITY_FLUID / ( pow(FLOW_RESISTIVITY, 2.0) * pow(VISCOUS_LENGTH, 2) * pow(POROSITY, 2)), 0.5);
 		double APPARENT_MASS_DENSITY = POROSITY * DENSITY_FLUID * (TORTUOSITY - 1.0);
-		std::complex<double> EQUIVALENT_COUPLING_DENSITY = - APPARENT_MASS_DENSITY + 1i * VISCOUS_DRAG / OMEGA;
+		std::complex<double> EQUIVALENT_COUPLING_DENSITY = - APPARENT_MASS_DENSITY + std::complex<double>(0,1) * VISCOUS_DRAG / OMEGA;
 		std::complex<double> EQUIVALENT_FLUID_DENSITY = POROSITY * DENSITY_FLUID - EQUIVALENT_COUPLING_DENSITY;
 		std::complex<double> EQUIVALENT_SOLID_DENSITY = (1.0 - POROSITY) * DENSITY_SOLID - EQUIVALENT_COUPLING_DENSITY;
 		std::complex<double> EQUIVALENT_DENSITY = EQUIVALENT_SOLID_DENSITY - pow(EQUIVALENT_COUPLING_DENSITY, 2) / EQUIVALENT_FLUID_DENSITY;
@@ -396,8 +392,8 @@ void PorousElement::CalculateLeftHandSide(MatrixType& rLeftHandSideMatrix, Proce
         DN_DX = geom.ShapeFunctionsIntegrationPointsGradients(DN_DX, DetJ, ThisIntegrationMethod);
 
 		std::complex<double> K = HEAT_CAPACITY_FLUID * STANDARD_PRESSURE_FLUID / pow(HEAT_CAPACITY_FLUID -
-			(HEAT_CAPACITY_FLUID - 1) * ((1 + 8 * VISCOSITY_FLUID / (1i * OMEGA * PRANDTL_NUMBER_FLUID * pow(THERMAL_LENGTH, 2) * DENSITY_FLUID) *
-			pow(1 + 1i * OMEGA * PRANDTL_NUMBER_FLUID * pow(THERMAL_LENGTH, 2) * DENSITY_FLUID / (16 * VISCOSITY_FLUID), 0.5))), -1);
+			(HEAT_CAPACITY_FLUID - 1) * ((1 + 8 * VISCOSITY_FLUID / (std::complex<double>(0,1) * OMEGA * PRANDTL_NUMBER_FLUID * pow(THERMAL_LENGTH, 2) * DENSITY_FLUID) *
+			pow(1 + std::complex<double>(0,1) * OMEGA * PRANDTL_NUMBER_FLUID * pow(THERMAL_LENGTH, 2) * DENSITY_FLUID / (16 * VISCOSITY_FLUID), 0.5))), -1);
 		std::complex<double> R = POROSITY * K;
 		std::complex<double> Q = (1 - POROSITY) * K;
 		std::complex<double> GAMMA = POROSITY * ((EQUIVALENT_COUPLING_DENSITY / EQUIVALENT_FLUID_DENSITY) - (Q / R));
@@ -405,8 +401,8 @@ void PorousElement::CalculateLeftHandSide(MatrixType& rLeftHandSideMatrix, Proce
 		// compute material matrix
 
 		// Determine Coefficients for the material matrix
-		std::complex<double> LAMBDA = (1 + 1i * DAMPING_SOLID) * LAMBDA_SOLID;
-		std::complex<double> MUE = (1 + 1i * DAMPING_SOLID) * MUE_SOLID;
+		std::complex<double> LAMBDA = (1 + std::complex<double>(0,1) * DAMPING_SOLID) * LAMBDA_SOLID;
+		std::complex<double> MUE = (1 + std::complex<double>(0,1) * DAMPING_SOLID) * MUE_SOLID;
 
 		// real part
 		ComplexMatrix D;
@@ -414,10 +410,10 @@ void PorousElement::CalculateLeftHandSide(MatrixType& rLeftHandSideMatrix, Proce
 		if (dimension == 2)
 		{
 			D = ZeroMatrix(3, 3);
-			D(0, 0) = LAMBDA + (2.0 + 0i) * MUE;
+			D(0, 0) = LAMBDA + (2.0 + std::complex<double>(0,0)) * MUE;
 			D(0, 1) = LAMBDA;
 			D(1, 0) = LAMBDA;
-			D(1, 1) = LAMBDA + (2.0 + 0i) * MUE;
+			D(1, 1) = LAMBDA + (2.0 + std::complex<double>(0,0)) * MUE;
 			D(2, 2) = MUE;
 		}
 
