@@ -28,8 +28,13 @@ namespace ComplexDofUpdater
         } else {
             node.FastGetSolutionStepValue(var) = std::abs(Z);
         }
-        node.FastGetSolutionStepValue(var_real) = std::real(Z);
-        node.FastGetSolutionStepValue(var_imag) = std::imag(Z);
+        if( node.SolutionStepsDataHas(var_real) && node.SolutionStepsDataHas(var_imag) ) {
+            node.FastGetSolutionStepValue(var_real) = std::real(Z);
+            node.FastGetSolutionStepValue(var_imag) = std::imag(Z);
+        } else {
+            KRATOS_WARNING("ComplexDofUpdater") << "Complex variable for " << var.Name() <<
+                " is not available. Using absolute value only."  << std::endl;
+        }
     }
 
 #ifdef KRATOS_MOR_ASSIGN_COMPLEX_DOF
