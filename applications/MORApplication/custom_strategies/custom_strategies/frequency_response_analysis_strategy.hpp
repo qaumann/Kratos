@@ -36,10 +36,10 @@ namespace { // settings namespace
         FrequencyDependentSettings(ModelPart& rModelPart, int buildLevel) :
             model_part(&rModelPart), build_level(buildLevel) {};
 
-        int build_level = -1;
+        ModelPart* model_part;
+        int build_level;
         std::complex<double> factor = std::complex<double>(0,0);
         typename SpaceType::MatrixPointerType matrix = SpaceType::CreateEmptyMatrixPointer();;
-        ModelPart* model_part = nullptr;
         bool initialized = false;
     };
 }
