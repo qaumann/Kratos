@@ -248,7 +248,7 @@ public:
         // Getting the array of the conditions
         const int nconditions = static_cast<int>(rModelPart.Conditions().size());
 
-        ProcessInfo& CurrentProcessInfo = rModelPart.GetProcessInfo();
+        const ProcessInfo& CurrentProcessInfo = rModelPart.GetProcessInfo();
         ModelPart::ElementsContainerType::iterator el_begin = rModelPart.ElementsBegin();
         ModelPart::ConditionsContainerType::iterator cond_begin = rModelPart.ConditionsBegin();
 
@@ -358,7 +358,7 @@ public:
         // Getting the array of the conditions
         const int nconditions = static_cast<int>(rModelPart.Conditions().size());
 
-        ProcessInfo& CurrentProcessInfo = rModelPart.GetProcessInfo();
+        const ProcessInfo& CurrentProcessInfo = rModelPart.GetProcessInfo();
         ModelPart::ElementsContainerType::iterator el_begin = rModelPart.ElementsBegin();
         ModelPart::ConditionsContainerType::iterator cond_begin = rModelPart.ConditionsBegin();
 
@@ -830,7 +830,7 @@ private:
         //getting the array of the conditions
         ConditionsArrayType& ConditionsArray = rModelPart.Conditions();
 
-        ProcessInfo& CurrentProcessInfo = rModelPart.GetProcessInfo();
+        const ProcessInfo& CurrentProcessInfo = rModelPart.GetProcessInfo();
 
         //contributions to the system
         LocalSystemVectorType RHS_Contribution = LocalSystemVectorType(0);
