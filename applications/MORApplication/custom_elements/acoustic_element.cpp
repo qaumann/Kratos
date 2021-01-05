@@ -137,7 +137,7 @@ void AcousticElement::GetDofList(DofsVectorType& rElementalDofList, ProcessInfo&
     for (SizeType i_node = 0; i_node < num_nodes; i_node++)
         rElementalDofList[i_node] = GetGeometry()[i_node].pGetDof(PRESSURE);
 
-    KRATOS_WATCH(rElementalDofList)
+    //KRATOS_WATCH(rElementalDofList)
 }
 
 /***********************************************************************************/
@@ -258,19 +258,19 @@ void AcousticElement::CalculateLeftHandSide(MatrixType& rLeftHandSideMatrix, Pro
         DN_DX = geom.ShapeFunctionsIntegrationPointsGradients(DN_DX, DetJ, ThisIntegrationMethod);
 
 
-        KRATOS_WATCH(integration_points)
-        KRATOS_WATCH(integration_points.size())
+        //KRATOS_WATCH(integration_points)
+        //KRATOS_WATCH(integration_points.size())
         for ( IndexType point_number = 0; point_number < integration_points.size(); ++point_number )
         {
             double int_weight = integration_points[point_number].Weight() * DetJ(point_number);
-            KRATOS_WATCH(DN_DX[point_number])
-            KRATOS_WATCH(prod( trans(DN_DX[point_number]), DN_DX[point_number]))
+            //KRATOS_WATCH(DN_DX[point_number])
+            //KRATOS_WATCH(prod( trans(DN_DX[point_number]), DN_DX[point_number]))
             
             noalias( rLeftHandSideMatrix ) += int_weight * prod( DN_DX[point_number], trans(DN_DX[point_number]));
 
         }
 
-        KRATOS_WATCH(rLeftHandSideMatrix)
+        //KRATOS_WATCH(rLeftHandSideMatrix)
 
        // N = r_geom.ShapeFunctionsValues(this_kinematic_variables.N, r_integration_points)
 
@@ -311,7 +311,7 @@ void AcousticElement::CalculateMassMatrix(MatrixType& rMassMatrix, ProcessInfo& 
     const double p = GetProperties()[DENSITY];
     const double G = GetProperties()[BULK_MODULUS];
 
-    KRATOS_WATCH(NContainer)
+    //KRATOS_WATCH(NContainer)
 
     for (IndexType i = 0; i < number_of_nodes; i++)
     {
@@ -325,7 +325,7 @@ void AcousticElement::CalculateMassMatrix(MatrixType& rMassMatrix, ProcessInfo& 
                 }
         }        
     }
-    KRATOS_WATCH(rMassMatrix)
+    //KRATOS_WATCH(rMassMatrix)
 }
 
 

@@ -334,16 +334,9 @@ void PorousElement::CalculateLeftHandSide(MatrixType& rLeftHandSideMatrix, Proce
 		const double DAMPING_SOLID = GetProperties()[DAMPING_SOLID];
 		const double DENSITY_SOLID = GetProperties()[DENSITY_SOLID];
 		const double DENSITY_FLUID = GetProperties()[DENSITY_FLUID];
-		const double VISCOSITY_FLUID = GetProperties()[VISCOSITY_FLUID];
 		const double STANDARD_PRESSURE_FLUID = GetProperties()[STANDARD_PRESSURE_FLUID];
-		const double HEAT_CAPACITY_FLUID = GetProperties()[HEAT_CAPACITY_FLUID];
-		const double PRANDTL_NUMBER_FLUID = GetProperties()[prandtl_number_fluid];
 		const double POROSITY = GetProperties()[POROSITY];
-		const double THERMAL_LENGTH = GetProperties()[THERMAL_LENGTH];
-		const double OMEGA = GetProperties()[FREQUENCY];
 		const double TORTUOSITY = GetProperties()[TORTUOSITY];
-		const double FLOW_RESISTIVITY = GetProperties()[FLOW_RESISTIVITY];
-		const double VISCOUS_LENGTH = GetProperties()[VISCOUS_LENGTH];
 		*/
 
 		// hard coded parameters to check the result
@@ -352,27 +345,28 @@ void PorousElement::CalculateLeftHandSide(MatrixType& rLeftHandSideMatrix, Proce
 		const double DAMPING_SOLID = 0.2;
 		const double DENSITY_SOLID = 8.0;
 		const double DENSITY_FLUID = 1.21;
-		const double VISCOSITY_FLUID = 1.84e-5;
+		//const double VISCOSITY_FLUID = 1.84e-5;
 		const double STANDARD_PRESSURE_FLUID = 101e3;
-		const double HEAT_CAPACITY_FLUID = 1.4;
-		const double PRANDTL_NUMBER_FLUID = 0.71;
+		//const double HEAT_CAPACITY_FLUID = 1.4;
+		//const double PRANDTL_NUMBER_FLUID = 0.71;
 		const double POROSITY = 0.3;
-		const double THERMAL_LENGTH = 1.5;
-		const double OMEGA = 15.0;
+		//const double THERMAL_LENGTH = 1.5;
+		//const double OMEGA = 15.0;
 		const double TORTUOSITY = 2.07;
-		const double FLOW_RESISTIVITY = 4410;
-		const double VISCOUS_LENGTH = 1.1e-2;
+		//const double FLOW_RESISTIVITY = 4410;
+		//const double VISCOUS_LENGTH = 1.1e-2;
 		//const int BUILD_LEVEL = 201;
 
 
 		// Determine relevant densities
-		std::complex<double> VISCOUS_DRAG = FLOW_RESISTIVITY * pow(POROSITY, 2.0) * pow(1.0 +
-			std::complex<double>(0,4) * OMEGA * pow(TORTUOSITY, 2.0) * VISCOSITY_FLUID * DENSITY_FLUID / ( pow(FLOW_RESISTIVITY, 2.0) * pow(VISCOUS_LENGTH, 2) * pow(POROSITY, 2)), 0.5);
 		double APPARENT_MASS_DENSITY = POROSITY * DENSITY_FLUID * (TORTUOSITY - 1.0);
-		std::complex<double> EQUIVALENT_COUPLING_DENSITY = - APPARENT_MASS_DENSITY + std::complex<double>(0,1) * VISCOUS_DRAG / OMEGA;
-		std::complex<double> EQUIVALENT_FLUID_DENSITY = POROSITY * DENSITY_FLUID - EQUIVALENT_COUPLING_DENSITY;
-		std::complex<double> EQUIVALENT_SOLID_DENSITY = (1.0 - POROSITY) * DENSITY_SOLID - EQUIVALENT_COUPLING_DENSITY;
-		std::complex<double> EQUIVALENT_DENSITY = EQUIVALENT_SOLID_DENSITY - pow(EQUIVALENT_COUPLING_DENSITY, 2) / EQUIVALENT_FLUID_DENSITY;
+
+		//std::complex<double> VISCOUS_DRAG = FLOW_RESISTIVITY * pow(POROSITY, 2.0) * pow(1.0 +
+		//	std::complex<double>(0,4) * OMEGA * pow(TORTUOSITY, 2.0) * VISCOSITY_FLUID * DENSITY_FLUID / ( pow(FLOW_RESISTIVITY, 2.0) * pow(VISCOUS_LENGTH, 2) * pow(POROSITY, 2)), 0.5);
+		//std::complex<double> EQUIVALENT_COUPLING_DENSITY = - APPARENT_MASS_DENSITY + std::complex<double>(0,1) * VISCOUS_DRAG / OMEGA;
+		//std::complex<double> EQUIVALENT_FLUID_DENSITY = POROSITY * DENSITY_FLUID - EQUIVALENT_COUPLING_DENSITY;
+		//std::complex<double> EQUIVALENT_SOLID_DENSITY = (1.0 - POROSITY) * DENSITY_SOLID - EQUIVALENT_COUPLING_DENSITY;
+		//std::complex<double> EQUIVALENT_DENSITY = EQUIVALENT_SOLID_DENSITY - pow(EQUIVALENT_COUPLING_DENSITY, 2) / EQUIVALENT_FLUID_DENSITY;
 
 		// resize leftHandSideMatrix if the size is incorrect
 		if (rLeftHandSideMatrix.size1() != number_of_nodes * (dimension + 1)  || rLeftHandSideMatrix.size2() != number_of_nodes * (dimension + 1))
@@ -380,8 +374,6 @@ void PorousElement::CalculateLeftHandSide(MatrixType& rLeftHandSideMatrix, Proce
             rLeftHandSideMatrix.resize(number_of_nodes * (dimension + 1), number_of_nodes * (dimension + 1), false);
         }
 		noalias(rLeftHandSideMatrix) = ZeroMatrix(number_of_nodes * (dimension + 1), number_of_nodes * (dimension + 1));
-
-
 
 		// initialize result for shape function derivatives and determinant of the Jacobi Matrix
         ShapeFunctionDerivativesArrayType DN_DX;
@@ -391,12 +383,12 @@ void PorousElement::CalculateLeftHandSide(MatrixType& rLeftHandSideMatrix, Proce
 		const Matrix& NContainer = geom.ShapeFunctionsValues(ThisIntegrationMethod);
         DN_DX = geom.ShapeFunctionsIntegrationPointsGradients(DN_DX, DetJ, ThisIntegrationMethod);
 
-		std::complex<double> K = HEAT_CAPACITY_FLUID * STANDARD_PRESSURE_FLUID / pow(HEAT_CAPACITY_FLUID -
-			(HEAT_CAPACITY_FLUID - 1) * ((1 + 8 * VISCOSITY_FLUID / (std::complex<double>(0,1) * OMEGA * PRANDTL_NUMBER_FLUID * pow(THERMAL_LENGTH, 2) * DENSITY_FLUID) *
-			pow(1 + std::complex<double>(0,1) * OMEGA * PRANDTL_NUMBER_FLUID * pow(THERMAL_LENGTH, 2) * DENSITY_FLUID / (16 * VISCOSITY_FLUID), 0.5))), -1);
-		std::complex<double> R = POROSITY * K;
-		std::complex<double> Q = (1 - POROSITY) * K;
-		std::complex<double> GAMMA = POROSITY * ((EQUIVALENT_COUPLING_DENSITY / EQUIVALENT_FLUID_DENSITY) - (Q / R));
+		//std::complex<double> K = HEAT_CAPACITY_FLUID * STANDARD_PRESSURE_FLUID / pow(HEAT_CAPACITY_FLUID -
+			//(HEAT_CAPACITY_FLUID - 1) * ((1 + 8 * VISCOSITY_FLUID / (std::complex<double>(0,1) * OMEGA * PRANDTL_NUMBER_FLUID * pow(THERMAL_LENGTH, 2) * DENSITY_FLUID) *
+			//pow(1 + std::complex<double>(0,1) * OMEGA * PRANDTL_NUMBER_FLUID * pow(THERMAL_LENGTH, 2) * DENSITY_FLUID / (16 * VISCOSITY_FLUID), 0.5))), -1);
+		//std::complex<double> R = POROSITY * K;
+		//std::complex<double> Q = (1 - POROSITY) * K;
+		//std::complex<double> GAMMA = POROSITY * ((EQUIVALENT_COUPLING_DENSITY / EQUIVALENT_FLUID_DENSITY) - (Q / R));
 
 		// compute material matrix
 
@@ -410,12 +402,29 @@ void PorousElement::CalculateLeftHandSide(MatrixType& rLeftHandSideMatrix, Proce
 		if (dimension == 2)
 		{
 			D = ZeroMatrix(3, 3);
-			D(0, 0) = LAMBDA + (2.0 + std::complex<double>(0,0)) * MUE;
+			D(0, 0) = LAMBDA + (2.0 + std::complex<double>(0, 0)) * MUE;
 			D(0, 1) = LAMBDA;
 			D(1, 0) = LAMBDA;
-			D(1, 1) = LAMBDA + (2.0 + std::complex<double>(0,0)) * MUE;
+			D(1, 1) = LAMBDA + (2.0 + std::complex<double>(0, 0)) * MUE;
 			D(2, 2) = MUE;
 		}
+		else if (dimension == 3)
+		{
+			D = ZeroMatrix(6, 6);
+			D(0, 0) = LAMBDA + (2.0 + std::complex<double>(0, 0)) * MUE;
+			D(0, 1) = LAMBDA;
+			D(0, 2) = LAMBDA;
+			D(1, 0) = LAMBDA;
+			D(1, 1) = LAMBDA + (2.0 + std::complex<double>(0, 0)) * MUE;
+			D(1, 2) = LAMBDA;
+			D(2, 0) = LAMBDA;
+			D(2, 1) = LAMBDA;
+			D(2, 2) = LAMBDA + (2.0 + std::complex<double>(0, 0)) * MUE;
+			D(3, 3) = MUE;
+			D(4, 4) = MUE;
+			D(5, 5) = MUE;
+		}
+
 
 		// initialize results for submatrices
 
@@ -484,12 +493,9 @@ void PorousElement::CalculateLeftHandSide(MatrixType& rLeftHandSideMatrix, Proce
 			noalias(Mf4_Matrix) += int_weight * outer_prod(row(NContainer, point_number), row(NContainer, point_number));
         }
 
-		KRATOS_WATCH(Mf4_Matrix)
-		KRATOS_WATCH(rCurrentProcessInfo[BUILD_LEVEL])
-
 		if (rCurrentProcessInfo.Has(BUILD_LEVEL) && rCurrentProcessInfo[BUILD_LEVEL] == 91)
 		{
-			// real part of NPE 1 stiffness
+			// K^ (real part)
 			noalias(project(rLeftHandSideMatrix, range(0, number_of_nodes * dimension), range(0, number_of_nodes * dimension))) = real(Ks_Matrix);
 			noalias(project(rLeftHandSideMatrix, range(0, number_of_nodes * dimension),
 				range(number_of_nodes * dimension, number_of_nodes * (dimension + 1)))) = -C1_Matrix;
@@ -498,93 +504,53 @@ void PorousElement::CalculateLeftHandSide(MatrixType& rLeftHandSideMatrix, Proce
 		}
 		else if (rCurrentProcessInfo.Has(BUILD_LEVEL) && rCurrentProcessInfo[BUILD_LEVEL] == 92)
 		{
-			// imaginary part of NPE 1 stiffness
+			// K^ (imaginary part)
 			noalias(project(rLeftHandSideMatrix, range(0, number_of_nodes * dimension), range(0, number_of_nodes * dimension))) = imag(Ks_Matrix);
-			// C1 and C2 do not have an imaginary part
 		}
-		else if (rCurrentProcessInfo.Has(BUILD_LEVEL) && rCurrentProcessInfo[BUILD_LEVEL] == 93)
+
+		else if (rCurrentProcessInfo.Has(BUILD_LEVEL) && rCurrentProcessInfo[BUILD_LEVEL] == 291)
 		{
-			// real part of NPE 2 stiffness
+			// M^
+			noalias(project(rLeftHandSideMatrix, range(0, number_of_nodes * dimension), range(0, number_of_nodes * dimension))) = real(Ms1_Matrix);
+			noalias(project(rLeftHandSideMatrix, range(number_of_nodes * dimension, number_of_nodes * (dimension + 1)),
+				range(0, number_of_nodes * dimension))) = trans(C1_Matrix);
+			noalias(project(rLeftHandSideMatrix, range(number_of_nodes * dimension, number_of_nodes * (dimension + 1)),
+				range(0, number_of_nodes * dimension))) = trans(C2_Matrix);
+			noalias(project(rLeftHandSideMatrix, range(number_of_nodes * dimension, number_of_nodes * (dimension + 1)),
+				range(number_of_nodes * dimension, number_of_nodes * (dimension + 1)))) = Mf1_Matrix;
+		}
+
+		else if (rCurrentProcessInfo.Has(BUILD_LEVEL) && rCurrentProcessInfo[BUILD_LEVEL] == 401)
+		{
+			// K*1
 			noalias(project(rLeftHandSideMatrix, range(0, number_of_nodes * dimension),
 				range(number_of_nodes * dimension, number_of_nodes * (dimension + 1)))) = C_Matrix;
 		}
-		else if (rCurrentProcessInfo.Has(BUILD_LEVEL) && rCurrentProcessInfo[BUILD_LEVEL] == 94)
+		else if (rCurrentProcessInfo.Has(BUILD_LEVEL) && rCurrentProcessInfo[BUILD_LEVEL] == 402)
 		{
-			// imaginary part of NPE 2 stiffness
-			// there is no imaginary part of the C_Matrix
-		}
-		else if (rCurrentProcessInfo.Has(BUILD_LEVEL) && rCurrentProcessInfo[BUILD_LEVEL] == 95)
-		{
-			// real part of NPE 3 stiffness
+			// K*2
 			noalias(project(rLeftHandSideMatrix, range(number_of_nodes * dimension, number_of_nodes * (dimension + 1)),
 				range(number_of_nodes * dimension, number_of_nodes * (dimension + 1)))) = Kf_Matrix;
 		}
-		else if (rCurrentProcessInfo.Has(BUILD_LEVEL) && rCurrentProcessInfo[BUILD_LEVEL] == 96)
+		else if (rCurrentProcessInfo.Has(BUILD_LEVEL) && rCurrentProcessInfo[BUILD_LEVEL] == 403)
 		{
-			// imaginary part of NPE 3 stiffness
-			// there is no imaginary part of the Kf_Matrix
+			// M*1
+			noalias(project(rLeftHandSideMatrix, range(number_of_nodes * dimension, number_of_nodes * (dimension + 1)),
+				range(0, number_of_nodes * dimension))) = -trans(C_Matrix);
 		}
-		else if (rCurrentProcessInfo.Has(BUILD_LEVEL) && rCurrentProcessInfo[BUILD_LEVEL] == 97)
+		else if (rCurrentProcessInfo.Has(BUILD_LEVEL) && rCurrentProcessInfo[BUILD_LEVEL] == 404)
 		{
-			// NPE 4 stiffness is empty
+			// M*2
+			noalias(project(rLeftHandSideMatrix, range(0, number_of_nodes * dimension), range(0, number_of_nodes * dimension))) = Ms3_Matrix;
 		}
-		else if (rCurrentProcessInfo.Has(BUILD_LEVEL) && rCurrentProcessInfo[BUILD_LEVEL] == 98)
+		else if (rCurrentProcessInfo.Has(BUILD_LEVEL) && rCurrentProcessInfo[BUILD_LEVEL] == 405)
 		{
-			// NPE 4 stiffness is empty
-		}
-
-		if (rCurrentProcessInfo.Has(BUILD_LEVEL) && rCurrentProcessInfo[BUILD_LEVEL] == 291)
-		{
-			// real part of NPE 1 mass
-			noalias(project(rLeftHandSideMatrix, range(0, number_of_nodes* dimension), range(0, number_of_nodes* dimension))) = real(Ms1_Matrix);
-			noalias(project(rLeftHandSideMatrix, range(number_of_nodes* dimension, number_of_nodes* (dimension + 1)),
-				range(0, number_of_nodes* dimension))) = trans(C1_Matrix);
-			noalias(project(rLeftHandSideMatrix, range(number_of_nodes* dimension, number_of_nodes* (dimension + 1)),
-				range(0, number_of_nodes* dimension))) = trans(C2_Matrix);
-			noalias(project(rLeftHandSideMatrix, range(number_of_nodes* dimension, number_of_nodes* (dimension + 1)),
-				range(number_of_nodes* dimension, number_of_nodes* (dimension + 1)))) = Mf1_Matrix;
-		}
-		else if (rCurrentProcessInfo.Has(BUILD_LEVEL) && rCurrentProcessInfo[BUILD_LEVEL] == 292)
-		{
-			// imaginary part of NPE 1 mass
-			noalias(project(rLeftHandSideMatrix, range(0, number_of_nodes* dimension), range(0, number_of_nodes* dimension))) = imag(Ms1_Matrix);
-			// C1_Matrix and C2_Matrix do not have an imaginary part
-		}
-		else if (rCurrentProcessInfo.Has(BUILD_LEVEL) && rCurrentProcessInfo[BUILD_LEVEL] == 293)
-		{
-			// real part of NPE 2 mass
-			noalias(project(rLeftHandSideMatrix, range(number_of_nodes* dimension, number_of_nodes* (dimension + 1)),
-				range(0, number_of_nodes* dimension))) = - trans(C_Matrix);
-		}
-		else if (rCurrentProcessInfo.Has(BUILD_LEVEL) && rCurrentProcessInfo[BUILD_LEVEL] == 294)
-		{
-			// imaginary part of NPE 2 mass
-			// there is no imaginary part of the C_Matrix
-		}
-		else if (rCurrentProcessInfo.Has(BUILD_LEVEL) && rCurrentProcessInfo[BUILD_LEVEL] == 295)
-		{
-			// real part of NPE 3 mass
-			noalias(project(rLeftHandSideMatrix, range(0, number_of_nodes* dimension), range(0, number_of_nodes* dimension))) = real(Ms3_Matrix);
-		}
-		else if (rCurrentProcessInfo.Has(BUILD_LEVEL) && rCurrentProcessInfo[BUILD_LEVEL] == 296)
-		{
-			// imaginary part of NPE 3 mass
-			// there is no imaginary part of the Ms3_Matrix
-		}
-		else if (rCurrentProcessInfo.Has(BUILD_LEVEL) && rCurrentProcessInfo[BUILD_LEVEL] == 297)
-		{
-			// real part of NPE 4 mass
-			noalias(project(rLeftHandSideMatrix, range(number_of_nodes* dimension, number_of_nodes* (dimension + 1)),
-				range(number_of_nodes* dimension, number_of_nodes* (dimension + 1)))) = Mf4_Matrix;
-		}
-		else if (rCurrentProcessInfo.Has(BUILD_LEVEL) && rCurrentProcessInfo[BUILD_LEVEL] == 298)
-		{
-			// imaginary part of the NPE 4 mass
-			// there is no imaginary part of the Mf4_Matrix
+			// M*3
+			noalias(project(rLeftHandSideMatrix, range(number_of_nodes * dimension, number_of_nodes * (dimension + 1)),
+				range(number_of_nodes * dimension, number_of_nodes * (dimension + 1)))) = Mf4_Matrix;
 		}
 
-
-		KRATOS_WATCH(rLeftHandSideMatrix)
+		// KRATOS_WATCH(rLeftHandSideMatrix)
 
 
         // GeometryUtils::JacobianOnInitialConfiguration(r_geom, r_geom.IntegrationPoints(ThisIntegrationMethod)[PointNumber], rJ0);
