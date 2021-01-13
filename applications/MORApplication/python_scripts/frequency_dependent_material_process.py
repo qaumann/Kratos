@@ -88,23 +88,23 @@ class FrequencyDependentMaterialProcess(KratosMultiphysics.Process):
             1j*viscous_drag(omega)/omega)
         self.strategy.SetFrequencyDependentMaterial(self.settings['k2'])
 
-        self.settings['m1'] = MOR.FrequencyDependentMaterialSettings(self.model_part, 381)
+        self.settings['m3'] = MOR.FrequencyDependentMaterialSettings(self.model_part, 281)
+        self.functions['m3'] = \
+            lambda omega: -omega**2 * (-porosity * (-apparent_mass_density + 1j*viscous_drag(omega)/omega) / \
+            (porosity*density_fluid + apparent_mass_density - 1j*viscous_drag(omega)/omega))
+        self.strategy.SetFrequencyDependentMaterial(self.settings['m3'])
+
+        self.settings['m1'] = MOR.FrequencyDependentMaterialSettings(self.model_part, 282)
         self.functions['m1'] = \
             lambda omega: -omega**2 * (-1j*viscous_drag(omega)/omega - \
             (-apparent_mass_density+1j*viscous_drag(omega)/omega)**2 / \
             (porosity*density_fluid + apparent_mass_density - 1j*viscous_drag(omega)/omega))
         self.strategy.SetFrequencyDependentMaterial(self.settings['m1'])
 
-        self.settings['m2'] = MOR.FrequencyDependentMaterialSettings(self.model_part, 382)
+        self.settings['m2'] = MOR.FrequencyDependentMaterialSettings(self.model_part, 283)
         self.functions['m2'] = \
             lambda omega: -omega**2 * (-(heat_capacity_fluid-1) / (alpha(omega) * heat_capacity_fluid*standard_pressure_fluid))
         self.strategy.SetFrequencyDependentMaterial(self.settings['m2'])
-
-        self.settings['m3'] = MOR.FrequencyDependentMaterialSettings(self.model_part, 383)
-        self.functions['m3'] = \
-            lambda omega: -omega**2 * (-porosity * (-apparent_mass_density + 1j*viscous_drag(omega)/omega) / \
-            (porosity*density_fluid + apparent_mass_density - 1j*viscous_drag(omega)/omega))
-        self.strategy.SetFrequencyDependentMaterial(self.settings['m3'])
 
     def _RetrieveProperty(self, property_type):
         for prop in self.model_part.GetProperties():
