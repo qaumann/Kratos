@@ -10,7 +10,6 @@
 // System includes
 
 // External includes
-#include "includes/ublas_complex_interface.h"
 
 // Project includes
 #include "utilities/geometry_utilities.h"
@@ -99,7 +98,7 @@ int  PorousElement::Check( const ProcessInfo& rCurrentProcessInfo )
 void PorousElement::Initialize()
 {
     KRATOS_TRY
-    std::cout << "i am initializing an porous element\n";
+    std::cout << "I am initializing a porous element\n";
     KRATOS_CATCH("")
 }
 
@@ -153,12 +152,17 @@ void PorousElement::GetDofList(DofsVectorType& rElementalDofList, ProcessInfo& C
 
 	rElementalDofList.resize(0);
 
+	// order: displacements of all nodes first, then pressure dofs for all nodes at the end
+
 	if (dimension == 2) {
 		for (SizeType i = 0; i < GetGeometry().size(); i++)
 		{
 
 			rElementalDofList.push_back(GetGeometry()[i].pGetDof(DISPLACEMENT_X));
 			rElementalDofList.push_back(GetGeometry()[i].pGetDof(DISPLACEMENT_Y));
+		}
+		for (SizeType i = 0; i < GetGeometry().size(); i++)
+		{
 			rElementalDofList.push_back(GetGeometry()[i].pGetDof(PRESSURE));
 		}
 	}
@@ -169,7 +173,11 @@ void PorousElement::GetDofList(DofsVectorType& rElementalDofList, ProcessInfo& C
 			rElementalDofList.push_back(GetGeometry()[i].pGetDof(DISPLACEMENT_X));
 			rElementalDofList.push_back(GetGeometry()[i].pGetDof(DISPLACEMENT_Y));
 			rElementalDofList.push_back(GetGeometry()[i].pGetDof(DISPLACEMENT_Z));
+		}
+		for (SizeType i = 0; i < GetGeometry().size(); i++)
+		{
 			rElementalDofList.push_back(GetGeometry()[i].pGetDof(PRESSURE));
+
 		}
 	}
 }
@@ -328,45 +336,18 @@ void PorousElement::CalculateLeftHandSide(MatrixType& rLeftHandSideMatrix, Proce
 		const SizeType dimension = geom.WorkingSpaceDimension();
 		const GeometryType::IntegrationPointsArrayType& integration_points = geom.IntegrationPoints(ThisIntegrationMethod);
 
-
-		/*const double LAMBDA_SOLID = GetProperties()[LAMBDA_SOLID];
-		const double MUE_SOLID = GetProperties()[MUE_SOLID];
-		const double DAMPING_SOLID = GetProperties()[DAMPING_SOLID];
-		const double DENSITY_SOLID = GetProperties()[DENSITY_SOLID];
-		const double DENSITY_FLUID = GetProperties()[DENSITY_FLUID];
-		const double STANDARD_PRESSURE_FLUID = GetProperties()[STANDARD_PRESSURE_FLUID];
-		const double POROSITY = GetProperties()[POROSITY];
-		const double TORTUOSITY = GetProperties()[TORTUOSITY];
-		*/
-
-		// hard coded parameters to check the result
-		const double LAMBDA_SOLID = 500.0;
-		const double MUE_SOLID = 30.0;
-		const double DAMPING_SOLID = 0.2;
-		const double DENSITY_SOLID = 8.0;
-		const double DENSITY_FLUID = 1.21;
-		//const double VISCOSITY_FLUID = 1.84e-5;
-		const double STANDARD_PRESSURE_FLUID = 101e3;
-		//const double HEAT_CAPACITY_FLUID = 1.4;
-		//const double PRANDTL_NUMBER_FLUID = 0.71;
-		const double POROSITY = 0.3;
-		//const double THERMAL_LENGTH = 1.5;
-		//const double OMEGA = 15.0;
-		const double TORTUOSITY = 2.07;
-		//const double FLOW_RESISTIVITY = 4410;
-		//const double VISCOUS_LENGTH = 1.1e-2;
-		//const int BUILD_LEVEL = 201;
-
+		// get material parameters
+		const double lamda_solid = GetProperties()[LAMBDA_SOLID];
+		const double mue_solid = GetProperties()[MUE_SOLID];
+		const double damping_solid = GetProperties()[DAMPING_SOLID];
+		const double density_solid = GetProperties()[DENSITY_SOLID];
+		const double density_fluid = GetProperties()[DENSITY_FLUID];
+		const double standard_pressure_fluid = GetProperties()[STANDARD_PRESSURE_FLUID];
+		const double porosity = GetProperties()[POROSITY];
+		const double tortuosity = GetProperties()[TORTUOSITY];
 
 		// Determine relevant densities
-		double APPARENT_MASS_DENSITY = POROSITY * DENSITY_FLUID * (TORTUOSITY - 1.0);
-
-		//std::complex<double> VISCOUS_DRAG = FLOW_RESISTIVITY * pow(POROSITY, 2.0) * pow(1.0 +
-		//	std::complex<double>(0,4) * OMEGA * pow(TORTUOSITY, 2.0) * VISCOSITY_FLUID * DENSITY_FLUID / ( pow(FLOW_RESISTIVITY, 2.0) * pow(VISCOUS_LENGTH, 2) * pow(POROSITY, 2)), 0.5);
-		//std::complex<double> EQUIVALENT_COUPLING_DENSITY = - APPARENT_MASS_DENSITY + std::complex<double>(0,1) * VISCOUS_DRAG / OMEGA;
-		//std::complex<double> EQUIVALENT_FLUID_DENSITY = POROSITY * DENSITY_FLUID - EQUIVALENT_COUPLING_DENSITY;
-		//std::complex<double> EQUIVALENT_SOLID_DENSITY = (1.0 - POROSITY) * DENSITY_SOLID - EQUIVALENT_COUPLING_DENSITY;
-		//std::complex<double> EQUIVALENT_DENSITY = EQUIVALENT_SOLID_DENSITY - pow(EQUIVALENT_COUPLING_DENSITY, 2) / EQUIVALENT_FLUID_DENSITY;
+		double APPARENT_MASS_DENSITY = porosity * density_fluid * (tortuosity - 1.0);
 
 		// resize leftHandSideMatrix if the size is incorrect
 		if (rLeftHandSideMatrix.size1() != number_of_nodes * (dimension + 1)  || rLeftHandSideMatrix.size2() != number_of_nodes * (dimension + 1))
@@ -383,72 +364,48 @@ void PorousElement::CalculateLeftHandSide(MatrixType& rLeftHandSideMatrix, Proce
 		const Matrix& NContainer = geom.ShapeFunctionsValues(ThisIntegrationMethod);
         DN_DX = geom.ShapeFunctionsIntegrationPointsGradients(DN_DX, DetJ, ThisIntegrationMethod);
 
-		//std::complex<double> K = HEAT_CAPACITY_FLUID * STANDARD_PRESSURE_FLUID / pow(HEAT_CAPACITY_FLUID -
-			//(HEAT_CAPACITY_FLUID - 1) * ((1 + 8 * VISCOSITY_FLUID / (std::complex<double>(0,1) * OMEGA * PRANDTL_NUMBER_FLUID * pow(THERMAL_LENGTH, 2) * DENSITY_FLUID) *
-			//pow(1 + std::complex<double>(0,1) * OMEGA * PRANDTL_NUMBER_FLUID * pow(THERMAL_LENGTH, 2) * DENSITY_FLUID / (16 * VISCOSITY_FLUID), 0.5))), -1);
-		//std::complex<double> R = POROSITY * K;
-		//std::complex<double> Q = (1 - POROSITY) * K;
-		//std::complex<double> GAMMA = POROSITY * ((EQUIVALENT_COUPLING_DENSITY / EQUIVALENT_FLUID_DENSITY) - (Q / R));
-
 		// compute material matrix
-
-		// Determine Coefficients for the material matrix
-		std::complex<double> LAMBDA = (1 + std::complex<double>(0,1) * DAMPING_SOLID) * LAMBDA_SOLID;
-		std::complex<double> MUE = (1 + std::complex<double>(0,1) * DAMPING_SOLID) * MUE_SOLID;
-
-		// real part
-		ComplexMatrix D;
+		Matrix D;
 
 		if (dimension == 2)
 		{
 			D = ZeroMatrix(3, 3);
-			D(0, 0) = LAMBDA + (2.0 + std::complex<double>(0, 0)) * MUE;
-			D(0, 1) = LAMBDA;
-			D(1, 0) = LAMBDA;
-			D(1, 1) = LAMBDA + (2.0 + std::complex<double>(0, 0)) * MUE;
-			D(2, 2) = MUE;
+			D(0, 0) = lamda_solid + 2.0 * mue_solid;
+			D(0, 1) = lamda_solid;
+			D(1, 0) = lamda_solid;
+			D(1, 1) = lamda_solid + 2.0 * mue_solid;
+			D(2, 2) = mue_solid;
 		}
 		else if (dimension == 3)
 		{
 			D = ZeroMatrix(6, 6);
-			D(0, 0) = LAMBDA + (2.0 + std::complex<double>(0, 0)) * MUE;
-			D(0, 1) = LAMBDA;
-			D(0, 2) = LAMBDA;
-			D(1, 0) = LAMBDA;
-			D(1, 1) = LAMBDA + (2.0 + std::complex<double>(0, 0)) * MUE;
-			D(1, 2) = LAMBDA;
-			D(2, 0) = LAMBDA;
-			D(2, 1) = LAMBDA;
-			D(2, 2) = LAMBDA + (2.0 + std::complex<double>(0, 0)) * MUE;
-			D(3, 3) = MUE;
-			D(4, 4) = MUE;
-			D(5, 5) = MUE;
+			D(0, 0) = lamda_solid + 2.0 * mue_solid;
+			D(0, 1) = lamda_solid;
+			D(0, 2) = lamda_solid;
+			D(1, 0) = lamda_solid;
+			D(1, 1) = lamda_solid + 2.0 * mue_solid;
+			D(1, 2) = lamda_solid;
+			D(2, 0) = lamda_solid;
+			D(2, 1) = lamda_solid;
+			D(2, 2) = lamda_solid + 2.0 * mue_solid;
+			D(3, 3) = mue_solid;
+			D(4, 4) = mue_solid;
+			D(5, 5) = mue_solid;
 		}
 
 
 		// initialize results for submatrices
 
-
 		// NPE 1 stiffness
-		ComplexMatrix Ks_Matrix = ZeroMatrix(number_of_nodes * dimension, number_of_nodes * dimension);
+		Matrix Ks_Matrix = ZeroMatrix(number_of_nodes * dimension, number_of_nodes * dimension);
 		Matrix C1_Matrix = ZeroMatrix(number_of_nodes * dimension, number_of_nodes);
 		Matrix C2_Matrix = ZeroMatrix(number_of_nodes * dimension, number_of_nodes);
 
-		// NPE 1 mass
-		Matrix Ms1_Matrix = ZeroMatrix(number_of_nodes * dimension, number_of_nodes * dimension);
-		Matrix Mf1_Matrix = ZeroMatrix(number_of_nodes, number_of_nodes);
-
-		// NPE 2 stiffness and mass
+		// NPE 2 stiffness 
 		Matrix C_Matrix = ZeroMatrix(number_of_nodes * dimension, number_of_nodes);
 
 		// NPE 3 stiffness
 		Matrix Kf_Matrix = ZeroMatrix(number_of_nodes, number_of_nodes);
-
-		// NPE 3 mass
-		Matrix Ms3_Matrix = ZeroMatrix(number_of_nodes * dimension, number_of_nodes * dimension);
-
-		// NPE 4
-		Matrix Mf4_Matrix = ZeroMatrix(number_of_nodes, number_of_nodes);
 
         for ( IndexType point_number = 0; point_number < integration_points.size(); ++point_number )
         {
@@ -463,94 +420,47 @@ void PorousElement::CalculateLeftHandSide(MatrixType& rLeftHandSideMatrix, Proce
 			// compute submatrices
 
 			// NPE 1 - stiffness
-			noalias(Ks_Matrix) += int_weight * prod(trans(Be), ComplexMatrix(prod(D, Be)));
-			noalias(C1_Matrix) += int_weight * POROSITY * prod(trans(N_mat), trans(DN_DX[point_number]));
+			noalias(Ks_Matrix) += int_weight * prod(trans(Be), Matrix(prod(D, Be)));
+			noalias(C1_Matrix) += int_weight * porosity * prod(trans(N_mat), trans(DN_DX[point_number]));
 			noalias(C2_Matrix) += int_weight * outer_prod(trans(Bu), row(NContainer, point_number));
-
-			// NPE 1 - mass
-			noalias(Ms1_Matrix) += int_weight * ( (1.0 - POROSITY) * DENSITY_SOLID + APPARENT_MASS_DENSITY) * prod(trans(N_mat), N_mat);
-			noalias(Mf1_Matrix) += int_weight * (pow(POROSITY, 2) / STANDARD_PRESSURE_FLUID) *
-				outer_prod(row(NContainer, point_number), row(NContainer, point_number));
-			// C1_Matrix
-			// C2_Matrix
 
 			// NPE 2 - stiffness
 			noalias(C_Matrix) += int_weight * prod(trans(N_mat), trans(DN_DX[point_number]));
 
-			// NPE 2 - mass
-			// C_Matrix
-
 			// NPE 3 stiffness
 			noalias(Kf_Matrix) += int_weight * prod(DN_DX[point_number], trans(DN_DX[point_number]));
 
-			// NPE 3 mass
-			noalias(Ms3_Matrix) += int_weight * prod(trans(N_mat), N_mat);
-
 			// NPE 4 stiffness
 			// empty
-
-			// NPE 4 mass
-			noalias(Mf4_Matrix) += int_weight * outer_prod(row(NContainer, point_number), row(NContainer, point_number));
         }
 
-		if (rCurrentProcessInfo.Has(BUILD_LEVEL) && rCurrentProcessInfo[BUILD_LEVEL] == 91)
-		{
-			// K^ (real part)
-			noalias(project(rLeftHandSideMatrix, range(0, number_of_nodes * dimension), range(0, number_of_nodes * dimension))) = real(Ks_Matrix);
-			noalias(project(rLeftHandSideMatrix, range(0, number_of_nodes * dimension),
-				range(number_of_nodes * dimension, number_of_nodes * (dimension + 1)))) = -C1_Matrix;
-			noalias(project(rLeftHandSideMatrix, range(0, number_of_nodes * dimension),
-				range(number_of_nodes * dimension, number_of_nodes * (dimension + 1)))) = -C2_Matrix;
-		}
-		else if (rCurrentProcessInfo.Has(BUILD_LEVEL) && rCurrentProcessInfo[BUILD_LEVEL] == 92)
-		{
-			// K^ (imaginary part)
-			noalias(project(rLeftHandSideMatrix, range(0, number_of_nodes * dimension), range(0, number_of_nodes * dimension))) = imag(Ks_Matrix);
-		}
-
-		else if (rCurrentProcessInfo.Has(BUILD_LEVEL) && rCurrentProcessInfo[BUILD_LEVEL] == 291)
-		{
-			// M^
-			noalias(project(rLeftHandSideMatrix, range(0, number_of_nodes * dimension), range(0, number_of_nodes * dimension))) = real(Ms1_Matrix);
-			noalias(project(rLeftHandSideMatrix, range(number_of_nodes * dimension, number_of_nodes * (dimension + 1)),
-				range(0, number_of_nodes * dimension))) = trans(C1_Matrix);
-			noalias(project(rLeftHandSideMatrix, range(number_of_nodes * dimension, number_of_nodes * (dimension + 1)),
-				range(0, number_of_nodes * dimension))) = trans(C2_Matrix);
-			noalias(project(rLeftHandSideMatrix, range(number_of_nodes * dimension, number_of_nodes * (dimension + 1)),
-				range(number_of_nodes * dimension, number_of_nodes * (dimension + 1)))) = Mf1_Matrix;
-		}
-
-		else if (rCurrentProcessInfo.Has(BUILD_LEVEL) && rCurrentProcessInfo[BUILD_LEVEL] == 401)
+		
+		if (rCurrentProcessInfo.Has(BUILD_LEVEL) && rCurrentProcessInfo[BUILD_LEVEL] == 81)
 		{
 			// K*1
 			noalias(project(rLeftHandSideMatrix, range(0, number_of_nodes * dimension),
 				range(number_of_nodes * dimension, number_of_nodes * (dimension + 1)))) = C_Matrix;
 		}
-		else if (rCurrentProcessInfo.Has(BUILD_LEVEL) && rCurrentProcessInfo[BUILD_LEVEL] == 402)
+		else if (rCurrentProcessInfo.Has(BUILD_LEVEL) && rCurrentProcessInfo[BUILD_LEVEL] == 82)
 		{
 			// K*2
 			noalias(project(rLeftHandSideMatrix, range(number_of_nodes * dimension, number_of_nodes * (dimension + 1)),
 				range(number_of_nodes * dimension, number_of_nodes * (dimension + 1)))) = Kf_Matrix;
 		}
-		else if (rCurrentProcessInfo.Has(BUILD_LEVEL) && rCurrentProcessInfo[BUILD_LEVEL] == 403)
+		else
 		{
-			// M*1
-			noalias(project(rLeftHandSideMatrix, range(number_of_nodes * dimension, number_of_nodes * (dimension + 1)),
-				range(0, number_of_nodes * dimension))) = -trans(C_Matrix);
-		}
-		else if (rCurrentProcessInfo.Has(BUILD_LEVEL) && rCurrentProcessInfo[BUILD_LEVEL] == 404)
-		{
-			// M*2
-			noalias(project(rLeftHandSideMatrix, range(0, number_of_nodes * dimension), range(0, number_of_nodes * dimension))) = Ms3_Matrix;
-		}
-		else if (rCurrentProcessInfo.Has(BUILD_LEVEL) && rCurrentProcessInfo[BUILD_LEVEL] == 405)
-		{
-			// M*3
-			noalias(project(rLeftHandSideMatrix, range(number_of_nodes * dimension, number_of_nodes * (dimension + 1)),
-				range(number_of_nodes * dimension, number_of_nodes * (dimension + 1)))) = Mf4_Matrix;
+			
+			// K^ (real part)
+			noalias(project(rLeftHandSideMatrix, range(0, number_of_nodes * dimension), range(0, number_of_nodes * dimension))) = Ks_Matrix;
+			noalias(project(rLeftHandSideMatrix, range(0, number_of_nodes * dimension),
+				range(number_of_nodes * dimension, number_of_nodes * (dimension + 1)))) = -C1_Matrix;
+			noalias(project(rLeftHandSideMatrix, range(0, number_of_nodes * dimension),
+				range(number_of_nodes * dimension, number_of_nodes * (dimension + 1)))) = -C2_Matrix;
+			
 		}
 
-		// KRATOS_WATCH(rLeftHandSideMatrix)
+		KRATOS_WATCH(rCurrentProcessInfo[BUILD_LEVEL])
+		KRATOS_WATCH(rLeftHandSideMatrix)
 
 
         // GeometryUtils::JacobianOnInitialConfiguration(r_geom, r_geom.IntegrationPoints(ThisIntegrationMethod)[PointNumber], rJ0);
@@ -567,54 +477,120 @@ void PorousElement::CalculateLeftHandSide(MatrixType& rLeftHandSideMatrix, Proce
 
 void PorousElement::CalculateMassMatrix(MatrixType& rMassMatrix, ProcessInfo& rCurrentProcessInfo)
 {
-	std::cout << "mass matrix\n";
-	const SizeType number_of_nodes = GetGeometry().size();
-	const SizeType dimension = GetGeometry().WorkingSpaceDimension();
+	// obtain parameters from geometry
+	const GeometryType& geom = GetGeometry();
+	IntegrationMethod ThisIntegrationMethod = geom.GetDefaultIntegrationMethod();
+	const SizeType number_of_nodes = geom.PointsNumber();
+	const SizeType dimension = geom.WorkingSpaceDimension();
+	const GeometryType::IntegrationPointsArrayType& integration_points = geom.IntegrationPoints(ThisIntegrationMethod);
 
-	// 2D -> 3 dofs, 3D -> 4 dofs per node (pressure + displacement)
-	const SizeType dofs_size = number_of_nodes * (dimension + 1);
+	// get material parameters
+	const double lamda_solid = GetProperties()[LAMBDA_SOLID];
+	const double mue_solid = GetProperties()[MUE_SOLID];
+	const double damping_solid = GetProperties()[DAMPING_SOLID];
+	const double density_solid = GetProperties()[DENSITY_SOLID];
+	const double density_fluid = GetProperties()[DENSITY_FLUID];
+	const double standard_pressure_fluid = GetProperties()[STANDARD_PRESSURE_FLUID];
+	const double porosity = GetProperties()[POROSITY];
+	const double tortuosity = GetProperties()[TORTUOSITY];
+
+	// Determine relevant densities
+	double APPARENT_MASS_DENSITY = porosity * density_fluid * (tortuosity - 1.0);
+
+	// resize leftHandSideMatrix if the size is incorrect
+	if (rMassMatrix.size1() != number_of_nodes * (dimension + 1) || rMassMatrix.size2() != number_of_nodes * (dimension + 1))
+	{
+		rMassMatrix.resize(number_of_nodes * (dimension + 1), number_of_nodes * (dimension + 1), false);
+	}
+	noalias(rMassMatrix) = ZeroMatrix(number_of_nodes * (dimension + 1), number_of_nodes * (dimension + 1));
+
+	// initialize result for shape function derivatives and determinant of the Jacobi Matrix
+	ShapeFunctionDerivativesArrayType DN_DX;
+	Vector DetJ;
+
+	// get shape functions and their derivatives
+	const Matrix& NContainer = geom.ShapeFunctionsValues(ThisIntegrationMethod);
+	DN_DX = geom.ShapeFunctionsIntegrationPointsGradients(DN_DX, DetJ, ThisIntegrationMethod);
 
 
-    // const GeometryType& geom = GetGeometry();
-    // const SizeType number_of_nodes = geom.PointsNumber();
-    if( rMassMatrix.size1() != dofs_size || rMassMatrix.size2() != dofs_size )
-    {
-        rMassMatrix.resize(dofs_size, dofs_size, false);
-        noalias(rMassMatrix) = ZeroMatrix( dofs_size, dofs_size );
-    }
-    // const GeometryType& geom = GetGeometry();
-    // IntegrationMethod ThisIntegrationMethod = geom.GetDefaultIntegrationMethod();
-    // const SizeType number_of_nodes = geom.PointsNumber();
-    // const GeometryType::IntegrationPointsArrayType& integration_points = geom.IntegrationPoints(ThisIntegrationMethod);
-    // IndexType NumGauss = integration_points.size();
-    // const Matrix& NContainer = geom.ShapeFunctionsValues(ThisIntegrationMethod);
-    // double Vol = geom.Volume();
-    // if( rMassMatrix.size1() != number_of_nodes || rMassMatrix.size2() != number_of_nodes )
-    // {
-    //     rMassMatrix.resize(number_of_nodes, number_of_nodes, false);
-    //     noalias(rMassMatrix) = ZeroMatrix( number_of_nodes, number_of_nodes );
-    // }
+	// initialize results for submatrices
 
-    // // KRATOS_WATCH(BULK_MODULUS)
+	// NPE 1 mass
+	Matrix Ms1_Matrix = ZeroMatrix(number_of_nodes * dimension, number_of_nodes * dimension);
+	Matrix Mf1_Matrix = ZeroMatrix(number_of_nodes, number_of_nodes);
+	Matrix C1_Matrix = ZeroMatrix(number_of_nodes * dimension, number_of_nodes);
+	Matrix C2_Matrix = ZeroMatrix(number_of_nodes * dimension, number_of_nodes);
 
-    // const double p = GetProperties()[DENSITY];
-    // const double G = GetProperties()[BULK_MODULUS];
+	// NPE 2 mass
+	Matrix C_Matrix = ZeroMatrix(number_of_nodes * dimension, number_of_nodes);
 
-    // KRATOS_WATCH(NContainer)
+	// NPE 3 mass
+	Matrix Ms3_Matrix = ZeroMatrix(number_of_nodes * dimension, number_of_nodes * dimension);
 
-    // for (IndexType i = 0; i < number_of_nodes; i++)
-    // {
-    //     for (IndexType j = 0; j < number_of_nodes; j++)
-    //     {
-    //         for (IndexType g = 0; g < NumGauss; g++)
-    //             {
-    //                 double DetJ = geom.DeterminantOfJacobian(g, ThisIntegrationMethod);
-    //                 double GaussWeight = DetJ * integration_points[g].Weight();
-    //                 rMassMatrix(i,j) += NContainer(g, i) * NContainer(g, j) * GaussWeight * (p/G);
-    //             }
-    //     }
-    // }
-    // KRATOS_WATCH(rMassMatrix)
+	// NPE 4
+	Matrix Mf4_Matrix = ZeroMatrix(number_of_nodes, number_of_nodes);
+
+	for (IndexType point_number = 0; point_number < integration_points.size(); ++point_number)
+	{
+		// compute coordinate transformation factor (including Gauss weight)
+		double int_weight = integration_points[point_number].Weight() * DetJ(point_number);
+
+		// get Be-Matrix, N_mat Matrix and Bu-Matrix
+		Matrix Be = CalculateBMatrix(DN_DX[point_number]);
+		Matrix N_mat = CalculateNMatrix(row(NContainer, point_number));
+		Vector Bu = CalculateBuMatrix(DN_DX[point_number]);
+
+		// compute submatrices
+
+		// NPE 1 - mass
+		noalias(Ms1_Matrix) += int_weight * ((1.0 - porosity) * density_solid + APPARENT_MASS_DENSITY) * prod(trans(N_mat), N_mat);
+		noalias(Mf1_Matrix) += int_weight * (pow(porosity, 2) / standard_pressure_fluid) *
+			outer_prod(row(NContainer, point_number), row(NContainer, point_number));
+		noalias(C1_Matrix) += int_weight * porosity * prod(trans(N_mat), trans(DN_DX[point_number]));
+		noalias(C2_Matrix) += int_weight * outer_prod(trans(Bu), row(NContainer, point_number));
+
+		// NPE 2 - mass
+		noalias(C_Matrix) += int_weight * prod(trans(N_mat), trans(DN_DX[point_number]));
+
+		// NPE 3 mass
+		noalias(Ms3_Matrix) += int_weight * prod(trans(N_mat), N_mat);
+
+		// NPE 4 mass
+		noalias(Mf4_Matrix) += int_weight * outer_prod(row(NContainer, point_number), row(NContainer, point_number));
+	}
+
+	if (rCurrentProcessInfo.Has(BUILD_LEVEL) && rCurrentProcessInfo[BUILD_LEVEL] == 281)
+	{
+		// M*1
+		noalias(project(rMassMatrix, range(number_of_nodes * dimension, number_of_nodes * (dimension + 1)),
+			range(0, number_of_nodes * dimension))) = -trans(C_Matrix);
+	}
+	else if (rCurrentProcessInfo.Has(BUILD_LEVEL) && rCurrentProcessInfo[BUILD_LEVEL] == 282)
+	{
+		// M*2
+		noalias(project(rMassMatrix, range(0, number_of_nodes * dimension), range(0, number_of_nodes * dimension))) = Ms3_Matrix;
+	}
+	else if (rCurrentProcessInfo.Has(BUILD_LEVEL) && rCurrentProcessInfo[BUILD_LEVEL] == 283)
+	{
+		// M*3
+		noalias(project(rMassMatrix, range(number_of_nodes * dimension, number_of_nodes * (dimension + 1)),
+			range(number_of_nodes * dimension, number_of_nodes * (dimension + 1)))) = Mf4_Matrix;
+	}
+	else
+	{
+		// M^
+		noalias(project(rMassMatrix, range(0, number_of_nodes * dimension), range(0, number_of_nodes * dimension))) = real(Ms1_Matrix);
+		noalias(project(rMassMatrix, range(number_of_nodes * dimension, number_of_nodes * (dimension + 1)),
+			range(0, number_of_nodes * dimension))) = trans(C1_Matrix);
+		noalias(project(rMassMatrix, range(number_of_nodes * dimension, number_of_nodes * (dimension + 1)),
+			range(0, number_of_nodes * dimension))) = trans(C2_Matrix);
+		noalias(project(rMassMatrix, range(number_of_nodes * dimension, number_of_nodes * (dimension + 1)),
+			range(number_of_nodes * dimension, number_of_nodes * (dimension + 1)))) = Mf1_Matrix;
+	}
+
+	KRATOS_WATCH(rCurrentProcessInfo[BUILD_LEVEL])
+	KRATOS_WATCH(rMassMatrix)
+
 }
 
 
