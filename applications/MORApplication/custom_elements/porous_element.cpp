@@ -124,19 +124,27 @@ void PorousElement::EquationIdVector(EquationIdVectorType& rResult,
 	// order of the dofs: displacement, pressure
 	if (dimension == 2) {
 		for (SizeType i = 0; i < number_of_nodes; i++) {
-			index = i * 3;
+			index = i * 2;
 			rResult[index] = GetGeometry()[i].GetDof(DISPLACEMENT_X).EquationId();
 			rResult[index + 1] = GetGeometry()[i].GetDof(DISPLACEMENT_Y).EquationId();
-			rResult[index + 2] = GetGeometry()[i].GetDof(PRESSURE).EquationId();
+		}
+		for (SizeType i = 0; i < number_of_nodes; i++) 
+		{
+			index = 2 * number_of_nodes + i;
+			rResult[index] = GetGeometry()[i].GetDof(PRESSURE).EquationId();
 		}
 	}
 	else {
 		for (SizeType i = 0; i < number_of_nodes; i++) {
-			index = i * 4;
+			index = i * 3;
 			rResult[index] = GetGeometry()[i].GetDof(DISPLACEMENT_X).EquationId();
 			rResult[index + 1] = GetGeometry()[i].GetDof(DISPLACEMENT_Y).EquationId();
 			rResult[index + 2] = GetGeometry()[i].GetDof(DISPLACEMENT_Z).EquationId();
-			rResult[index + 3] = GetGeometry()[i].GetDof(PRESSURE).EquationId();
+		}
+		for (SizeType i = 0; i < number_of_nodes; i++)
+		{
+			index = 3 * number_of_nodes + i;
+			rResult[index] = GetGeometry()[i].GetDof(PRESSURE).EquationId();
 		}
 	}
 
