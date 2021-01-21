@@ -461,9 +461,7 @@ void PorousElement::CalculateLeftHandSide(MatrixType& rLeftHandSideMatrix, Proce
 			// K^ (real part)
 			noalias(project(rLeftHandSideMatrix, range(0, number_of_nodes * dimension), range(0, number_of_nodes * dimension))) = Ks_Matrix;
 			noalias(project(rLeftHandSideMatrix, range(0, number_of_nodes * dimension),
-				range(number_of_nodes * dimension, number_of_nodes * (dimension + 1)))) = -C1_Matrix;
-			noalias(project(rLeftHandSideMatrix, range(0, number_of_nodes * dimension),
-				range(number_of_nodes * dimension, number_of_nodes * (dimension + 1)))) = -C2_Matrix;
+				range(number_of_nodes * dimension, number_of_nodes * (dimension + 1)))) = - C1_Matrix - C2_Matrix;
 			
 		}
 
@@ -589,9 +587,7 @@ void PorousElement::CalculateMassMatrix(MatrixType& rMassMatrix, ProcessInfo& rC
 		// M^
 		noalias(project(rMassMatrix, range(0, number_of_nodes * dimension), range(0, number_of_nodes * dimension))) = real(Ms1_Matrix);
 		noalias(project(rMassMatrix, range(number_of_nodes * dimension, number_of_nodes * (dimension + 1)),
-			range(0, number_of_nodes * dimension))) = trans(C1_Matrix);
-		noalias(project(rMassMatrix, range(number_of_nodes * dimension, number_of_nodes * (dimension + 1)),
-			range(0, number_of_nodes * dimension))) = trans(C2_Matrix);
+			range(0, number_of_nodes * dimension))) = trans(C1_Matrix) + trans(C2_Matrix);
 		noalias(project(rMassMatrix, range(number_of_nodes * dimension, number_of_nodes * (dimension + 1)),
 			range(number_of_nodes * dimension, number_of_nodes * (dimension + 1)))) = Mf1_Matrix;
 	}
