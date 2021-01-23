@@ -128,7 +128,7 @@ void PorousElement::EquationIdVector(EquationIdVectorType& rResult,
 			rResult[index] = GetGeometry()[i].GetDof(DISPLACEMENT_X).EquationId();
 			rResult[index + 1] = GetGeometry()[i].GetDof(DISPLACEMENT_Y).EquationId();
 		}
-		for (SizeType i = 0; i < number_of_nodes; i++) 
+		for (SizeType i = 0; i < number_of_nodes; i++)
 		{
 			index = 2 * number_of_nodes + i;
 			rResult[index] = GetGeometry()[i].GetDof(PRESSURE).EquationId();
@@ -409,7 +409,7 @@ void PorousElement::CalculateLeftHandSide(MatrixType& rLeftHandSideMatrix, Proce
 		Matrix C1_Matrix = ZeroMatrix(number_of_nodes * dimension, number_of_nodes);
 		Matrix C2_Matrix = ZeroMatrix(number_of_nodes * dimension, number_of_nodes);
 
-		// NPE 2 stiffness 
+		// NPE 2 stiffness
 		Matrix C_Matrix = ZeroMatrix(number_of_nodes * dimension, number_of_nodes);
 
 		// NPE 3 stiffness
@@ -442,7 +442,7 @@ void PorousElement::CalculateLeftHandSide(MatrixType& rLeftHandSideMatrix, Proce
 			// empty
         }
 
-		
+
 		if (rCurrentProcessInfo.Has(BUILD_LEVEL) && rCurrentProcessInfo[BUILD_LEVEL] == 81)
 		{
 			// K*1
@@ -454,15 +454,27 @@ void PorousElement::CalculateLeftHandSide(MatrixType& rLeftHandSideMatrix, Proce
 			// K*2
 			noalias(project(rLeftHandSideMatrix, range(number_of_nodes * dimension, number_of_nodes * (dimension + 1)),
 				range(number_of_nodes * dimension, number_of_nodes * (dimension + 1)))) = Kf_Matrix;
+
+		}
+		else if (rCurrentProcessInfo.Has(BUILD_LEVEL) && rCurrentProcessInfo[BUILD_LEVEL] == 83)
+		{
+			// compensate 1s on the diagonal by -1s
+			noalias(project(rLeftHandSideMatrix, range(number_of_nodes * dimension, number_of_nodes * (dimension + 1)),
+				range(number_of_nodes * dimension, number_of_nodes * (dimension + 1)))) -= IdentityMatrix(number_of_nodes, number_of_nodes);
 		}
 		else
 		{
-			
+
 			// K^ (real part)
 			noalias(project(rLeftHandSideMatrix, range(0, number_of_nodes * dimension), range(0, number_of_nodes * dimension))) = Ks_Matrix;
 			noalias(project(rLeftHandSideMatrix, range(0, number_of_nodes * dimension),
 				range(number_of_nodes * dimension, number_of_nodes * (dimension + 1)))) = - C1_Matrix - C2_Matrix;
-			
+
+			// put dummy 1s on the diagonal to prevent the Dirichlet utility from setting a value there
+			// they will be compensated by -1s in BUILD_LEVEL 83
+			noalias(project(rLeftHandSideMatrix, range(number_of_nodes * dimension, number_of_nodes * (dimension + 1)),
+				range(number_of_nodes * dimension, number_of_nodes * (dimension + 1)))) += IdentityMatrix(number_of_nodes, number_of_nodes);
+
 		}
 
 		KRATOS_WATCH(rCurrentProcessInfo[BUILD_LEVEL])

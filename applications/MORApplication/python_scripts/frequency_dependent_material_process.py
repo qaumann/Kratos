@@ -88,6 +88,10 @@ class FrequencyDependentMaterialProcess(KratosMultiphysics.Process):
             1j*viscous_drag(omega)/omega)
         self.strategy.SetFrequencyDependentMaterial(self.settings['k2'])
 
+        self.settings['k3'] = MOR.FrequencyDependentMaterialSettings(self.model_part, 83)
+        self.functions['k3'] = lambda omega: 1
+        self.strategy.SetFrequencyDependentMaterial(self.settings['k3'])
+
         self.settings['m3'] = MOR.FrequencyDependentMaterialSettings(self.model_part, 281)
         self.functions['m3'] = \
             lambda omega: -omega**2 * (-porosity * (-apparent_mass_density + 1j*viscous_drag(omega)/omega) / \
