@@ -73,9 +73,6 @@ Element::Pointer PorousElement::Clone (
     // // Currently selected integration methods
     p_new_elem->SetIntegrationMethod(mThisIntegrationMethod);
 
-    // // The vector containing the constitutive laws
-    // p_new_elem->SetConstitutiveLawVector(BaseType::mConstitutiveLawVector);
-
     return p_new_elem;
 
     KRATOS_CATCH("");
@@ -84,11 +81,20 @@ Element::Pointer PorousElement::Clone (
 /***********************************************************************************/
 /***********************************************************************************/
 
-int  PorousElement::Check( const ProcessInfo& rCurrentProcessInfo )
+int PorousElement::Check( const ProcessInfo& rCurrentProcessInfo ) const
 {
     KRATOS_TRY
+    const double numerical_limit = std::numeric_limits<double>::epsilon();
 
     int ier = Element::Check(rCurrentProcessInfo);
+
+	// Check that all required variables have resonable values
+    KRATOS_ERROR_IF(!GetProperties().Has(DENSITY_SOLID) ||
+                GetProperties()[DENSITY_SOLID] <= numerical_limit)
+        << "Please provide a reasonable value for \"DENSITY_SOLID\" for element #"
+        << Id() << std::endl;
+
+	//TODO: add sanity check
 
     return ier;
 
@@ -117,8 +123,9 @@ void PorousElement::EquationIdVector(EquationIdVectorType& rResult,
 	// 2D -> 3 dofs, 3D -> 4 dofs per node (pressure + displacement)
 	const SizeType dofs_size = number_of_nodes * (dimension + 1);
 
-    if(rResult.size() != dofs_size)
+    if(rResult.size() != dofs_size) {
         rResult.resize(dofs_size,false);
+	}
 
 	SizeType index;
 	// order of the dofs: displacement, pressure
@@ -347,15 +354,15 @@ void PorousElement::CalculateLeftHandSide(MatrixType& rLeftHandSideMatrix, Proce
 		// get material parameters
 		const double lamda_solid = GetProperties()[LAMBDA_SOLID];
 		const double mue_solid = GetProperties()[MUE_SOLID];
-		const double damping_solid = GetProperties()[DAMPING_SOLID];
-		const double density_solid = GetProperties()[DENSITY_SOLID];
-		const double density_fluid = GetProperties()[DENSITY_FLUID];
-		const double standard_pressure_fluid = GetProperties()[STANDARD_PRESSURE_FLUID];
+		// const double damping_solid = GetProperties()[DAMPING_SOLID];
+		// const double density_solid = GetProperties()[DENSITY_SOLID];
+		// const double density_fluid = GetProperties()[DENSITY_FLUID];
+		// const double standard_pressure_fluid = GetProperties()[STANDARD_PRESSURE_FLUID];
 		const double porosity = GetProperties()[POROSITY];
-		const double tortuosity = GetProperties()[TORTUOSITY];
+		// const double tortuosity = GetProperties()[TORTUOSITY];
 
 		// Determine relevant densities
-		double APPARENT_MASS_DENSITY = porosity * density_fluid * (tortuosity - 1.0);
+		// double APPARENT_MASS_DENSITY = porosity * density_fluid * (tortuosity - 1.0);
 
 		// resize leftHandSideMatrix if the size is incorrect
 		if (rLeftHandSideMatrix.size1() != number_of_nodes * (dimension + 1)  || rLeftHandSideMatrix.size2() != number_of_nodes * (dimension + 1))
@@ -477,8 +484,8 @@ void PorousElement::CalculateLeftHandSide(MatrixType& rLeftHandSideMatrix, Proce
 
 		}
 
-		KRATOS_WATCH(rCurrentProcessInfo[BUILD_LEVEL])
-		KRATOS_WATCH(rLeftHandSideMatrix)
+		// KRATOS_WATCH(rCurrentProcessInfo[BUILD_LEVEL])
+		// KRATOS_WATCH(rLeftHandSideMatrix)
 
 
         // GeometryUtils::JacobianOnInitialConfiguration(r_geom, r_geom.IntegrationPoints(ThisIntegrationMethod)[PointNumber], rJ0);
@@ -503,9 +510,9 @@ void PorousElement::CalculateMassMatrix(MatrixType& rMassMatrix, ProcessInfo& rC
 	const GeometryType::IntegrationPointsArrayType& integration_points = geom.IntegrationPoints(ThisIntegrationMethod);
 
 	// get material parameters
-	const double lamda_solid = GetProperties()[LAMBDA_SOLID];
-	const double mue_solid = GetProperties()[MUE_SOLID];
-	const double damping_solid = GetProperties()[DAMPING_SOLID];
+	// const double lamda_solid = GetProperties()[LAMBDA_SOLID];
+	// const double mue_solid = GetProperties()[MUE_SOLID];
+	// const double damping_solid = GetProperties()[DAMPING_SOLID];
 	const double density_solid = GetProperties()[DENSITY_SOLID];
 	const double density_fluid = GetProperties()[DENSITY_FLUID];
 	const double standard_pressure_fluid = GetProperties()[STANDARD_PRESSURE_FLUID];
@@ -604,8 +611,8 @@ void PorousElement::CalculateMassMatrix(MatrixType& rMassMatrix, ProcessInfo& rC
 			range(number_of_nodes * dimension, number_of_nodes * (dimension + 1)))) = Mf1_Matrix;
 	}
 
-	KRATOS_WATCH(rCurrentProcessInfo[BUILD_LEVEL])
-	KRATOS_WATCH(rMassMatrix)
+	// KRATOS_WATCH(rCurrentProcessInfo[BUILD_LEVEL])
+	// KRATOS_WATCH(rMassMatrix)
 
 }
 
@@ -618,11 +625,10 @@ void PorousElement::CalculateDampingMatrix(MatrixType& rDampingMatrix, ProcessIn
 	const SizeType dimension = GetGeometry().WorkingSpaceDimension();
 	const SizeType dofs_size = number_of_nodes * (dimension + 1);
 
-    if( rDampingMatrix.size1() != dofs_size || rDampingMatrix.size2() != dofs_size )
-    {
+    if( rDampingMatrix.size1() != dofs_size || rDampingMatrix.size2() != dofs_size ) {
         rDampingMatrix.resize(dofs_size, dofs_size, false);
-        noalias(rDampingMatrix) = ZeroMatrix( dofs_size, dofs_size );
     }
+	noalias(rDampingMatrix) = ZeroMatrix( dofs_size, dofs_size );
 
 }
 
@@ -636,10 +642,10 @@ void PorousElement::CalculateRightHandSide(VectorType& rRightHandSideVector, Pro
 	const SizeType dofs_size = number_of_nodes * (dimension + 1);
 
     // Resizing as needed the RHS
-        if ( rRightHandSideVector.size() != dofs_size )
-            rRightHandSideVector.resize( dofs_size, false );
-
-        rRightHandSideVector = ZeroVector( dofs_size ); //resetting RHS
+	if ( rRightHandSideVector.size() != dofs_size ) {
+		rRightHandSideVector.resize( dofs_size, false );
+	}
+	rRightHandSideVector = ZeroVector( dofs_size ); //resetting RHS
     // }
 
 
@@ -656,17 +662,6 @@ void PorousElement::CalculateLocalSystem(MatrixType& rLeftHandSideMatrix, Vector
     CalculateLeftHandSide(rLeftHandSideMatrix, rCurrentProcessInfo);
     CalculateRightHandSide(rRightHandSideVector, rCurrentProcessInfo);
 
-    // auto& r_geometry = this->GetGeometry();
-    // const SizeType number_of_nodes = r_geometry.size();
-    // const SizeType dimension = r_geometry.WorkingSpaceDimension();
-    // const SizeType strain_size = GetProperties().GetValue( CONSTITUTIVE_LAW )->GetStrainSize();
-
-    // KinematicVariables this_kinematic_variables(number_of_nodes, dimension);
-
-    // const GeometryType::IntegrationPointsArrayType& integration_points = r_geometry.IntegrationPoints(this->GetIntegrationMethod());
-
-
-
     KRATOS_CATCH( "" )
 
 }
@@ -675,18 +670,18 @@ void PorousElement::CalculateLocalSystem(MatrixType& rLeftHandSideMatrix, Vector
 /***********************************************************************************/
 
 
-// void AcousticElement::save( Serializer& rSerializer ) const
-// {
-//     KRATOS_SERIALIZE_SAVE_BASE_CLASS( rSerializer, BaseSolidElement );
-// }
+void PorousElement::save( Serializer& rSerializer ) const
+{
+    KRATOS_SERIALIZE_SAVE_BASE_CLASS( rSerializer, Element );
+}
 
 /***********************************************************************************/
 /***********************************************************************************/
 
-// void AcousticElement::load( Serializer& rSerializer )
-// {
-//     KRATOS_SERIALIZE_LOAD_BASE_CLASS( rSerializer, BaseSolidElement );
-// }
+void PorousElement::load( Serializer& rSerializer )
+{
+    KRATOS_SERIALIZE_LOAD_BASE_CLASS( rSerializer, Element );
+}
 
 } // Namespace Kratos
 
