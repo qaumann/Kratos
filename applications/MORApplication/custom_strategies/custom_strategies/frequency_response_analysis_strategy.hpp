@@ -25,6 +25,7 @@
 
 #include "custom_utilities/dirichlet_utility.hpp"
 #include "custom_utilities/complex_dof_updater.hpp"
+#include "custom_utilities/complex_matrix_utility.hpp"
 
 namespace Kratos
 {
@@ -476,18 +477,11 @@ class FrequencyResponseAnalysisStrategy
 
                 p_scheme->FinalizeNonLinIteration(BaseType::GetModelPart(), r_K, tmp, tmp);
 
-
                 //resize and itialize working matrix
-                r_A.resize(r_K.size1(), r_K.size2(), false);
-                noalias(r_A) = r_K;
-
-                if( mUseModalDamping ) {
-                    noalias(r_A) += r_Ki + r_C - r_Mi;
-                } else {
-                    noalias(r_A) += r_C;
-                }
-                r_A *= complex(0,1);
-                noalias(r_A) += r_K - r_M;
+                ComplexMatrixUtility::ConstructMatrixStructure<TSchemeType, TSolutionMatrixType>(p_scheme,
+                    r_A,
+                    BaseType::GetModelPart(),
+                    p_builder_and_solver->GetEquationSystemSize());
             }
 
             KRATOS_INFO_IF("System Construction Time", BaseType::GetEchoLevel() > 0 && rank == 0)
@@ -569,18 +563,11 @@ class FrequencyResponseAnalysisStrategy
         TSolutionSpace::SetToZero(r_A);
 
         BuiltinTimer build_time;
-        #pragma omp parallel for schedule(static)// nowait
-        for( int i=0; i<static_cast<int>(r_A.size2()); ++i ) {
-            // row(r_A, i) = row(r_Ki, i) + excitation_frequency * row(r_C, i) - excitation_frequency2 * row(r_Mi, i);
-            row(r_A, i) += excitation_frequency * row(r_C, i);
-        }
+        ComplexMatrixUtility::axpy<TSystemMatrixType, TSolutionMatrixType>(r_C, r_A, 1.0);
 
         if( mUseModalDamping ) {
-            #pragma omp parallel for schedule(static)
-            for( int i=0; i<static_cast<int>(r_A.size2()); ++i ) {
-                row(r_A, i) += row(r_Ki, i);
-                row(r_A, i) -= excitation_frequency2 * row(r_Mi, i);
-            }
+            ComplexMatrixUtility::axpy<TSystemMatrixType, TSolutionMatrixType>(r_Ki, r_A, 1.0);
+            ComplexMatrixUtility::axpy<TSystemMatrixType, TSolutionMatrixType>(r_Mi, r_A, -excitation_frequency2);
         }
 
         if( mUseFrequencyDependentMaterials ) {
@@ -589,20 +576,17 @@ class FrequencyResponseAnalysisStrategy
                 KRATOS_WATCH(setting->factor)
                 TSystemMatrixType& r_Mat = *(setting->matrix);
                 factor = std::imag(setting->factor);
-                for( int i=0; i<static_cast<int>(r_A.size2()); ++i ) {
-                    row(r_A, i) += factor * row(r_Mat, i);
+                if( std::abs(factor) < std::numeric_limits<double>::epsilon() ) {
+                    continue;
                 }
+                ComplexMatrixUtility::axpy<TSystemMatrixType, TSolutionMatrixType>(r_Mat, r_A, factor);
             }
         }
 
         r_A *= complex(0,1);
 
-        #pragma omp parallel for schedule(static)// nowait
-        for( int i=0; i<static_cast<int>(r_A.size2()); ++i ) {
-            // row(r_A, i) += row(r_K, i) - excitation_frequency2 * row(r_M, i);
-            row(r_A, i) += row(r_K, i);
-            row(r_A, i) -= excitation_frequency2 * row(r_M, i);
-        }
+        ComplexMatrixUtility::axpy<TSystemMatrixType, TSolutionMatrixType>(r_K, r_A, 1.0);
+        ComplexMatrixUtility::axpy<TSystemMatrixType, TSolutionMatrixType>(r_M, r_A, -excitation_frequency2);
 
         if( mUseFrequencyDependentMaterials ) {
             double factor;
@@ -610,9 +594,10 @@ class FrequencyResponseAnalysisStrategy
                 KRATOS_WATCH(setting->factor)
                 TSystemMatrixType& r_Mat = *(setting->matrix);
                 factor = std::real(setting->factor);
-                for( int i=0; i<static_cast<int>(r_A.size2()); ++i ) {
-                    row(r_A, i) += factor * row(r_Mat, i);
+                if( std::abs(factor) < std::numeric_limits<double>::epsilon() ) {
+                    continue;
                 }
+                ComplexMatrixUtility::axpy<TSystemMatrixType, TSolutionMatrixType>(r_Mat, r_A, factor);
             }
         }
 
@@ -827,7 +812,7 @@ class FrequencyResponseAnalysisStrategy
         TSystemMatrixType& r_matrix  = *setting.matrix;
 
         p_builder_and_solver->ResizeAndInitializeVectors(p_scheme, setting.matrix, tmp, tmp,
-            r_model_part);
+            BaseType::GetModelPart());
         r_model_part.GetProcessInfo()[BUILD_LEVEL] = setting.build_level;
         p_builder_and_solver->Build(p_scheme, r_model_part, r_matrix, *tmp);
         DirichletUtility::ApplyDirichletConditions<TSparseSpace>(r_matrix, *tmp, FixedDofSet, 0.0);
