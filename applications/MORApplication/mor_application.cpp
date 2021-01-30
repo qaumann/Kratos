@@ -42,14 +42,16 @@ KratosMORApplication::KratosMORApplication():
       mAcousticElement2D4N(0, Element::GeometryType::Pointer(new Quadrilateral2D4<NodeType >(Element::GeometryType::PointsArrayType(4)))),
       mAcousticElement3D4N(0, Element::GeometryType::Pointer(new Tetrahedra3D4<NodeType >(Element::GeometryType::PointsArrayType(4)))),
       mAcousticElement3D8N(0, Element::GeometryType::Pointer(new Hexahedra3D8<NodeType >(Element::GeometryType::PointsArrayType(8)))),
-	  mPorousElement2D2N(0, Element::GeometryType::Pointer(new Line2D2<NodeType >(Element::GeometryType::PointsArrayType(2)))),
-	  mPorousElement2D4N(0, Element::GeometryType::Pointer(new Quadrilateral2D4<NodeType >(Element::GeometryType::PointsArrayType(4)))),
-	  mPorousElement3D4N(0, Element::GeometryType::Pointer(new Tetrahedra3D4<NodeType >(Element::GeometryType::PointsArrayType(4)))),
-	  mPorousElement3D8N(0, Element::GeometryType::Pointer(new Hexahedra3D8<NodeType >(Element::GeometryType::PointsArrayType(8)))),
+      mPorousElement2D2N(0, Element::GeometryType::Pointer(new Line2D2<NodeType >(Element::GeometryType::PointsArrayType(2)))),
+      mPorousElement2D4N(0, Element::GeometryType::Pointer(new Quadrilateral2D4<NodeType >(Element::GeometryType::PointsArrayType(4)))),
+      mPorousElement3D4N(0, Element::GeometryType::Pointer(new Tetrahedra3D4<NodeType >(Element::GeometryType::PointsArrayType(4)))),
+      mPorousElement3D8N(0, Element::GeometryType::Pointer(new Hexahedra3D8<NodeType >(Element::GeometryType::PointsArrayType(8)))),
 
 
       // conditions
+      mAcousticLoadConcition2D1N(0, Condition::GeometryType::Pointer(new Point2D<NodeType >(Condition::GeometryType::PointsArrayType(1)))),
       mAcousticLoadConcition2D2N(0, Condition::GeometryType::Pointer(new Line2D2<NodeType >(Condition::GeometryType::PointsArrayType(2)))),
+      mAcousticLoadConcition3D1N(0, Condition::GeometryType::Pointer(new Point3D<NodeType >(Condition::GeometryType::PointsArrayType(1)))),
       mAcousticLoadConcition3D3N(0, Condition::GeometryType::Pointer(new Triangle3D3<NodeType >(Condition::GeometryType::PointsArrayType(3)))),
       mAcousticLoadConcition3D4N(0, Condition::GeometryType::Pointer(new Quadrilateral3D4<NodeType >(Condition::GeometryType::PointsArrayType(4)))),
       mAcousticRobinConcition2D2N(0, Condition::GeometryType::Pointer(new Line2D2<NodeType >(Condition::GeometryType::PointsArrayType(2)))),
@@ -109,7 +111,9 @@ void KratosMORApplication::Register()
   KRATOS_REGISTER_ELEMENT("PorousElement3D8N", mPorousElement3D8N)
 
   // conditions
+  KRATOS_REGISTER_CONDITION("AcousticLoadCondition2D1N", mAcousticLoadConcition2D1N)
   KRATOS_REGISTER_CONDITION("AcousticLoadCondition2D2N", mAcousticLoadConcition2D2N)
+  KRATOS_REGISTER_CONDITION("AcousticLoadCondition3D1N", mAcousticLoadConcition3D1N)
   KRATOS_REGISTER_CONDITION("AcousticLoadCondition3D3N", mAcousticLoadConcition3D3N)
   KRATOS_REGISTER_CONDITION("AcousticLoadCondition3D4N", mAcousticLoadConcition3D4N)
   KRATOS_REGISTER_CONDITION("AcousticRobinCondition2D2N", mAcousticRobinConcition2D2N)

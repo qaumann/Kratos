@@ -174,13 +174,10 @@ void AcousticLoadCondition::GetSecondDerivativesVector(
     KRATOS_ERROR << "Condition not prepared for time step analysis" << std::endl;
 }
 
-int AcousticLoadCondition::Check( const ProcessInfo& rCurrentProcessInfo )
+int AcousticLoadCondition::Check( const ProcessInfo& rCurrentProcessInfo ) const
 {
     // Base check
     Condition::Check(rCurrentProcessInfo);
-
-    // Verify variable exists
-    KRATOS_CHECK_VARIABLE_KEY(PRESSURE)
 
     // Check that the condition's nodes contain all required SolutionStepData and Degrees of freedom
     for (const auto& r_node : this->GetGeometry().Points()) {
@@ -244,16 +241,20 @@ void AcousticLoadCondition::CalculateRightHandSide(
         load[i] *= frequency2;
     }
 
-    for( IndexType point_number = 0; point_number < integration_points.size(); ++point_number ) {
+    if( number_of_nodes == 1 ) {
+        rRightHandSideVector[0] += load[0];
+    } else {
+        for( IndexType point_number = 0; point_number < integration_points.size(); ++point_number ) {
 
-        const double detJ = r_geometry.DeterminantOfJacobian( integration_points[point_number] );
-        const double integration_weight =
-            GetIntegrationWeight(integration_points, point_number, detJ);
+            const double detJ = r_geometry.DeterminantOfJacobian( integration_points[point_number] );
+            const double integration_weight =
+                GetIntegrationWeight(integration_points, point_number, detJ);
 
-        const Vector& rN = row(Ncontainer,point_number);
+            const Vector& rN = row(Ncontainer,point_number);
 
-        for( IndexType i=0; i<number_of_nodes; ++i ) {
-            rRightHandSideVector[i] += integration_weight * rN[i] * load[i];
+            for( IndexType i=0; i<number_of_nodes; ++i ) {
+                rRightHandSideVector[i] += integration_weight * rN[i] * load[i];
+            }
         }
     }
 

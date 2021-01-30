@@ -195,7 +195,9 @@ private:
 
 
     // Conditions
+    const AcousticLoadCondition mAcousticLoadConcition2D1N;
     const AcousticLoadCondition mAcousticLoadConcition2D2N;
+    const AcousticLoadCondition mAcousticLoadConcition3D1N;
     const AcousticLoadCondition mAcousticLoadConcition3D3N;
     const AcousticLoadCondition mAcousticLoadConcition3D4N;
     const AcousticRobinCondition mAcousticRobinConcition2D2N;
