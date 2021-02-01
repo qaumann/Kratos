@@ -37,7 +37,8 @@ class FrequencyDependentMaterialProcess(KratosMultiphysics.Process):
         if self.contribution_type == "biot":
             self._SetUpBiot()
             pass
-        elif self.contribution_type == "ghm":
+        elif self.contribution_type == "acoustic_load":
+            self._SetUpAcousticLoad()
             pass
         else:
             err_msg  = 'Unknown contribution type "{}".'.format(self.contribution_type)
@@ -48,7 +49,6 @@ class FrequencyDependentMaterialProcess(KratosMultiphysics.Process):
         frequency = self.model_part.ProcessInfo[MOR.FREQUENCY]
         for key in self.settings.keys():
             self.settings[key].factor = self.functions[key](frequency)
-            print(self.functions[key](frequency))
 
     def _SetUpBiot(self):
         lambda_solid = self._RetrieveProperty(MOR.LAMBDA_SOLID)
@@ -76,39 +76,44 @@ class FrequencyDependentMaterialProcess(KratosMultiphysics.Process):
         # global stiffness matrix
         # K_glob = K1 + k1*K2 + k2*K3 - omega^2 * M1 + m3*M2 + m1*M3 + m2*M4;
 
-        self.settings['k1'] = MOR.FrequencyDependentMaterialSettings(self.model_part, 81)
+        self.settings['k1'] = MOR.FrequencyDependentMaterialSettings(self.model_part, 81, True, False)
         self.functions['k1'] = \
             lambda omega: -porosity * (-apparent_mass_density + 1j*viscous_drag(omega)/omega) / \
             (porosity*density_fluid + apparent_mass_density - 1j*viscous_drag(omega)/omega)
         self.strategy.SetFrequencyDependentMaterial(self.settings['k1'])
 
-        self.settings['k2'] = MOR.FrequencyDependentMaterialSettings(self.model_part, 82)
+        self.settings['k2'] = MOR.FrequencyDependentMaterialSettings(self.model_part, 82, True, False)
         self.functions['k2'] = \
             lambda omega: porosity**2 / (porosity*density_fluid + apparent_mass_density - \
             1j*viscous_drag(omega)/omega)
         self.strategy.SetFrequencyDependentMaterial(self.settings['k2'])
 
-        self.settings['k3'] = MOR.FrequencyDependentMaterialSettings(self.model_part, 83)
+        self.settings['k3'] = MOR.FrequencyDependentMaterialSettings(self.model_part, 83, True, False)
         self.functions['k3'] = lambda omega: 1
         self.strategy.SetFrequencyDependentMaterial(self.settings['k3'])
 
-        self.settings['m3'] = MOR.FrequencyDependentMaterialSettings(self.model_part, 281)
+        self.settings['m3'] = MOR.FrequencyDependentMaterialSettings(self.model_part, 281, True, False)
         self.functions['m3'] = \
             lambda omega: -omega**2 * (-porosity * (-apparent_mass_density + 1j*viscous_drag(omega)/omega) / \
             (porosity*density_fluid + apparent_mass_density - 1j*viscous_drag(omega)/omega))
         self.strategy.SetFrequencyDependentMaterial(self.settings['m3'])
 
-        self.settings['m1'] = MOR.FrequencyDependentMaterialSettings(self.model_part, 282)
+        self.settings['m1'] = MOR.FrequencyDependentMaterialSettings(self.model_part, 282, True, False)
         self.functions['m1'] = \
             lambda omega: -omega**2 * (-1j*viscous_drag(omega)/omega - \
             (-apparent_mass_density+1j*viscous_drag(omega)/omega)**2 / \
             (porosity*density_fluid + apparent_mass_density - 1j*viscous_drag(omega)/omega))
         self.strategy.SetFrequencyDependentMaterial(self.settings['m1'])
 
-        self.settings['m2'] = MOR.FrequencyDependentMaterialSettings(self.model_part, 283)
+        self.settings['m2'] = MOR.FrequencyDependentMaterialSettings(self.model_part, 283, True, False)
         self.functions['m2'] = \
             lambda omega: -omega**2 * (-(heat_capacity_fluid-1) / (alpha(omega) * heat_capacity_fluid*standard_pressure_fluid))
         self.strategy.SetFrequencyDependentMaterial(self.settings['m2'])
+
+    def _SetUpAcousticLoad(self):
+        self.settings['load'] = MOR.FrequencyDependentMaterialSettings(self.model_part, 311, False, True)
+        self.functions['load'] = lambda omega: omega**2
+        self.strategy.SetFrequencyDependentMaterial(self.settings['load'])
 
     def _RetrieveProperty(self, property_type):
         for prop in self.model_part.GetProperties():

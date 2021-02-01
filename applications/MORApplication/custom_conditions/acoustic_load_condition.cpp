@@ -182,7 +182,6 @@ int AcousticLoadCondition::Check( const ProcessInfo& rCurrentProcessInfo ) const
     // Check that the condition's nodes contain all required SolutionStepData and Degrees of freedom
     for (const auto& r_node : this->GetGeometry().Points()) {
         KRATOS_CHECK_VARIABLE_IN_NODAL_DATA(PRESSURE,r_node)
-
         KRATOS_CHECK_DOF_IN_NODE(PRESSURE, r_node)
     }
 
@@ -219,41 +218,42 @@ void AcousticLoadCondition::CalculateRightHandSide(
     }
     noalias( rRightHandSideVector ) = ZeroVector( number_of_nodes );
 
-     // Reading integration points and local gradients
-    const IntegrationMethod integration_method = IntegrationUtilities::GetIntegrationMethodForExactMassMatrixEvaluation(r_geometry);
-    const GeometryType::IntegrationPointsArrayType& integration_points = r_geometry.IntegrationPoints(integration_method);
-    const Matrix& Ncontainer = r_geometry.ShapeFunctionsValues(integration_method);
+    if( rCurrentProcessInfo.Has(BUILD_LEVEL) && rCurrentProcessInfo[BUILD_LEVEL] == 311 )
+    {
+        // Reading integration points and local gradients
+        const IntegrationMethod integration_method = IntegrationUtilities::GetIntegrationMethodForExactMassMatrixEvaluation(r_geometry);
+        const GeometryType::IntegrationPointsArrayType& integration_points = r_geometry.IntegrationPoints(integration_method);
+        const Matrix& Ncontainer = r_geometry.ShapeFunctionsValues(integration_method);
 
-    double load_on_condition = 0.0;
-    if( this->Has( ACOUSTIC_LOAD ) ) {
-        load_on_condition += this->GetValue( ACOUSTIC_LOAD );
-    }
-    if( this->GetProperties().Has(ACOUSTIC_LOAD) ) {
-        load_on_condition += this->GetProperties()[ACOUSTIC_LOAD];
-    }
-    const double frequency2 = std::pow( rCurrentProcessInfo[FREQUENCY], 2 );
-
-    Vector load(number_of_nodes, load_on_condition);
-    for( IndexType i=0; i<number_of_nodes; ++i ) {
-        if( r_geometry[i].SolutionStepsDataHas( ACOUSTIC_LOAD ) ) {
-            load[i] += r_geometry[i].FastGetSolutionStepValue( ACOUSTIC_LOAD );
+        double load_on_condition = 0.0;
+        if( this->Has( ACOUSTIC_LOAD ) ) {
+            load_on_condition += this->GetValue( ACOUSTIC_LOAD );
         }
-        load[i] *= frequency2;
-    }
+        if( this->GetProperties().Has(ACOUSTIC_LOAD) ) {
+            load_on_condition += this->GetProperties()[ACOUSTIC_LOAD];
+        }
 
-    if( number_of_nodes == 1 ) {
-        rRightHandSideVector[0] += load[0];
-    } else {
-        for( IndexType point_number = 0; point_number < integration_points.size(); ++point_number ) {
+        Vector load(number_of_nodes, load_on_condition);
+        for( IndexType i=0; i<number_of_nodes; ++i ) {
+            if( r_geometry[i].SolutionStepsDataHas( ACOUSTIC_LOAD ) ) {
+                load[i] += r_geometry[i].FastGetSolutionStepValue( ACOUSTIC_LOAD );
+            }
+        }
 
-            const double detJ = r_geometry.DeterminantOfJacobian( integration_points[point_number] );
-            const double integration_weight =
-                GetIntegrationWeight(integration_points, point_number, detJ);
+        if( number_of_nodes == 1 ) {
+            rRightHandSideVector[0] += load[0];
+        } else {
+            for( IndexType point_number = 0; point_number < integration_points.size(); ++point_number ) {
 
-            const Vector& rN = row(Ncontainer,point_number);
+                const double detJ = r_geometry.DeterminantOfJacobian( integration_points[point_number] );
+                const double integration_weight =
+                    GetIntegrationWeight(integration_points, point_number, detJ);
 
-            for( IndexType i=0; i<number_of_nodes; ++i ) {
-                rRightHandSideVector[i] += integration_weight * rN[i] * load[i];
+                const Vector& rN = row(Ncontainer,point_number);
+
+                for( IndexType i=0; i<number_of_nodes; ++i ) {
+                    rRightHandSideVector[i] += integration_weight * rN[i] * load[i];
+                }
             }
         }
     }

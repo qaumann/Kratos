@@ -250,7 +250,7 @@ void  AddCustomStrategiesToPython(pybind11::module& m)
     // typedef FrequencyResponseAnalysisStrategyType::TSystemMatrixPointerType FrequencyResponseAnalysisStrategyMatrixPointerType;
     typedef FrequencyDependentSettings<SparseSpaceType> FrequencyDependentSettingsType;
     py::class_<FrequencyDependentSettingsType>(m, "FrequencyDependentMaterialSettings")
-        .def(py::init<ModelPart&, int>())
+        .def(py::init<ModelPart&, int, bool, bool>())
         .def_readwrite("build_level", &FrequencyDependentSettingsType::build_level)
         .def_readwrite("model_part", &FrequencyDependentSettingsType::model_part)
         .def_readwrite("factor", &FrequencyDependentSettingsType::factor)
