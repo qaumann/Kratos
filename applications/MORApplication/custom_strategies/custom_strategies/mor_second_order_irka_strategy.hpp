@@ -37,6 +37,7 @@
 #include "custom_utilities/generalized_eigenvalue_utility.h"
 #include "custom_utilities/orthogonalization_utility.hpp"
 #include "custom_utilities/complex_sort_utility.hpp"
+#include "custom_utilities/complex_matrix_utility.hpp"
 // #include "../EigenSolversApplication/custom_solvers/eigen_direct_solver.h"
 
 #include "omp.h"
@@ -345,9 +346,19 @@ class MorSecondOrderIRKAStrategy
 
         // copy mass matrix, damping matrix, and rhs to the complex space
         ComplexSparseMatrixType r_M_tmp(r_M.size1(), r_M.size2());
-        noalias(r_M_tmp) = r_M;
+        ComplexMatrixUtility::ConstructMatrixStructure<TSchemeType, ComplexSparseMatrixType>(p_scheme,
+            r_M_tmp,
+            BaseType::GetModelPart(),
+            p_builder_and_solver->GetEquationSystemSize());
+        ComplexMatrixUtility::axpy<TSystemMatrixType, ComplexSparseMatrixType>(r_M, r_M_tmp, 1.0);
+
         ComplexSparseMatrixType r_D_tmp(r_D.size1(), r_D.size2());
-        noalias(r_D_tmp) = r_D;
+        ComplexMatrixUtility::ConstructMatrixStructure<TSchemeType, ComplexSparseMatrixType>(p_scheme,
+            r_D_tmp,
+            BaseType::GetModelPart(),
+            p_builder_and_solver->GetEquationSystemSize());
+        ComplexMatrixUtility::axpy<TSystemMatrixType, ComplexSparseMatrixType>(r_D, r_D_tmp, 1.0);
+
         ComplexSparseVectorType r_RHS_tmp = ComplexSparseVectorType(r_RHS);
         ComplexSparseVectorType r_ov_tmp = ComplexSparseVectorType(r_ov);
 
@@ -370,6 +381,10 @@ class MorSecondOrderIRKAStrategy
 
         // create dynamic stiffness matrix
         ComplexSparseMatrixType r_kdyn(system_size, system_size);
+        ComplexMatrixUtility::ConstructMatrixStructure<TSchemeType, ComplexSparseMatrixType>(p_scheme,
+            r_kdyn,
+            BaseType::GetModelPart(),
+            p_builder_and_solver->GetEquationSystemSize());
 
         if( BaseType::GetEchoLevel() == 7 ) {
             this->template MatrixOutput<SparseSpaceType>(r_K, "K");
@@ -415,7 +430,9 @@ class MorSecondOrderIRKAStrategy
                     if( this->SystemIsSymmetric() ) {
                         noalias(r_kdyn) = r_K + mSamplingPoints(2*i) * r_D_tmp + std::pow( mSamplingPoints(2*i), 2 ) * r_M_tmp;
                     } else {
-                        noalias(r_kdyn) = r_K + mSamplingPoints(2*i) * r_D_tmp - std::pow( mSamplingPoints(2*i), 2 ) * r_M_tmp;
+                        ComplexMatrixUtility::axpy<TSystemMatrixType, ComplexSparseMatrixType>(r_K, r_kdyn, 1.0);
+                        ComplexMatrixUtility::axpy<ComplexSparseMatrixType, ComplexSparseMatrixType>(r_D_tmp, r_kdyn, mSamplingPoints(2*i));
+                        ComplexMatrixUtility::axpy<ComplexSparseMatrixType, ComplexSparseMatrixType>(r_M_tmp, r_kdyn, std::pow( mSamplingPoints(2*i), 2 ));
                     }
                 }
 
@@ -498,9 +515,11 @@ class MorSecondOrderIRKAStrategy
                 GeneralizedEigenvalueUtility::ComputePolynomial<TReducedDenseSpace>(r_Kr, r_Dr, r_Mr, eigenvalues);
 
                 // use mirror images of first r eigenvalues as expansion points
+                std::stable_sort(eigenvalues.begin(), eigenvalues.end(),
+                    [](complex z1, complex z2) {return std::abs(std::imag(z1)) < std::abs(std::imag(z2));});
                 eigenvalues *= -1.;
-                ComplexSortUtility::PairComplexConjugates(eigenvalues);
                 this->UpdateSamplingPoints(eigenvalues, reduced_system_size);
+                ComplexSortUtility::PairComplexConjugates(eigenvalues);
             }
 
             // calculate error
