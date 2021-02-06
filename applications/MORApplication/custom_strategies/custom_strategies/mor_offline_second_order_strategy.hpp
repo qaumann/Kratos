@@ -14,7 +14,8 @@
 #define MOR_OFFLINE_SECOND_ORDER_STRATEGY
 
 // System includes
-
+#include <Eigen/Core>
+#include <Eigen/Sparse>
 // External includes
 
 // Project includes
@@ -598,10 +599,10 @@ class MorOfflineSecondOrderStrategy
         r_output_vector_r.resize( reduced_system_size, false);
         noalias(r_output_vector_r) = prod( r_output_vector, r_basis );
 
-        ProjectMatrix<TSystemMatrixType>(r_K, r_basis, r_stiffness_matrix_reduced);
-        ProjectMatrix<TSystemMatrixType>(r_M, r_basis, r_mass_matrix_reduced);
+        ProjectMatrix<TSystemMatrixType, TReducedDenseMatrixType>(r_K, r_basis, r_stiffness_matrix_reduced);
+        ProjectMatrix<TSystemMatrixType, TReducedDenseMatrixType>(r_M, r_basis, r_mass_matrix_reduced);
         if (mUseDamping)
-            ProjectMatrix<TSystemMatrixType>(r_D, r_basis, r_damping_matrix_reduced);
+            ProjectMatrix<TSystemMatrixType, TReducedDenseMatrixType>(r_D, r_basis, r_damping_matrix_reduced);
 
         KRATOS_INFO_IF("System Projection Time", BaseType::GetEchoLevel() > 0 && rank == 0)
             << system_projection_time.ElapsedSeconds() << std::endl;
@@ -1088,97 +1089,44 @@ class MorOfflineSecondOrderStrategy
     ///@{
 
     /**
-     * @brief computes X=W^H * A * V
-     */
-    template <typename MatrixType>
-    void ProjectMatrix(MatrixType& rA, ComplexMatrix& rV, ComplexMatrix& rW, ComplexMatrix& rX)
-    {
-        const size_t system_size = rV.size1();
-        const size_t reduced_system_size = rV.size2();
-        ComplexVector v_col = ComplexZeroVector(system_size);
-        ComplexVector tmp_1 = ComplexZeroVector(system_size);
-        ComplexVector tmp_2 = ComplexZeroVector(reduced_system_size);
-        ComplexMatrix rWH = ComplexZeroMatrix(reduced_system_size, system_size);
-        noalias(rWH) = herm(rW);
-
-        #pragma omp parallel for firstprivate(v_col, tmp_1, tmp_2) schedule(static)
-        for( int i=0; i<static_cast<int>(reduced_system_size); ++i )
-        {
-            noalias(v_col) = column(rV,i);
-
-            axpy_prod(rA, v_col, tmp_1, true);      // A*V  (=T)
-            axpy_prod(rWH, tmp_1, tmp_2, true);     // W^H * T
-            noalias(column(rX, i)) = tmp_2;         // X = W^H A V
-        }
-    }
-
-    /**
      * @brief computes X=W^T * A * V
      */
-    template <typename MatrixType>
-    void ProjectMatrix(MatrixType& rA, Matrix& rV, Matrix& rW, Matrix& rX)
+    template <typename SparseMatrixType, typename DenseMatrixType>
+    void ProjectMatrix(SparseMatrixType& rA, DenseMatrixType& rV, DenseMatrixType& rW, DenseMatrixType& rX)
     {
-        const size_t reduced_system_size = rV.size2();
-        Vector v_col = ZeroVector(rV.size1());
-        Vector tmp_1 = ZeroVector(rV.size1());
-        Vector tmp_2 = ZeroVector(rV.size2());
+        typedef typename Eigen::Matrix<typename DenseMatrixType::value_type, Eigen::Dynamic, Eigen::Dynamic> EigenMatrixType;
+        typedef typename Eigen::SparseMatrix<typename SparseMatrixType::value_type, Eigen::RowMajor, int> EigenSparseMatrixType;
 
-        #pragma omp parallel for firstprivate(v_col, tmp_1, tmp_2) schedule(static)// nowait
-        for( int i=0; i<static_cast<int>(reduced_system_size); ++i )
-        {
-            noalias(v_col) = column(rV,i);
+        std::vector<int> outerIndexPtr(rA.index1_data().begin(), rA.index1_data().end());
+        std::vector<int> innerIndexPtr(rA.index2_data().begin(), rA.index2_data().end());
+        Eigen::Map<EigenSparseMatrixType> eA(rA.size1(),rA.size2(),rA.nnz(),outerIndexPtr.data(),
+                                    innerIndexPtr.data(),rA.value_data().begin());
 
-            axpy_prod(rA, v_col, tmp_1, true);      // A*V  (=T)
-            axpy_prod(tmp_1, rW, tmp_2, true);      // W' * T
-            noalias(column(rX, i)) = tmp_2;         // X = W' A V
-        }
-    }
+        Eigen::Map<EigenMatrixType> eV(rV.data().begin(), rV.size1(), rV.size2());
+        Eigen::Map<EigenMatrixType> eW(rW.data().begin(), rW.size1(), rW.size2());
+        Eigen::Map<EigenMatrixType> eX(rX.data().begin(), rX.size1(), rX.size2());
 
-    /**
-     * @brief computes X=V^H * A * V
-     */
-    template <typename MatrixType>
-    void ProjectMatrix(MatrixType& rA, ComplexMatrix& rV, ComplexMatrix& rX)
-    {
-        const size_t system_size = rV.size1();
-        const size_t reduced_system_size = rV.size2();
-        ComplexVector v_col = ComplexZeroVector(system_size);
-        ComplexVector tmp_1 = ComplexZeroVector(system_size);
-        ComplexVector tmp_2 = ComplexZeroVector(reduced_system_size);
-        ComplexMatrix rVH = ComplexZeroMatrix(reduced_system_size, system_size);
-        noalias(rVH) = herm(rV);
-
-        #pragma omp parallel for firstprivate(v_col, tmp_1, tmp_2) schedule(static)
-        for( int i=0; i<static_cast<int>(reduced_system_size); ++i )
-        {
-            noalias(v_col) = column(rV,i);
-
-            axpy_prod(rA, v_col, tmp_1, true);      // A*V  (=T)
-            axpy_prod(rVH, tmp_1, tmp_2, true);     // V^H * T
-            noalias(column(rX, i)) = tmp_2;         // X = V^H A V
-        }
+        eX = eW.adjoint() * eA * eV;
     }
 
     /**
      * @brief computes X=V^T * A * V
      */
-    template <typename MatrixType>
-    void ProjectMatrix(MatrixType& rA, Matrix& rV, Matrix& rX)
+    template <typename SparseMatrixType, typename DenseMatrixType>
+    void ProjectMatrix(SparseMatrixType& rA, DenseMatrixType& rV, DenseMatrixType& rX)
     {
-        const size_t reduced_system_size = rV.size2();
-        Vector v_col = ZeroVector(rV.size1());
-        Vector tmp_1 = ZeroVector(rV.size1());
-        Vector tmp_2 = ZeroVector(rV.size2());
+        typedef typename Eigen::Matrix<typename DenseMatrixType::value_type, Eigen::Dynamic, Eigen::Dynamic> EigenMatrixType;
+        typedef typename Eigen::SparseMatrix<typename SparseMatrixType::value_type, Eigen::RowMajor, int> EigenSparseMatrixType;
 
-        #pragma omp parallel for firstprivate(v_col, tmp_1, tmp_2) schedule(static)// nowait
-        for( int i=0; i<static_cast<int>(reduced_system_size); ++i )
-        {
-            noalias(v_col) = column(rV,i);
+        std::vector<int> outerIndexPtr(rA.index1_data().begin(), rA.index1_data().end());
+        std::vector<int> innerIndexPtr(rA.index2_data().begin(), rA.index2_data().end());
+        Eigen::Map<EigenSparseMatrixType> eA(rA.size1(),rA.size2(),rA.nnz(),outerIndexPtr.data(),
+                                    innerIndexPtr.data(),rA.value_data().begin());
 
-            axpy_prod(rA, v_col, tmp_1, true);      // A*V  (=T)
-            axpy_prod(tmp_1, rV, tmp_2, true);      // V' * T
-            noalias(column(rX, i)) = tmp_2;         // X = V' A V
-        }
+        Eigen::Map<EigenMatrixType> eV(rV.data().begin(), rV.size1(), rV.size2());
+        Eigen::Map<EigenMatrixType> eX(rX.data().begin(), rX.size1(), rX.size2());
+
+        eX = eV.adjoint() * eA * eV;
     }
 
     ///@}

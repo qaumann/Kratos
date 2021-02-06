@@ -465,23 +465,23 @@ class MorSecondOrderIRKAStrategy
             if( TUseModalDamping )
             {
                 if( this->SystemIsSymmetric() ) {
-                    this->template ProjectMatrix<TReducedSparseMatrixType>(r_K_cplx, r_basis, r_Kr);
-                    this->template ProjectMatrix<TSystemMatrixType>(r_M, r_basis, r_Mr);
+                    this->template ProjectMatrix<TReducedSparseMatrixType, TReducedDenseMatrixType>(r_K_cplx, r_basis, r_Kr);
+                    this->template ProjectMatrix<TSystemMatrixType, TReducedDenseMatrixType>(r_M, r_basis, r_Mr);
                 } else {
-                    this->template ProjectMatrix<TReducedSparseMatrixType>(r_K_cplx, r_basis, r_basis_l, r_Kr);
-                    this->template ProjectMatrix<TSystemMatrixType>(r_M, r_basis, r_basis_l, r_Mr);
+                    this->template ProjectMatrix<TReducedSparseMatrixType, TReducedDenseMatrixType>(r_K_cplx, r_basis, r_basis_l, r_Kr);
+                    this->template ProjectMatrix<TSystemMatrixType, TReducedDenseMatrixType>(r_M, r_basis, r_basis_l, r_Mr);
                 }
             }
             else
             {
                 if( this->SystemIsSymmetric() ) {
-                    this->template ProjectMatrix<TSystemMatrixType>(r_K, r_basis, r_Kr);
-                    this->template ProjectMatrix<TSystemMatrixType>(r_D, r_basis, r_Dr);
-                    this->template ProjectMatrix<TSystemMatrixType>(r_M, r_basis, r_Mr);
+                    this->template ProjectMatrix<TSystemMatrixType, TReducedDenseMatrixType>(r_K, r_basis, r_Kr);
+                    this->template ProjectMatrix<TSystemMatrixType, TReducedDenseMatrixType>(r_D, r_basis, r_Dr);
+                    this->template ProjectMatrix<TSystemMatrixType, TReducedDenseMatrixType>(r_M, r_basis, r_Mr);
                 } else {
-                    this->template ProjectMatrix<TSystemMatrixType>(r_K, r_basis, r_basis_l, r_Kr);
-                    this->template ProjectMatrix<TSystemMatrixType>(r_D, r_basis, r_basis_l, r_Dr);
-                    this->template ProjectMatrix<TSystemMatrixType>(r_M, r_basis, r_basis_l, r_Mr);
+                    this->template ProjectMatrix<TSystemMatrixType, TReducedDenseMatrixType>(r_K, r_basis, r_basis_l, r_Kr);
+                    this->template ProjectMatrix<TSystemMatrixType, TReducedDenseMatrixType>(r_D, r_basis, r_basis_l, r_Dr);
+                    this->template ProjectMatrix<TSystemMatrixType, TReducedDenseMatrixType>(r_M, r_basis, r_basis_l, r_Mr);
                 }
             }
             projection_time = irka_projection_time.ElapsedSeconds();
