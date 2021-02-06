@@ -4,7 +4,7 @@ import KratosMultiphysics
 import KratosMultiphysics.MORApplication as MOR
 
 import sys
-from cmath import sqrt
+from cmath import sqrt, exp, pi
 
 def Factory(settings, Model):
     if(type(settings) != KratosMultiphysics.Parameters):
@@ -19,7 +19,7 @@ class FrequencyDependentMaterialProcess(KratosMultiphysics.Process):
             {
                 "help"              : "This process adds and updates frequency dependent material properties.",
                 "model_part_name"   : "Structure",
-                "contribution_type" : "biot"
+                "contribution_type" : "type"
             }
             """
         )
@@ -36,13 +36,13 @@ class FrequencyDependentMaterialProcess(KratosMultiphysics.Process):
     def ExecuteInitialize(self):
         if self.contribution_type == "biot":
             self._SetUpBiot()
-            pass
         elif self.contribution_type == "acoustic_load":
             self._SetUpAcousticLoad()
-            pass
+        elif self.contribution_type == "output":
+            self._SetUpOutput()
         else:
             err_msg  = 'Unknown contribution type "{}".'.format(self.contribution_type)
-            err_msg += 'Possible choices are "biot" and "ghm".'
+            err_msg += 'Possible choices are "biot", "acoustic_load".'
             raise Exception(err_msg)
 
     def ExecuteInitializeSolutionStep(self):
@@ -50,10 +50,36 @@ class FrequencyDependentMaterialProcess(KratosMultiphysics.Process):
         for key in self.settings.keys():
             self.settings[key].factor = self.functions[key](frequency)
 
+    def Export(self, ftype):
+        try:
+            import scipy, scipy.sparse, scipy.io
+            import numpy
+        except ImportError:
+            KratosMultiphysics.Logger.PrintWarning("FrequencyDependentMaterialProcess", \
+                "scipy could not be imported. Skipping export.")
+            return
+        import KratosMultiphysics.scipy_conversion_tools
+
+        if ftype == "mm":
+            for key in self.settings.keys():
+                if self.settings[key].has_vector_contribution:
+                    scipy.io.mmwrite("export_vec_" + key, numpy.mat(self.settings[key].vector).T, comment='', field='real', precision=8)
+                if self.settings[key].has_matrix_contribution:
+                    mat = KratosMultiphysics.scipy_conversion_tools.to_csr(self.settings[key].matrix)
+                    scipy.io.mmwrite("export_mat_" + key, mat, comment='', field='real', precision=8)
+        elif ftype == "mat":
+            data = dict()
+            for key in self.settings.keys():
+                if self.settings[key].has_vector_contribution:
+                    data[key + '_vec'] = numpy.mat(self.settings[key].vector).T
+                if self.settings[key].has_matrix_contribution:
+                    data[key + '_mat'] = KratosMultiphysics.scipy_conversion_tools.to_csr(self.settings[key].matrix)
+            scipy.io.savemat('export_' + self.contribution_type + '.mat', data)
+        else:
+            KratosMultiphysics.Logger.PrintWarning("FrequencyDependentMaterialProcess", \
+                "Unknown filetype, skipping export. Please use either \"mm\" or \"mat\".")
+
     def _SetUpBiot(self):
-        lambda_solid = self._RetrieveProperty(MOR.LAMBDA_SOLID)
-        damping_solid = self._RetrieveProperty(MOR.DAMPING_SOLID)
-        density_solid = self._RetrieveProperty(MOR.DENSITY_SOLID)
         density_fluid = self._RetrieveProperty(MOR.DENSITY_FLUID)
         viscosity_fluid = self._RetrieveProperty(MOR.VISCOSITY_FLUID)
         standard_pressure_fluid = self._RetrieveProperty(MOR.STANDARD_PRESSURE_FLUID)
@@ -112,8 +138,15 @@ class FrequencyDependentMaterialProcess(KratosMultiphysics.Process):
 
     def _SetUpAcousticLoad(self):
         self.settings['load'] = MOR.FrequencyDependentMaterialSettings(self.model_part, 311, False, True)
-        self.functions['load'] = lambda omega: omega**2
+        self.functions['load'] = lambda omega: -1.j*omega
+        # self.functions['load'] = lambda omega: -1.j*omega * exp(-1.j*omega/343) / (4*pi)
+        # self.functions['load'] = lambda omega: .525e-3 * omega**2 * exp(-1.j*omega/343) / (4*pi)
         self.strategy.SetFrequencyDependentMaterial(self.settings['load'])
+
+    def _SetUpOutput(self):
+        self.settings['output'] = MOR.FrequencyDependentMaterialSettings(self.model_part, 301, False, True)
+        self.functions['output'] = lambda omega: 1
+        self.strategy.SetFrequencyDependentMaterial(self.settings['output'])
 
     def _RetrieveProperty(self, property_type):
         for prop in self.model_part.GetProperties():
