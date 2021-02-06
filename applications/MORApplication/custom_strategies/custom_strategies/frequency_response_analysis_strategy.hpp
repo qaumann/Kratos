@@ -448,13 +448,9 @@ class FrequencyResponseAnalysisStrategy
 
                 //set up the stiffness matrix and rhs
                 r_model_part.GetProcessInfo()[BUILD_LEVEL] = 1;
-                // TSparseSpace::SetToZero(r_tmp_RHS);
                 p_scheme->InitializeNonLinIteration(BaseType::GetModelPart(), r_K, tmp, tmp);
                 p_builder_and_solver->Build(p_scheme, BaseType::GetModelPart(), r_K, r_B);
                 DirichletUtility::ApplyDirichletConditions<TSparseSpace>(r_K, r_B, fixed_dofs, 1.0);
-
-                //copy the rhs to the complex space
-                // r_RHS = TSolutionVectorType(r_tmp_RHS);
 
                 //if required, set up the imaginary part of the stiffness and mass
                 if( mUseModalDamping )
@@ -537,7 +533,7 @@ class FrequencyResponseAnalysisStrategy
             SparseSpaceType::Clear(mpC);
             TSolutionSpace::Clear(mpRHS);
             TSolutionSpace::Clear(mpDx);
-            TSolutionSpace::Clear(mpB);
+            SparseSpaceType::Clear(mpB);
 
             if( mUseFrequencyDependentMaterials ) {
                 for( auto& setting : mFrequencyDependentSettings ) {
@@ -639,13 +635,8 @@ class FrequencyResponseAnalysisStrategy
 
         // if required, write dynamic stiffness and rhs
         if( BaseType::GetEchoLevel() > 4 ) {
-            std::stringstream matrix_market_name;
-            matrix_market_name << "A_" << excitation_frequency << ".mm";
-            TSparseSpace::WriteMatrixMarketMatrix((char *)(matrix_market_name.str()).c_str(), r_A, false);
-
-            std::stringstream matrix_market_vectname;
-            matrix_market_vectname << "RHS_" << excitation_frequency << ".mm.rhs";
-            TSparseSpace::WriteMatrixMarketVector((char *)(matrix_market_vectname.str()).c_str(), r_RHS);
+            MatrixOutput<ComplexSparseSpaceType>(r_A, "A_" + std::to_string(excitation_frequency));
+            VectorOutput<ComplexSparseSpaceType>(r_RHS, "RHS_" + std::to_string(excitation_frequency));
         }
 
         //Solve the system
@@ -739,7 +730,6 @@ class FrequencyResponseAnalysisStrategy
 
     /**
      * @brief This method returns the components of the system of equations depending of the echo level
-     * @param IterationNumber The non linear iteration in the solution loop
      */
     virtual void EchoInfo()
     {
@@ -838,7 +828,6 @@ class FrequencyResponseAnalysisStrategy
     {
         typename TSchemeType::Pointer p_scheme = GetScheme();
         typename TBuilderAndSolverType::Pointer p_builder_and_solver = GetBuilderAndSolver();
-        // TSystemVectorPointerType tmp = TSparseSpace::CreateEmptyVectorPointer();
 
         KRATOS_ERROR_IF_NOT( setting.has_matrix_contribution || setting.has_vector_contribution ) <<
             "No contribution type has been set for frequency dependent contribution with build level " <<
@@ -858,10 +847,10 @@ class FrequencyResponseAnalysisStrategy
 
         // remove temporaries
         if( !setting.has_matrix_contribution ) {
-            setting.matrix = TSparseSpace::CreateEmptyMatrixPointer();
+            SparseSpaceType::Clear(setting.matrix);
         }
         if( !setting.has_vector_contribution ) {
-            setting.vector = TSparseSpace::CreateEmptyVectorPointer();
+            SparseSpaceType::Clear(setting.vector);
         }
 
         setting.initialized = true;

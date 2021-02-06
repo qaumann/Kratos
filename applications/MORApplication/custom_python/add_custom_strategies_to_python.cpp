@@ -254,6 +254,10 @@ void  AddCustomStrategiesToPython(pybind11::module& m)
         .def_readwrite("build_level", &FrequencyDependentSettingsType::build_level)
         .def_readwrite("model_part", &FrequencyDependentSettingsType::model_part)
         .def_readwrite("factor", &FrequencyDependentSettingsType::factor)
+        .def_readwrite("has_matrix_contribution", &FrequencyDependentSettingsType::has_matrix_contribution)
+        .def_readwrite("has_vector_contribution", &FrequencyDependentSettingsType::has_vector_contribution)
+        .def_readonly("matrix", &FrequencyDependentSettingsType::matrix)
+        .def_readonly("vector", &FrequencyDependentSettingsType::vector)
         ;
 
     py::class_< FrequencyResponseAnalysisStrategyType, typename FrequencyResponseAnalysisStrategyType::Pointer, BaseSolvingStrategyType >(m,"FrequencyResponseAnalysisStrategy")

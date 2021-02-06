@@ -143,7 +143,6 @@ namespace ComplexMatrixUtility
     template<typename MatrixType, typename OtherMatrixType>
     void axpy(MatrixType& rX, OtherMatrixType& rY, const double A)
     {
-        std::cout << "double version" << std::endl;
         const std::size_t size = rX.value_data().size();
         KRATOS_ERROR_IF_NOT(size == rY.value_data().size()) << "wrong size!" << std::endl;
 
