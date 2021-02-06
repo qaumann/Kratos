@@ -30,6 +30,7 @@
 
 #if defined USE_EIGEN_MKL
 #include "custom_solvers/eigen_pardiso_lu_solver.h"
+#include "custom_solvers/eigen_pardiso_lu_adjoint_solver.h"
 #include "custom_solvers/eigen_pardiso_llt_solver.h"
 #include "custom_solvers/eigen_pardiso_ldlt_solver.h"
 #endif
@@ -208,10 +209,12 @@ void AddCustomSolversToPython(pybind11::module& m)
 
 #if defined USE_EIGEN_MKL
     register_solver<EigenPardisoLUSolver<double>>(m, "PardisoLUSolver");
+    register_solver<EigenPardisoLUAdjointSolver<double>>(m, "PardisoLUAdjointSolver");
     register_solver<EigenPardisoLDLTSolver<double>>(m, "PardisoLDLTSolver");
     register_solver<EigenPardisoLLTSolver<double>>(m, "PardisoLLTSolver");
 
     register_solver<EigenPardisoLUSolver<complex>>(m, "ComplexPardisoLUSolver");
+    register_solver<EigenPardisoLUAdjointSolver<complex>>(m, "ComplexPardisoLUAdjointSolver");
     register_solver<EigenPardisoLDLTSolver<complex>>(m, "ComplexPardisoLDLTSolver");
     register_solver<EigenPardisoLLTSolver<complex>>(m, "ComplexPardisoLLTSolver");
 #endif // defined USE_EIGEN_MKL
