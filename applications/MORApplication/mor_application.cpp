@@ -39,6 +39,7 @@ namespace Kratos {
 KratosMORApplication::KratosMORApplication():
     KratosApplication("MORApplication"),
       mAcousticElement2D2N(0, Element::GeometryType::Pointer(new Line2D2<NodeType >(Element::GeometryType::PointsArrayType(2)))),
+      mAcousticElement2D3N(0, Element::GeometryType::Pointer(new Triangle2D3<NodeType >(Element::GeometryType::PointsArrayType(3)))),
       mAcousticElement2D4N(0, Element::GeometryType::Pointer(new Quadrilateral2D4<NodeType >(Element::GeometryType::PointsArrayType(4)))),
       mAcousticElement3D4N(0, Element::GeometryType::Pointer(new Tetrahedra3D4<NodeType >(Element::GeometryType::PointsArrayType(4)))),
       mAcousticElement3D8N(0, Element::GeometryType::Pointer(new Hexahedra3D8<NodeType >(Element::GeometryType::PointsArrayType(8)))),
@@ -102,6 +103,7 @@ void KratosMORApplication::Register()
 
   // elements
   KRATOS_REGISTER_ELEMENT("AcousticElement2D2N", mAcousticElement2D2N)
+  KRATOS_REGISTER_ELEMENT("AcousticElement2D3N", mAcousticElement2D3N)
   KRATOS_REGISTER_ELEMENT("AcousticElement2D4N", mAcousticElement2D4N)
   KRATOS_REGISTER_ELEMENT("AcousticElement3D4N", mAcousticElement3D4N)
   KRATOS_REGISTER_ELEMENT("AcousticElement3D8N", mAcousticElement3D8N)

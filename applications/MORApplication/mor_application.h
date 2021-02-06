@@ -185,6 +185,7 @@ private:
 
     // Elements
     const AcousticElement mAcousticElement2D2N;
+    const AcousticElement mAcousticElement2D3N;
     const AcousticElement mAcousticElement2D4N;
     const AcousticElement mAcousticElement3D4N;
     const AcousticElement mAcousticElement3D8N;
