@@ -176,14 +176,10 @@ void AcousticRobinCondition::GetSecondDerivativesVector(
     KRATOS_ERROR << "Condition not prepared for time step analysis" << std::endl;
 }
 
-int AcousticRobinCondition::Check( const ProcessInfo& rCurrentProcessInfo )
+int AcousticRobinCondition::Check( const ProcessInfo& rCurrentProcessInfo ) const
 {
     // Base check
     Condition::Check(rCurrentProcessInfo);
-
-    // Verify variable exists
-    KRATOS_CHECK_VARIABLE_KEY(PRESSURE)
-    KRATOS_CHECK_VARIABLE_KEY(ADMITTANCE)
 
     // Check that the condition's nodes contain all required SolutionStepData and Degrees of freedom
     for (const auto& r_node : this->GetGeometry().Points()) {

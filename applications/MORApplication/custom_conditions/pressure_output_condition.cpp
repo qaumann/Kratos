@@ -239,18 +239,14 @@ void PressureOutputCondition::CalculateAll(
 // /***********************************************************************************/
 // /***********************************************************************************/
 
-int PressureOutputCondition::Check( const ProcessInfo& rCurrentProcessInfo )
+int PressureOutputCondition::Check( const ProcessInfo& rCurrentProcessInfo ) const
 {
     // Base check
     Condition::Check(rCurrentProcessInfo);
 
-    // Verify variable exists
-    KRATOS_CHECK_VARIABLE_KEY(SCALAR_OUTPUT)
-
     // Check that the condition's nodes contain all required SolutionStepData and Degrees of freedom
     for (const auto& r_node : this->GetGeometry().Points()) {
-        // KRATOS_CHECK_VARIABLE_IN_NODAL_DATA(SCALAR_OUTPUT,r_node)
-
+        KRATOS_CHECK_VARIABLE_IN_NODAL_DATA(COMPONENT_OUTPUT,r_node)
         KRATOS_CHECK_DOF_IN_NODE(PRESSURE, r_node)
     }
 

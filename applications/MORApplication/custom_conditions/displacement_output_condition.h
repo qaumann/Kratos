@@ -20,7 +20,6 @@
 // Project includes
 #include "includes/condition.h"
 #include "containers/variable.h"
-// #include "structural_mechanics_application_variables.h"
 #include "mor_application_variables.h"
 
 namespace Kratos
@@ -250,53 +249,12 @@ public:
         ProcessInfo& rCurrentProcessInfo
         ) override;
 
-     /**
-      * @brief This function is designed to make the element to assemble an rRHS vector identified by a variable rRHSVariable by assembling it to the nodes on the variable rDestinationVariable.
-      * @param rRHSVector input variable containing the RHS vector to be assembled
-      * @param rRHSVariable variable describing the type of the RHS vector to be assembled
-      * @param rDestinationVariable variable in the database to which the rRHSvector will be assembled
-      * @param rCurrentProcessInfo The current process info instance
-     */
-    // void AddExplicitContribution(const VectorType& rRHS,
-    //     const Variable<VectorType>& rRHSVariable,
-    //     Variable<array_1d<double,3> >& rDestinationVariable,
-    //     const ProcessInfo& rCurrentProcessInfo
-    //     ) override;
-
     /**
      * @brief This function provides the place to perform checks on the completeness of the input.
      * @details It is designed to be called only once (or anyway, not often) typically at the beginning of the calculations, so to verify that nothing is missing from the input or that no common error is found.
      * @param rCurrentProcessInfo The current process info instance
      */
-    int Check( const ProcessInfo& rCurrentProcessInfo ) override;
-
-    // /**
-    //  * @brief Check if Rotational Dof existant
-    //  * @return Trues if exists, false otherwise
-    //  */
-    // virtual bool HasRotDof() const
-    // {
-    //     return (GetGeometry()[0].HasDofFor(ROTATION_X) && GetGeometry().size() == 2);
-    // }
-
-    // /**
-    //  * @brief This method computes the DoF block size
-    //  * @return The size of the DoF block
-    //  */
-    // unsigned int GetBlockSize() const
-    // {
-    //     unsigned int dim = GetGeometry().WorkingSpaceDimension();
-    //     if( HasRotDof() ) { // if it has rotations
-    //         if(dim == 2)
-    //             return 3;
-    //         else if(dim == 3)
-    //             return 6;
-    //         else
-    //             KRATOS_ERROR << "The conditions only works for 2D and 3D elements";
-    //     } else {
-    //         return dim;
-    //     }
-    // }
+    int Check( const ProcessInfo& rCurrentProcessInfo ) const override;
 
     ///@}
     ///@name Access

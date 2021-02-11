@@ -181,56 +181,6 @@ void DisplacementOutputCondition::GetValuesVector(
 // /***********************************************************************************/
 // /***********************************************************************************/
 
-// // void DisplacementOutputCondition::GetFirstDerivativesVector(
-// //     Vector& rValues,
-// //     int Step
-// //     )
-// // {
-// //     const SizeType number_of_nodes = GetGeometry().size();
-// //     const SizeType dim = GetGeometry().WorkingSpaceDimension();
-// //     const SizeType mat_size = number_of_nodes * dim;
-
-// //     if (rValues.size() != mat_size) {
-// //         rValues.resize(mat_size, false);
-// //     }
-
-// //     for (SizeType i = 0; i < number_of_nodes; ++i) {
-// //         const array_1d<double, 3 > & Velocity = GetGeometry()[i].FastGetSolutionStepValue(VELOCITY, Step);
-// //         const SizeType index = i * dim;
-// //         for(SizeType k = 0; k<dim; ++k) {
-// //             rValues[index + k] = Velocity[k];
-// //         }
-// //     }
-// // }
-
-// /***********************************************************************************/
-// /***********************************************************************************/
-
-// // void DisplacementOutputCondition::GetSecondDerivativesVector(
-// //     Vector& rValues,
-// //     int Step
-// //     )
-// // {
-// //     const SizeType number_of_nodes = GetGeometry().size();
-// //     const SizeType dim = GetGeometry().WorkingSpaceDimension();
-// //     const SizeType mat_size = number_of_nodes * dim;
-
-// //     if (rValues.size() != mat_size) {
-// //         rValues.resize(mat_size, false);
-// //     }
-
-// //     for (SizeType i = 0; i < number_of_nodes; ++i) {
-// //         const array_1d<double, 3 >& r_acceleration = GetGeometry()[i].FastGetSolutionStepValue(ACCELERATION, Step);
-// //         const SizeType index = i * dim;
-// //         for(SizeType k = 0; k < dim; ++k) {
-// //             rValues[index + k] = r_acceleration[k];
-// //         }
-// //     }
-// // }
-
-// /***********************************************************************************/
-// /***********************************************************************************/
-
 void DisplacementOutputCondition::CalculateRightHandSide(
     VectorType& rRightHandSideVector,
     ProcessInfo& rCurrentProcessInfo
@@ -355,13 +305,10 @@ void DisplacementOutputCondition::CalculateAll(
 // /***********************************************************************************/
 
 // template< class TVariableType, TVariableType& TVariable >
-int DisplacementOutputCondition::Check( const ProcessInfo& rCurrentProcessInfo )
+int DisplacementOutputCondition::Check( const ProcessInfo& rCurrentProcessInfo ) const
 {
     // Base check
     Condition::Check(rCurrentProcessInfo);
-
-    // Verify variable exists
-    KRATOS_CHECK_VARIABLE_KEY(COMPONENT_OUTPUT)
 
     // Check that the condition's nodes contain all required SolutionStepData and Degrees of freedom
     for (const auto& r_node : this->GetGeometry().Points()) {

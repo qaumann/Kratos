@@ -326,16 +326,10 @@ void AcousticStructureCouplingCondition<TDim, TIsMapping>::GetSecondDerivativesV
 }
 
 template<std::size_t TDim, bool TIsMapping>
-int AcousticStructureCouplingCondition<TDim, TIsMapping>::Check( const ProcessInfo& rCurrentProcessInfo )
+int AcousticStructureCouplingCondition<TDim, TIsMapping>::Check( const ProcessInfo& rCurrentProcessInfo ) const
 {
     // Base check
     Condition::Check(rCurrentProcessInfo);
-
-    // Verify variable exists
-    if( !TIsMapping ) {
-        KRATOS_CHECK_VARIABLE_KEY(DISPLACEMENT)
-    }
-    KRATOS_CHECK_VARIABLE_KEY(PRESSURE)
 
     // Check that the condition's nodes contain all required SolutionStepData and Degrees of freedom
     for (const auto& r_node : this->GetGeometry().Points()) {
@@ -349,14 +343,6 @@ int AcousticStructureCouplingCondition<TDim, TIsMapping>::Check( const ProcessIn
             if( TDim == 3)
                 KRATOS_CHECK_DOF_IN_NODE(DISPLACEMENT_Z, r_node)
         }
-    }
-
-    // Check required data for mapping
-    if( TIsMapping ) {
-        KRATOS_CHECK_VARIABLE_KEY(MAPPING_NODES)
-        KRATOS_CHECK_VARIABLE_KEY(MAPPING_FACTOR)
-        // KRATOS_WATCH(MAPPING_FACTOR)
-        //TODO throw error for non-matching grids
     }
 
     return 0;
