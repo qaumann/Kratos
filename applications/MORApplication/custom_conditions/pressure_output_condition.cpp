@@ -246,7 +246,6 @@ int PressureOutputCondition::Check( const ProcessInfo& rCurrentProcessInfo ) con
 
     // Check that the condition's nodes contain all required SolutionStepData and Degrees of freedom
     for (const auto& r_node : this->GetGeometry().Points()) {
-        KRATOS_CHECK_VARIABLE_IN_NODAL_DATA(COMPONENT_OUTPUT,r_node)
         KRATOS_CHECK_DOF_IN_NODE(PRESSURE, r_node)
     }
 
