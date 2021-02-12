@@ -324,12 +324,12 @@ public:
     static inline bool CheckConditionNumber(
         const TMatrix1& rInputMatrix,
         TMatrix2& rInvertedMatrix,
-        const TDataType Tolerance = std::numeric_limits<double>::epsilon(),
+        const double Tolerance = std::numeric_limits<double>::epsilon(),
         const bool ThrowError = true
         )
     {
         // We want at least 4 significant digits
-        const TDataType max_condition_number = (1.0/Tolerance) * 1.0e-4;
+        const double max_condition_number = (1.0/Tolerance) * 1.0e-4;
 
         // Find the condition number to define is inverse is OK
         const double input_matrix_norm = norm_frobenius(rInputMatrix);
@@ -426,7 +426,7 @@ public:
         const TMatrix1& rInputMatrix,
         TMatrix2& rInvertedMatrix,
         TDataType& rInputMatrixDet,
-        const TDataType Tolerance = ZeroTolerance
+        const TDataType Tolerance = GetZeroTolerance()
         )
     {
         const SizeType size = rInputMatrix.size2();
@@ -451,7 +451,7 @@ public:
                 rInvertedMatrix.resize(size1, size2,false);
             }
 
-            Matrix A(rInputMatrix);
+            TMatrix1 A(rInputMatrix);
 #ifdef KRATOS_USE_AMATRIX   // This macro definition is for the migration period and to be removed afterward please do not use it
             AMatrix::LUFactorization<MatrixType, DenseVector<std::size_t> > lu_factorization(A);
             rInputMatrixDet = lu_factorization.determinant();
@@ -476,10 +476,10 @@ public:
        } else { // Bounded-matrix case
             const SizeType size1 = rInputMatrix.size1();
             const SizeType size2 = rInputMatrix.size2();
-            
-            Matrix A(rInputMatrix);
-            Matrix invA(rInvertedMatrix);
-            
+
+            TMatrix1 A(rInputMatrix);
+            TMatrix2 invA(rInvertedMatrix);
+
  #ifdef KRATOS_USE_AMATRIX   // This macro definition is for the migration period and to be removed afterward please do not use it
             AMatrix::LUFactorization<MatrixType, DenseVector<std::size_t> > lu_factorization(A);
             rInputMatrixDet = lu_factorization.determinant();
@@ -501,17 +501,17 @@ public:
                 rInputMatrixDet *= (ki == 0) ? A(i,i) : -A(i,i);
             }
  #endif // ifdef KRATOS_USE_AMATRIX
-            
+
             for (IndexType i = 0; i < size1;++i) {
                 for (IndexType j = 0; j < size2;++j) {
                     rInvertedMatrix(i,j) = invA(i,j);
                 }
-            } 
+            }
        }
 
        // Checking condition number
-       if (Tolerance > 0.0) { // Check is skipped for negative tolerances
-            CheckConditionNumber(rInputMatrix, rInvertedMatrix, Tolerance);
+       if (std::abs(Tolerance) > 0.0) { // Check is skipped for zero tolerances
+            CheckConditionNumber(rInputMatrix, rInvertedMatrix, std::abs(Tolerance));
        }
     }
 
