@@ -40,9 +40,11 @@ class FrequencyDependentMaterialProcess(KratosMultiphysics.Process):
             self._SetUpAcousticLoad()
         elif self.contribution_type == "output":
             self._SetUpOutput()
+        elif self.contribution_type == "pml":
+            self._SetUpPML()
         else:
-            err_msg  = 'Unknown contribution type "{}".'.format(self.contribution_type)
-            err_msg += 'Possible choices are "biot", "acoustic_load".'
+            err_msg  = 'Unknown contribution type "{}". '.format(self.contribution_type)
+            err_msg += 'Possible choices are "acoustic_load", "biot", "output", "pml".'
             raise Exception(err_msg)
 
     def ExecuteInitializeSolutionStep(self):
@@ -148,10 +150,18 @@ class FrequencyDependentMaterialProcess(KratosMultiphysics.Process):
         self.functions['output'] = lambda omega: 1
         self.strategy.SetFrequencyDependentMaterial(self.settings['output'])
 
+    def _SetUpPML(self):
+        self.settings['k'] = MOR.FrequencyDependentMaterialSettings(self.model_part, 91, True, False)
+        self.functions['k'] = lambda omega: 0+1j
+        self.strategy.SetFrequencyDependentMaterial(self.settings['k'])
+        self.settings['m'] = MOR.FrequencyDependentMaterialSettings(self.model_part, 291, True, False)
+        self.functions['m'] = lambda omega: (0-1j) * omega**2
+        self.strategy.SetFrequencyDependentMaterial(self.settings['m'])
+
     def _RetrieveProperty(self, property_type):
         for prop in self.model_part.GetProperties():
-                if prop.Has(property_type):
-                    if prop.GetValue(property_type) > sys.float_info.epsilon:
-                        value = prop.GetValue(property_type)
-                        return value
+            if prop.Has(property_type):
+                if prop.GetValue(property_type) > sys.float_info.epsilon:
+                    value = prop.GetValue(property_type)
+                    return value
         return 0.0

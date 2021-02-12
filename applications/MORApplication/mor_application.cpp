@@ -43,6 +43,11 @@ KratosMORApplication::KratosMORApplication():
       mAcousticElement2D4N(0, Element::GeometryType::Pointer(new Quadrilateral2D4<NodeType >(Element::GeometryType::PointsArrayType(4)))),
       mAcousticElement3D4N(0, Element::GeometryType::Pointer(new Tetrahedra3D4<NodeType >(Element::GeometryType::PointsArrayType(4)))),
       mAcousticElement3D8N(0, Element::GeometryType::Pointer(new Hexahedra3D8<NodeType >(Element::GeometryType::PointsArrayType(8)))),
+      mAcousticPMLElement2D2N(0, Element::GeometryType::Pointer(new Line2D2<NodeType >(Element::GeometryType::PointsArrayType(2)))),
+      mAcousticPMLElement2D3N(0, Element::GeometryType::Pointer(new Triangle2D3<NodeType >(Element::GeometryType::PointsArrayType(3)))),
+      mAcousticPMLElement2D4N(0, Element::GeometryType::Pointer(new Quadrilateral2D4<NodeType >(Element::GeometryType::PointsArrayType(4)))),
+      mAcousticPMLElement3D4N(0, Element::GeometryType::Pointer(new Tetrahedra3D4<NodeType >(Element::GeometryType::PointsArrayType(4)))),
+      mAcousticPMLElement3D8N(0, Element::GeometryType::Pointer(new Hexahedra3D8<NodeType >(Element::GeometryType::PointsArrayType(8)))),
       mPorousElement2D2N(0, Element::GeometryType::Pointer(new Line2D2<NodeType >(Element::GeometryType::PointsArrayType(2)))),
       mPorousElement2D4N(0, Element::GeometryType::Pointer(new Quadrilateral2D4<NodeType >(Element::GeometryType::PointsArrayType(4)))),
       mPorousElement3D4N(0, Element::GeometryType::Pointer(new Tetrahedra3D4<NodeType >(Element::GeometryType::PointsArrayType(4)))),
@@ -50,14 +55,14 @@ KratosMORApplication::KratosMORApplication():
 
 
       // conditions
-      mAcousticLoadConcition2D1N(0, Condition::GeometryType::Pointer(new Point2D<NodeType >(Condition::GeometryType::PointsArrayType(1)))),
-      mAcousticLoadConcition2D2N(0, Condition::GeometryType::Pointer(new Line2D2<NodeType >(Condition::GeometryType::PointsArrayType(2)))),
-      mAcousticLoadConcition3D1N(0, Condition::GeometryType::Pointer(new Point3D<NodeType >(Condition::GeometryType::PointsArrayType(1)))),
-      mAcousticLoadConcition3D3N(0, Condition::GeometryType::Pointer(new Triangle3D3<NodeType >(Condition::GeometryType::PointsArrayType(3)))),
-      mAcousticLoadConcition3D4N(0, Condition::GeometryType::Pointer(new Quadrilateral3D4<NodeType >(Condition::GeometryType::PointsArrayType(4)))),
-      mAcousticRobinConcition2D2N(0, Condition::GeometryType::Pointer(new Line2D2<NodeType >(Condition::GeometryType::PointsArrayType(2)))),
-      mAcousticRobinConcition3D3N(0, Condition::GeometryType::Pointer(new Triangle3D3<NodeType >(Condition::GeometryType::PointsArrayType(3)))),
-      mAcousticRobinConcition3D4N(0, Condition::GeometryType::Pointer(new Quadrilateral3D4<NodeType >(Condition::GeometryType::PointsArrayType(4)))),
+      mAcousticLoadCondition2D1N(0, Condition::GeometryType::Pointer(new Point2D<NodeType >(Condition::GeometryType::PointsArrayType(1)))),
+      mAcousticLoadCondition2D2N(0, Condition::GeometryType::Pointer(new Line2D2<NodeType >(Condition::GeometryType::PointsArrayType(2)))),
+      mAcousticLoadCondition3D1N(0, Condition::GeometryType::Pointer(new Point3D<NodeType >(Condition::GeometryType::PointsArrayType(1)))),
+      mAcousticLoadCondition3D3N(0, Condition::GeometryType::Pointer(new Triangle3D3<NodeType >(Condition::GeometryType::PointsArrayType(3)))),
+      mAcousticLoadCondition3D4N(0, Condition::GeometryType::Pointer(new Quadrilateral3D4<NodeType >(Condition::GeometryType::PointsArrayType(4)))),
+      mAcousticRobinCondition2D2N(0, Condition::GeometryType::Pointer(new Line2D2<NodeType >(Condition::GeometryType::PointsArrayType(2)))),
+      mAcousticRobinCondition3D3N(0, Condition::GeometryType::Pointer(new Triangle3D3<NodeType >(Condition::GeometryType::PointsArrayType(3)))),
+      mAcousticRobinCondition3D4N(0, Condition::GeometryType::Pointer(new Quadrilateral3D4<NodeType >(Condition::GeometryType::PointsArrayType(4)))),
       mAcousticStructureCouplingCondition2D2N(0, Condition::GeometryType::Pointer(new Line2D2<NodeType >(Condition::GeometryType::PointsArrayType(2)))),
       mAcousticStructureCouplingCondition3D4N(0, Condition::GeometryType::Pointer(new Quadrilateral3D4<NodeType >(Condition::GeometryType::PointsArrayType(4)))),
       mAcousticStructureCouplingCondition3D3N(0, Condition::GeometryType::Pointer(new Triangle3D3<NodeType >(Condition::GeometryType::PointsArrayType(3)))),
@@ -101,26 +106,39 @@ void KratosMORApplication::Register()
   KRATOS_REGISTER_VARIABLE( FLOW_RESISTIVITY )
   KRATOS_REGISTER_VARIABLE( VISCOUS_LENGTH )
 
+  // PML variables
+  KRATOS_REGISTER_VARIABLE( PARAMETER_EXPONENT )
+  KRATOS_REGISTER_VARIABLE( PARAMETER_SPATIAL )
+  KRATOS_REGISTER_VARIABLE( PRESCRIBED_POTENTIAL )
+  KRATOS_REGISTER_VARIABLE( IMAG_DISTANCE )
+  KRATOS_REGISTER_VARIABLE( LOCAL_PML_WIDTH )
+  KRATOS_REGISTER_3D_VARIABLE_WITH_COMPONENTS( ABSORBTION_VECTOR )
+
   // elements
   KRATOS_REGISTER_ELEMENT("AcousticElement2D2N", mAcousticElement2D2N)
   KRATOS_REGISTER_ELEMENT("AcousticElement2D3N", mAcousticElement2D3N)
   KRATOS_REGISTER_ELEMENT("AcousticElement2D4N", mAcousticElement2D4N)
   KRATOS_REGISTER_ELEMENT("AcousticElement3D4N", mAcousticElement3D4N)
   KRATOS_REGISTER_ELEMENT("AcousticElement3D8N", mAcousticElement3D8N)
+  KRATOS_REGISTER_ELEMENT("AcousticPMLElement2D2N", mAcousticPMLElement2D2N)
+  KRATOS_REGISTER_ELEMENT("AcousticPMLElement2D3N", mAcousticPMLElement2D3N)
+  KRATOS_REGISTER_ELEMENT("AcousticPMLElement2D4N", mAcousticPMLElement2D4N)
+  KRATOS_REGISTER_ELEMENT("AcousticPMLElement3D4N", mAcousticPMLElement3D4N)
+  KRATOS_REGISTER_ELEMENT("AcousticPMLElement3D8N", mAcousticPMLElement3D8N)
   KRATOS_REGISTER_ELEMENT("PorousElement2D2N", mPorousElement2D2N)
   KRATOS_REGISTER_ELEMENT("PorousElement2D4N", mPorousElement2D4N)
   KRATOS_REGISTER_ELEMENT("PorousElement3D4N", mPorousElement3D4N)
   KRATOS_REGISTER_ELEMENT("PorousElement3D8N", mPorousElement3D8N)
 
   // conditions
-  KRATOS_REGISTER_CONDITION("AcousticLoadCondition2D1N", mAcousticLoadConcition2D1N)
-  KRATOS_REGISTER_CONDITION("AcousticLoadCondition2D2N", mAcousticLoadConcition2D2N)
-  KRATOS_REGISTER_CONDITION("AcousticLoadCondition3D1N", mAcousticLoadConcition3D1N)
-  KRATOS_REGISTER_CONDITION("AcousticLoadCondition3D3N", mAcousticLoadConcition3D3N)
-  KRATOS_REGISTER_CONDITION("AcousticLoadCondition3D4N", mAcousticLoadConcition3D4N)
-  KRATOS_REGISTER_CONDITION("AcousticRobinCondition2D2N", mAcousticRobinConcition2D2N)
-  KRATOS_REGISTER_CONDITION("AcousticRobinCondition3D3N", mAcousticRobinConcition3D3N)
-  KRATOS_REGISTER_CONDITION("AcousticRobinCondition3D4N", mAcousticRobinConcition3D4N)
+  KRATOS_REGISTER_CONDITION("AcousticLoadCondition2D1N", mAcousticLoadCondition2D1N)
+  KRATOS_REGISTER_CONDITION("AcousticLoadCondition2D2N", mAcousticLoadCondition2D2N)
+  KRATOS_REGISTER_CONDITION("AcousticLoadCondition3D1N", mAcousticLoadCondition3D1N)
+  KRATOS_REGISTER_CONDITION("AcousticLoadCondition3D3N", mAcousticLoadCondition3D3N)
+  KRATOS_REGISTER_CONDITION("AcousticLoadCondition3D4N", mAcousticLoadCondition3D4N)
+  KRATOS_REGISTER_CONDITION("AcousticRobinCondition2D2N", mAcousticRobinCondition2D2N)
+  KRATOS_REGISTER_CONDITION("AcousticRobinCondition3D3N", mAcousticRobinCondition3D3N)
+  KRATOS_REGISTER_CONDITION("AcousticRobinCondition3D4N", mAcousticRobinCondition3D4N)
   KRATOS_REGISTER_CONDITION("AcousticStructureCouplingCondition2D2N", mAcousticStructureCouplingCondition2D2N)
   KRATOS_REGISTER_CONDITION("AcousticStructureCouplingCondition3D4N", mAcousticStructureCouplingCondition3D4N)
   KRATOS_REGISTER_CONDITION("AcousticStructureCouplingCondition3D3N", mAcousticStructureCouplingCondition3D3N)

@@ -16,9 +16,11 @@
 // #include "includes/define.h"
 // #include "includes/define_python.h"
 #include "spaces/ublas_space.h"
+#include "linear_solvers/linear_solver.h"
 
 #include "processes/process.h"
 #include "custom_processes/monolithic_mapping_process.hpp"
+#include "custom_processes/acoustic_pml_direction_process.hpp"
 
 namespace Kratos
 {
@@ -30,11 +32,18 @@ void  AddCustomProcessesToPython(pybind11::module& m)
 {
 
     namespace py = pybind11;
-    typedef TUblasSparseSpace<double> SparseSpaceType;
+    typedef UblasSpace<double, CompressedMatrix, Vector> SparseSpaceType;
+    typedef UblasSpace<double, Matrix, Vector> DenseSpaceType;
+    typedef LinearSolver<SparseSpaceType, DenseSpaceType > LinearSolverType;
     typedef SparseSpaceType::MatrixType SparseMatrixType;
 
     py::class_<MonolithicMappingProcess<SparseMatrixType>, typename MonolithicMappingProcess<SparseMatrixType>::Pointer, Process>(m, "MonolithicMappingProcess")
         .def(py::init<ModelPart&, ModelPart&, SparseMatrixType&>())
+        ;
+
+    typedef AcousticPMLDirectionProcess<SparseSpaceType, DenseSpaceType, LinearSolverType> AcousticPMLDirectionProcessType;
+    py::class_<AcousticPMLDirectionProcessType, typename AcousticPMLDirectionProcessType::Pointer, Process>(m, "AcousticPMLDirectionProcess")
+        .def(py::init<ModelPart&, ModelPart&, ModelPart&, typename LinearSolverType::Pointer>())
         ;
 
 }

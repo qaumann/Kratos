@@ -25,6 +25,7 @@
 #include "includes/kratos_application.h"
 
 #include "custom_elements/acoustic_element.h"
+#include "custom_elements/acoustic_pml_element.h"
 #include "custom_elements/porous_element.h"
 
 #include "custom_conditions/acoustic_load_condition.h"
@@ -189,6 +190,11 @@ private:
     const AcousticElement mAcousticElement2D4N;
     const AcousticElement mAcousticElement3D4N;
     const AcousticElement mAcousticElement3D8N;
+    const AcousticPMLElement mAcousticPMLElement2D2N;
+    const AcousticPMLElement mAcousticPMLElement2D3N;
+    const AcousticPMLElement mAcousticPMLElement2D4N;
+    const AcousticPMLElement mAcousticPMLElement3D4N;
+    const AcousticPMLElement mAcousticPMLElement3D8N;
 	const PorousElement mPorousElement2D2N;
 	const PorousElement mPorousElement2D4N;
 	const PorousElement mPorousElement3D4N;
@@ -196,14 +202,14 @@ private:
 
 
     // Conditions
-    const AcousticLoadCondition mAcousticLoadConcition2D1N;
-    const AcousticLoadCondition mAcousticLoadConcition2D2N;
-    const AcousticLoadCondition mAcousticLoadConcition3D1N;
-    const AcousticLoadCondition mAcousticLoadConcition3D3N;
-    const AcousticLoadCondition mAcousticLoadConcition3D4N;
-    const AcousticRobinCondition mAcousticRobinConcition2D2N;
-    const AcousticRobinCondition mAcousticRobinConcition3D3N;
-    const AcousticRobinCondition mAcousticRobinConcition3D4N;
+    const AcousticLoadCondition mAcousticLoadCondition2D1N;
+    const AcousticLoadCondition mAcousticLoadCondition2D2N;
+    const AcousticLoadCondition mAcousticLoadCondition3D1N;
+    const AcousticLoadCondition mAcousticLoadCondition3D3N;
+    const AcousticLoadCondition mAcousticLoadCondition3D4N;
+    const AcousticRobinCondition mAcousticRobinCondition2D2N;
+    const AcousticRobinCondition mAcousticRobinCondition3D3N;
+    const AcousticRobinCondition mAcousticRobinCondition3D4N;
     const AcousticStructureCouplingCondition<2, false> mAcousticStructureCouplingCondition2D2N;
     const AcousticStructureCouplingCondition<3, false> mAcousticStructureCouplingCondition3D4N;
     const AcousticStructureCouplingCondition<3, false> mAcousticStructureCouplingCondition3D3N;
