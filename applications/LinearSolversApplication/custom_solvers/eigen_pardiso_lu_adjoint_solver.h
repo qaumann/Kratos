@@ -46,7 +46,7 @@ public:
 
     bool Compute(Eigen::Map<const SparseMatrix> a)
     {
-        m_solver.compute(a.adjoint());
+        m_solver.compute(a.transpose());
 
         const bool success = m_solver.info() == Eigen::Success;
 
