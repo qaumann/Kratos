@@ -319,7 +319,6 @@ class MorSecondOrderIRKAStrategy
     bool SolveSolutionStep() override
     {
         KRATOS_TRY;
-        std::cout << "hello! this is where the second order IRKA MOR magic happens" << std::endl;
         typename TSchemeType::Pointer p_scheme = this->GetScheme();
         typename BaseType::TBuilderAndSolverType::Pointer p_builder_and_solver = this->GetBuilderAndSolver();
         const int rank = BaseType::GetModelPart().GetCommunicator().MyPID();
@@ -420,6 +419,7 @@ class MorSecondOrderIRKAStrategy
                 }
 
                 // build dynamic stiffness matrix
+                ComplexSparseSpaceType::SetToZero(r_kdyn);
                 if( TUseModalDamping) {
                     if( this->SystemIsSymmetric() ) {
                         noalias(r_kdyn) = r_K_cplx + std::pow( mSamplingPoints(2*i), 2 ) * r_M_tmp;
@@ -487,8 +487,7 @@ class MorSecondOrderIRKAStrategy
             projection_time = irka_projection_time.ElapsedSeconds();
 
             // compute eigenvalues in reduced space
-            if( TUseModalDamping )
-            {
+            if( TUseModalDamping ) {
                 // compute generalized eigenvalues
                 ComplexVector tmp_eigenvalues;
                 GeneralizedEigenvalueUtility::Compute<TReducedDenseSpace>(r_Kr, r_Mr, tmp_eigenvalues);
@@ -508,18 +507,23 @@ class MorSecondOrderIRKAStrategy
                     [](complex z1, complex z2) {return std::abs(z1) < std::abs(z2);});
 
                 this->UpdateSamplingPoints(eigenvalues, reduced_system_size);
-            }
-            else
-            {
+            } else {
                 // compute generalized eigenvalues
                 GeneralizedEigenvalueUtility::ComputePolynomial<TReducedDenseSpace>(r_Kr, r_Dr, r_Mr, eigenvalues);
 
                 // use mirror images of first r eigenvalues as expansion points
-                std::stable_sort(eigenvalues.begin(), eigenvalues.end(),
-                    [](complex z1, complex z2) {return std::abs(std::imag(z1)) < std::abs(std::imag(z2));});
+                // sort by imaginary part and exclude zero imaginary parts
+                std::stable_sort(eigenvalues.begin(), eigenvalues.end(), [](complex z1, complex z2) {
+                        if(std::abs(std::imag(z1)) < std::numeric_limits<double>::epsilon()) {
+                            z1 = complex(0,std::numeric_limits<double>::max());
+                        }
+                        if(std::abs(std::imag(z2)) < std::numeric_limits<double>::epsilon()) {
+                            z2 = complex(0,std::numeric_limits<double>::max());
+                        }
+                        return std::abs(std::imag(z1)) < std::abs(std::imag(z2));
+                        });
                 eigenvalues *= -1.;
                 this->UpdateSamplingPoints(eigenvalues, reduced_system_size);
-                ComplexSortUtility::PairComplexConjugates(eigenvalues);
             }
 
             // calculate error
@@ -533,8 +537,8 @@ class MorSecondOrderIRKAStrategy
             iter++;
             samplingPoints_old = mSamplingPoints;
 
-            KRATOS_INFO_IF("IRKA error after iteration " + iter, BaseType::GetEchoLevel() > 0 && rank == 0)
-                << ": e=" << error << std::endl;
+            KRATOS_INFO_IF("IRKA error after iteration " + std::to_string(iter), BaseType::GetEchoLevel() > 0 && rank == 0)
+                << "e=" << error << std::endl;
             KRATOS_INFO_IF("IRKA Iteration Solve Time", BaseType::GetEchoLevel() > 0 && rank == 0)
                 << irka_iteration_time.ElapsedSeconds() << std::endl;
             KRATOS_INFO_IF("\tProjection Time", BaseType::GetEchoLevel() > 0 && rank == 0)
@@ -736,6 +740,7 @@ class MorSecondOrderIRKAStrategy
 
         } else {
             noalias(mSamplingPoints) = subrange(eigenvalues, 0, reduced_system_size);
+            ComplexSortUtility::PairComplexConjugates(mSamplingPoints);
         }
     }
 
