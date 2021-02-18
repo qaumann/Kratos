@@ -46,7 +46,6 @@ namespace DirichletUtility
      * @param pScheme The integration scheme considered
      * @param rModelPart The model part of the problem to solve
      * @param A The LHS matrix
-     * @param Dx The Unknowns vector
      * @param b The RHS vector
      */
     template<typename SparseSpaceType>
@@ -54,15 +53,15 @@ namespace DirichletUtility
         typename SparseSpaceType::MatrixType& A,
         typename SparseSpaceType::VectorType& b,
         const std::vector<unsigned int>& FixedDofSet,
-        double Factor)
+        const typename SparseSpaceType::DataType Factor)
     {
         std::size_t system_size = A.size1();
-        double* Avalues = A.value_data().begin();
+        typename SparseSpaceType::DataType* Avalues = A.value_data().begin();
         std::size_t* Arow_indices = A.index1_data().begin();
         std::size_t* Acol_indices = A.index2_data().begin();
 
         //detect if there is a line of all zeros and set the diagonal to a 1 if this happens
-        if( Factor != 0.0 )
+        if( std::abs(Factor) != 0.0 )
         {
             #pragma omp parallel for firstprivate(system_size)
             for (int k = 0; k < static_cast<int>(system_size); ++k){
@@ -99,7 +98,7 @@ namespace DirichletUtility
                     if (static_cast<int>(Acol_indices[j]) != k )
                         Avalues[j] = 0.0;
                     else
-                        Avalues[j] *= Factor;
+                        Avalues[j] = Factor;
 
                 // zero out the RHS
                 b[k] = 0.0;
@@ -113,6 +112,46 @@ namespace DirichletUtility
             }
         }
     }
+
+    template<typename ComplexSparseSpaceType>
+    void SetComplexDirichletConditions(
+        ModelPart& rModelPart,
+        typename ComplexSparseSpaceType::MatrixType& rA,
+        typename ComplexSparseSpaceType::VectorType& rb,
+        const std::vector<unsigned int>& FixedDofSet,
+        const Variable<double>& rVariable,
+        const Variable<double>& rValueVariableReal,
+        const Variable<double>& rValueVariableImag
+    )
+    {
+        typename ComplexSparseSpaceType::VectorType x(rb.size());
+        ComplexSparseSpaceType::SetToZero(x);
+        ModelPart::NodesContainerType& nodes = rModelPart.Nodes();
+
+        // add contribution to rhs
+        for( ModelPart::NodesContainerType::iterator it_node = nodes.begin(); it_node != nodes.end() ; ++it_node) {
+            if( it_node->HasDofFor(rVariable) ) {
+                if( it_node->IsFixed(rVariable) ) {
+                    const size_t pos = it_node->GetDof(rVariable).GetId() - 1;
+                    std::complex<double> val(it_node->GetValue(rValueVariableReal), it_node->GetValue(rValueVariableImag));
+                    x[pos] = val;
+                }
+            }
+        }
+
+        noalias(rb) -= prod( rA, x );
+
+        DirichletUtility::ApplyDirichletConditions<ComplexSparseSpaceType>(rA, rb, FixedDofSet, 1.0);
+
+        for( int i=0; i<static_cast<int>(rb.size()); ++i ) {
+            if( std::abs(x[i]) > std::numeric_limits<double>::epsilon() ) {
+                rb[i] = x[i];
+                // std::cout << "setting " << x[i] << "=" << rb[i] << " at id " << i << std::endl;
+
+            }
+        }
+    }
+
 
 } // namespace DirichletUtility
 
