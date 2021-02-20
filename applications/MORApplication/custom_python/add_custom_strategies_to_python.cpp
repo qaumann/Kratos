@@ -217,6 +217,7 @@ void  AddCustomStrategiesToPython(pybind11::module& m)
 
     py::class_< MorSecondOrderRealKrylovStrategyType, typename MorSecondOrderRealKrylovStrategyType::Pointer, MorSecondOrderRealInRealOutOfflineStrategyType >(m,"MorSecondOrderRealKrylovStrategy")
         .def(py::init < ModelPart&, BaseSchemeType::Pointer, BuilderAndSolverType::Pointer, ComplexLinearSolverPointer, ComplexVector >())
+        .def(py::init < ModelPart&, BaseSchemeType::Pointer, BuilderAndSolverType::Pointer, ComplexLinearSolverPointer, ComplexLinearSolverPointer, ComplexVector >())
         ;
 
     py::class_< MorSecondOrderComplexKrylovStrategyType, typename MorSecondOrderComplexKrylovStrategyType::Pointer, MorSecondOrderRealInComplexOutOfflineStrategyType >(m,"MorSecondOrderComplexKrylovStrategy")

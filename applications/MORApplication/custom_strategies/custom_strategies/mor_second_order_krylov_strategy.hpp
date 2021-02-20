@@ -133,7 +133,7 @@ class MorSecondOrderKrylovStrategy
     ///@{
 
     /**
-     * Default constructor for the damped case and no derivatives of the moments
+     * Default constructor for the symmetric damped case and expansion points in complex conjugate pairs
      * @param rModelPart The model part of the problem
      * @param pScheme The integration scheme
      * @param pBuilderAndSolver The builder and solver
@@ -166,55 +166,35 @@ class MorSecondOrderKrylovStrategy
     }
 
     /**
-     * Constructor for the damped case and the same number of derivatives for all moments
+     * Default constructor for the non-symmetric damped case and expansion points in complex conjugate pairs
      * @param rModelPart The model part of the problem
      * @param pScheme The integration scheme
      * @param pBuilderAndSolver The builder and solver
      * @param pLinearSolver The complex linear solver to compute the basis
-     * @param samplingPoints The complex sampling points
+     * @param samplingPoints The complex sampling points in pairs of complex conjugate values
      */
     MorSecondOrderKrylovStrategy(
         ModelPart& rModelPart,
         typename TSchemeType::Pointer pScheme,
         typename BaseType::TBuilderAndSolverType::Pointer pBuilderAndSolver,
         typename TLinearSolverType::Pointer pNewLinearSolver,
-        ComplexVector samplingPoints,
-        std::size_t order)
-        : BaseType(rModelPart, pScheme, pBuilderAndSolver, pNewLinearSolver, true),
+        typename TLinearSolverType::Pointer pNewAdjointLinearSolver,
+        ComplexVector samplingPoints)
+        : BaseType(rModelPart, pScheme, pBuilderAndSolver, pNewLinearSolver, pNewAdjointLinearSolver, true),
             mSamplingPoints(samplingPoints)
     {
         KRATOS_TRY;
 
         this->mSystemSizeR = mSamplingPoints.size();
-        mOrders.resize(this->mSystemSizeR, order);
 
-        KRATOS_CATCH("");
-    }
+        // check, if the sampling points are ordered in complex conjugate pairs
+        ComplexSortUtility::PairComplexConjugates(mSamplingPoints);
 
-    /**
-     * Constructor for the damped case and a defined number of derivatives for each moment
-     * @param rModelPart The model part of the problem
-     * @param pScheme The integration scheme
-     * @param pBuilderAndSolver The builder and solver
-     * @param pLinearSolver The complex linear solver to compute the basis
-     * @param samplingPoints The complex sampling points
-     */
-    MorSecondOrderKrylovStrategy(
-        ModelPart& rModelPart,
-        typename TSchemeType::Pointer pScheme,
-        typename BaseType::TBuilderAndSolverType::Pointer pBuilderAndSolver,
-        typename TLinearSolverType::Pointer pNewLinearSolver,
-        ComplexVector samplingPoints,
-        std::vector<std::size_t> orders)
-        : BaseType(rModelPart, pScheme, pBuilderAndSolver, pNewLinearSolver, true),
-            mSamplingPoints(samplingPoints),
-            mOrders(orders)
-    {
-        KRATOS_TRY;
+        // use only one value of each pair to build a real-valued reduction basis
+        mOrders.resize(this->mSystemSizeR);
+        std::size_t n = 0;
+        std::generate(mOrders.begin(), mOrders.end(), [&n] () { n++; return n%2; });
 
-        KRATOS_ERROR_IF_NOT(mSamplingPoints.size() == mOrders.size()) << "The vectors for sampling points and order must have the same length" << std::endl;
-
-        this->mSystemSizeR = accumulate(mOrders.begin(), mOrders.end(), 0);
 
         KRATOS_CATCH("");
     }
@@ -248,6 +228,9 @@ class MorSecondOrderKrylovStrategy
             TReducedDenseSpace::Resize(this->GetDr(), reduced_system_size, reduced_system_size);
             TReducedDenseSpace::Resize(this->GetMr(), reduced_system_size, reduced_system_size);
             TReducedDenseSpace::Resize(this->GetBasis(), system_size, reduced_system_size);
+            if( !this->SystemIsSymmetric() ) {
+               TReducedDenseSpace::Resize(this->GetBasisLeft(), system_size, reduced_system_size);
+            }
 
 
             this->mSolutionStepIsInitialized = true;
@@ -267,7 +250,7 @@ class MorSecondOrderKrylovStrategy
     bool SolveSolutionStep() override
     {
         KRATOS_TRY;
-        std::cout << "hello! this is where the second order krylov MOR magic happens" << std::endl;
+        // std::cout << "hello! this is where the second order krylov MOR magic happens" << std::endl;
         typename TSchemeType::Pointer p_scheme = this->GetScheme();
         typename BaseType::TBuilderAndSolverType::Pointer p_builder_and_solver = this->GetBuilderAndSolver();
         const int rank = BaseType::GetModelPart().GetCommunicator().MyPID();
@@ -276,46 +259,67 @@ class MorSecondOrderKrylovStrategy
         TSystemMatrixType& r_M = this->GetM();
         TSystemMatrixType& r_D = this->GetC();
         TSystemVectorType& r_RHS = this->GetSystemVector();
+        TSystemVectorType& r_ov = this->GetOutputVector();
         TReducedDenseMatrixType& r_basis = this->GetBasis();
+        TReducedDenseMatrixType& r_basis_l = this->GetBasisLeft();
 
         const std::size_t system_size = p_builder_and_solver->GetEquationSystemSize();
         const std::size_t n_sampling_points = mSamplingPoints.size();
 
         // copy mass matrix, damping matrix, and rhs to the complex space
         ComplexSparseMatrixType r_M_tmp(r_M.size1(), r_M.size2());
-        noalias(r_M_tmp) = r_M;
-        ComplexSparseVectorType r_RHS_tmp = ComplexSparseVectorType(r_RHS);
+        ComplexMatrixUtility::ConstructMatrixStructure<TSchemeType, ComplexSparseMatrixType>(p_scheme,
+            r_M_tmp,
+            BaseType::GetModelPart(),
+            p_builder_and_solver->GetEquationSystemSize());
+        ComplexMatrixUtility::axpy<TSystemMatrixType, ComplexSparseMatrixType>(r_M, r_M_tmp, 1.0);
 
-        // create dynamic stiffness matrix
-        auto kdyn = ComplexSparseSpaceType::CreateEmptyMatrixPointer();
-        auto& r_kdyn = *kdyn;
-        ComplexSparseSpaceType::Resize(r_kdyn, system_size, system_size);
+        ComplexSparseMatrixType r_D_tmp(r_D.size1(), r_D.size2());
+        ComplexMatrixUtility::ConstructMatrixStructure<TSchemeType, ComplexSparseMatrixType>(p_scheme,
+            r_D_tmp,
+            BaseType::GetModelPart(),
+            p_builder_and_solver->GetEquationSystemSize());
+        ComplexMatrixUtility::axpy<TSystemMatrixType, ComplexSparseMatrixType>(r_D, r_D_tmp, 1.0);
+
+        ComplexSparseVectorType r_RHS_tmp = ComplexSparseVectorType(r_RHS);
+        ComplexSparseVectorType r_ov_tmp = ComplexSparseVectorType(r_ov);
 
         // create solution vector
-        ComplexSparseVectorPointerType dx_tmp = ComplexSparseSpaceType::CreateEmptyVectorPointer();
-        ComplexSparseVectorType& r_dx_tmp = *dx_tmp;
-        ComplexSparseSpaceType::Resize(r_dx_tmp, system_size);
+        ComplexSparseVectorPointerType tmp_dx = ComplexSparseSpaceType::CreateEmptyVectorPointer();
+        ComplexSparseVectorType& r_tmp_dx = *tmp_dx;
+        ComplexSparseSpaceType::Resize(r_tmp_dx, system_size);
+        ComplexSparseSpaceType::Set(r_tmp_dx, 0.0);
 
-        std::size_t index = 0;
-        BuiltinTimer basis_construction_time;
+        // create dynamic stiffness matrix
+        ComplexSparseMatrixType r_kdyn(system_size, system_size);
+        ComplexMatrixUtility::ConstructMatrixStructure<TSchemeType, ComplexSparseMatrixType>(p_scheme,
+            r_kdyn,
+            BaseType::GetModelPart(),
+            p_builder_and_solver->GetEquationSystemSize());
 
         // loop over sampling points
+        std::size_t index = 0;
+        std::size_t index_left = 0;
+        BuiltinTimer basis_construction_time;
+
         for( std::size_t i=0; i<n_sampling_points; ++i ) {
+            if( mOrders[i] == 0 ) {
+                continue;
+            }
+
             // build dynamic stiffness matrix
-            r_kdyn = r_D;
-            r_kdyn *= mSamplingPoints(i);
-            r_kdyn += r_K;
-            r_kdyn += std::pow(mSamplingPoints(i), 2.0) * r_M_tmp;
+            ComplexSparseSpaceType::SetToZero(r_kdyn);
+            ComplexMatrixUtility::axpy<TSystemMatrixType, ComplexSparseMatrixType>(r_K, r_kdyn, 1.0);
+            ComplexMatrixUtility::axpy<ComplexSparseMatrixType, ComplexSparseMatrixType>(r_D_tmp, r_kdyn, mSamplingPoints(i));
+            ComplexMatrixUtility::axpy<ComplexSparseMatrixType, ComplexSparseMatrixType>(r_M_tmp, r_kdyn, std::pow( mSamplingPoints(i), 2 ));
 
-            ComplexSparseVectorType aux = ComplexSparseVectorType(r_RHS_tmp);
+            // compute the basis vectors
+            this->mpLinearSolver->Solve( r_kdyn, r_tmp_dx, r_RHS_tmp );
+            UpdateBasis<typename TReducedSparseSpace::DataType>(r_basis, r_tmp_dx, index);
 
-            // loop over orders
-            for( std::size_t j=0; j<mOrders[i]; ++j ) {
-                if( j>0 ) {
-                    noalias(aux) = prod( r_M_tmp, r_dx_tmp );
-                }
-                this->mpLinearSolver->Solve( r_kdyn, r_dx_tmp, aux );
-                UpdateBasis<typename TReducedSparseSpace::DataType>(r_dx_tmp, index);
+            if( !this->SystemIsSymmetric() ) {
+                this->mpAdjointLinearSolver->Solve(r_kdyn, r_tmp_dx, r_ov_tmp);
+                UpdateBasis<typename TReducedSparseSpace::DataType>(r_basis_l, r_tmp_dx, index_left);
             }
         }
 
@@ -326,6 +330,9 @@ class MorSecondOrderKrylovStrategy
         BuiltinTimer basis_orthogonalization_time;
 
         OrthogonalizationUtility::OrthogonalizeQR<TReducedDenseSpace>(r_basis);
+        if( !this->SystemIsSymmetric() ) {
+            OrthogonalizationUtility::OrthogonalizeQR<TReducedDenseSpace>(r_basis_l);
+        }
 
         KRATOS_INFO_IF("Basis Orthogonalization Time", BaseType::GetEchoLevel() > 0 && rank == 0)
             << basis_orthogonalization_time.ElapsedSeconds() << std::endl;
@@ -423,10 +430,10 @@ class MorSecondOrderKrylovStrategy
      * @param index the column index
      */
     template<typename TScalar, typename std::enable_if<std::is_same<std::complex<double>, TScalar>::value, int>::type = 0>
-    void UpdateBasis(ComplexSparseVectorType& r_dx, std::size_t& index)
+    void UpdateBasis(TReducedDenseMatrixType& rBasis, ComplexSparseVectorType& rDx, std::size_t& index)
     {
-        TReducedDenseMatrixType& r_basis = this->GetBasis();
-        column( r_basis, index ) = r_dx;
+        // TReducedDenseMatrixType& r_basis = this->GetBasis();
+        column( rBasis, index ) = rDx;
         index++;
     }
 
@@ -436,11 +443,11 @@ class MorSecondOrderKrylovStrategy
      * @param index the column index
      */
     template<typename TScalar, typename std::enable_if<std::is_same<double, TScalar>::value, int>::type = 0>
-    void UpdateBasis(ComplexSparseVectorType& r_dx, std::size_t& index)
+    void UpdateBasis(TReducedDenseMatrixType& rBasis, ComplexSparseVectorType& rDx, std::size_t& index)
     {
-        TReducedDenseMatrixType& r_basis = this->GetBasis();
-        column( r_basis, index ) = real(r_dx);
-        column( r_basis, index+1 ) = imag(r_dx);
+        // TReducedDenseMatrixType& r_basis = this->GetBasis();
+        column( rBasis, index ) = real(rDx);
+        column( rBasis, index+1 ) = imag(rDx);
         index = index + 2;
     }
 
