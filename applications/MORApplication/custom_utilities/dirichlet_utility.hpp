@@ -126,28 +126,37 @@ namespace DirichletUtility
     {
         typename ComplexSparseSpaceType::VectorType x(rb.size());
         ComplexSparseSpaceType::SetToZero(x);
-        ModelPart::NodesContainerType& nodes = rModelPart.Nodes();
+        const int num_nodes = static_cast<int>( rModelPart.Nodes().size() );
+        bool empty = true;
 
         // add contribution to rhs
-        for( ModelPart::NodesContainerType::iterator it_node = nodes.begin(); it_node != nodes.end() ; ++it_node) {
+        #pragma omp parallel for
+        for( int i=0; i<num_nodes; ++i ) {
+            auto it_node = std::begin(rModelPart.Nodes()) + i;
             if( it_node->HasDofFor(rVariable) ) {
                 if( it_node->IsFixed(rVariable) ) {
                     const size_t pos = it_node->GetDof(rVariable).GetId() - 1;
                     std::complex<double> val(it_node->GetValue(rValueVariableReal), it_node->GetValue(rValueVariableImag));
                     x[pos] = val;
+                    if( std::abs(val) > std::numeric_limits<double>::epsilon() ) {
+                        empty = false;
+                    }
                 }
             }
         }
 
-        noalias(rb) -= prod( rA, x );
+        if( !empty ) {
+            axpy_prod( rA, -x, rb, false);
+        }
 
         DirichletUtility::ApplyDirichletConditions<ComplexSparseSpaceType>(rA, rb, FixedDofSet, 1.0);
 
-        for( int i=0; i<static_cast<int>(rb.size()); ++i ) {
-            if( std::abs(x[i]) > std::numeric_limits<double>::epsilon() ) {
-                rb[i] = x[i];
-                // std::cout << "setting " << x[i] << "=" << rb[i] << " at id " << i << std::endl;
-
+        if( !empty ) {
+            #pragma omp parallel for
+            for( int i=0; i<static_cast<int>(rb.size()); ++i ) {
+                if( std::abs(x[i]) > std::numeric_limits<double>::epsilon() ) {
+                    rb[i] = x[i];
+                }
             }
         }
     }

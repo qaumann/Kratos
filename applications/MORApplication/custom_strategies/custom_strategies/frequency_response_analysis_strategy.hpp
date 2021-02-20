@@ -450,7 +450,6 @@ class FrequencyResponseAnalysisStrategy
                 r_model_part.GetProcessInfo()[BUILD_LEVEL] = 1;
                 p_scheme->InitializeNonLinIteration(BaseType::GetModelPart(), r_K, tmp, tmp);
                 p_builder_and_solver->Build(p_scheme, BaseType::GetModelPart(), r_K, r_B);
-                DirichletUtility::ApplyDirichletConditions<TSparseSpace>(r_K, r_B, fixed_dofs, 1.0);
 
                 //if required, set up the imaginary part of the stiffness and mass
                 if( mUseModalDamping )
@@ -459,24 +458,20 @@ class FrequencyResponseAnalysisStrategy
                                                                     BaseType::GetModelPart());
                     r_model_part.GetProcessInfo()[BUILD_LEVEL] = 111;
                     p_builder_and_solver->Build(p_scheme, BaseType::GetModelPart(), r_Ki, tmp);
-                    DirichletUtility::ApplyDirichletConditions<TSparseSpace>(r_Ki, tmp, fixed_dofs, 0.0);
 
                     p_builder_and_solver->ResizeAndInitializeVectors(p_scheme, mpMi, p_tmp, p_tmp,
                                                                     BaseType::GetModelPart());
                     r_model_part.GetProcessInfo()[BUILD_LEVEL] = 121;
                     p_builder_and_solver->Build(p_scheme, BaseType::GetModelPart(), r_Mi, tmp);
-                    DirichletUtility::ApplyDirichletConditions<TSparseSpace>(r_Mi, tmp, fixed_dofs, 0.0);
                 }
 
                 //set up the damping matrix
                 r_model_part.GetProcessInfo()[BUILD_LEVEL] = 101;
                 p_builder_and_solver->Build(p_scheme, BaseType::GetModelPart(), r_C, tmp);
-                DirichletUtility::ApplyDirichletConditions<TSparseSpace>(r_C, tmp, fixed_dofs, 0.0);
 
                 //set up the mass matrix
                 r_model_part.GetProcessInfo()[BUILD_LEVEL] = 201;
                 p_builder_and_solver->Build(p_scheme, BaseType::GetModelPart(), r_M, tmp);
-                DirichletUtility::ApplyDirichletConditions<TSparseSpace>(r_M, tmp, fixed_dofs, 0.0);
 
                 //if required, set up porous Biot material matrices
                 if( mUseFrequencyDependentMaterials ) {
@@ -578,7 +573,7 @@ class FrequencyResponseAnalysisStrategy
         TSolutionSpace::SetToZero(r_RHS);
 
         BuiltinTimer build_time;
-        ComplexMatrixUtility::axpy<TSystemMatrixType, TSolutionMatrixType>(r_C, r_A, 1.0);
+        ComplexMatrixUtility::axpy<TSystemMatrixType, TSolutionMatrixType>(r_C, r_A, excitation_frequency);
 
         if( mUseModalDamping ) {
             ComplexMatrixUtility::axpy<TSystemMatrixType, TSolutionMatrixType>(r_Ki, r_A, 1.0);
@@ -629,6 +624,9 @@ class FrequencyResponseAnalysisStrategy
                 }
             }
         }
+
+        // add complex contribution to rhs for complex dirichlet condition
+        ApplyComplexDirichletConditions();
 
         KRATOS_INFO_IF("Dynamic Stiffness Matrix Build Time", BaseType::GetEchoLevel() > 0 && rank == 0)
                 << build_time.ElapsedSeconds() << std::endl;
@@ -843,14 +841,13 @@ class FrequencyResponseAnalysisStrategy
         r_model_part.GetProcessInfo()[BUILD_LEVEL] = setting.build_level;
 
         p_builder_and_solver->Build(p_scheme, r_model_part, r_matrix, r_vector);
-        DirichletUtility::ApplyDirichletConditions<TSparseSpace>(r_matrix, r_vector, FixedDofSet, 0.0);
 
         // remove temporaries
         if( !setting.has_matrix_contribution ) {
-            SparseSpaceType::Clear(setting.matrix);
+            TSparseSpace::Clear(setting.matrix);
         }
         if( !setting.has_vector_contribution ) {
-            SparseSpaceType::Clear(setting.vector);
+            TSparseSpace::Clear(setting.vector);
         }
 
         setting.initialized = true;
@@ -912,6 +909,25 @@ class FrequencyResponseAnalysisStrategy
     ///@}
     ///@name Private Operations
     ///@{
+
+    void ApplyComplexDirichletConditions()
+    {
+        typename TBuilderAndSolverType::Pointer p_builder_and_solver = GetBuilderAndSolver();
+        std::vector<unsigned int> fixed_dofs;
+        DirichletUtility::GetDirichletConstraints<typename TBuilderAndSolverType::DofsArrayType>(p_builder_and_solver->GetDofSet(), fixed_dofs);
+
+        // this should not be hard coded
+        DirichletUtility::SetComplexDirichletConditions<TSolutionSpace>(
+            BaseType::GetModelPart(),
+            *mpA,
+            *mpRHS,
+            fixed_dofs,
+            PRESSURE,
+            REAL_PRESSURE,
+            IMAG_PRESSURE
+        );
+
+    }
 
     ///@}
     ///@name Private  Access
