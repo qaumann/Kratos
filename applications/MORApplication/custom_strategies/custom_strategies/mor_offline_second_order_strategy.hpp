@@ -588,21 +588,31 @@ class MorOfflineSecondOrderStrategy
         auto& r_output_vector = this->GetOutputVector();
         auto& r_output_vector_r = this->GetOVr();
         auto& r_basis = this->GetBasis();
+        auto& r_basis_l = this->GetBasisLeft();
 
         const size_t reduced_system_size = r_basis.size2();
 
         BuiltinTimer system_projection_time;
 
         r_force_vector_reduced.resize( reduced_system_size, false);
-        noalias(r_force_vector_reduced) = prod( r_RHS, r_basis );
+        axpy_prod(r_RHS, r_basis_l, r_force_vector_reduced, true);
 
         r_output_vector_r.resize( reduced_system_size, false);
-        noalias(r_output_vector_r) = prod( r_output_vector, r_basis );
+        r_output_vector_r = prod( r_output_vector, r_basis );
 
-        ProjectMatrix<TSystemMatrixType, TReducedDenseMatrixType>(r_K, r_basis, r_stiffness_matrix_reduced);
-        ProjectMatrix<TSystemMatrixType, TReducedDenseMatrixType>(r_M, r_basis, r_mass_matrix_reduced);
-        if (mUseDamping)
-            ProjectMatrix<TSystemMatrixType, TReducedDenseMatrixType>(r_D, r_basis, r_damping_matrix_reduced);
+        if( this->SystemIsSymmetric() ) {
+            ProjectMatrix<TSystemMatrixType, TReducedDenseMatrixType>(r_K, r_basis, r_stiffness_matrix_reduced);
+            ProjectMatrix<TSystemMatrixType, TReducedDenseMatrixType>(r_M, r_basis, r_mass_matrix_reduced);
+            if (mUseDamping) {
+                ProjectMatrix<TSystemMatrixType, TReducedDenseMatrixType>(r_D, r_basis, r_damping_matrix_reduced);
+            }
+        } else {
+            ProjectMatrix<TSystemMatrixType, TReducedDenseMatrixType>(r_K, r_basis, r_basis_l, r_stiffness_matrix_reduced);
+            ProjectMatrix<TSystemMatrixType, TReducedDenseMatrixType>(r_M, r_basis, r_basis_l, r_mass_matrix_reduced);
+            if (mUseDamping) {
+                ProjectMatrix<TSystemMatrixType, TReducedDenseMatrixType>(r_D, r_basis, r_basis_l, r_damping_matrix_reduced);
+            }
+        }
 
         KRATOS_INFO_IF("System Projection Time", BaseType::GetEchoLevel() > 0 && rank == 0)
             << system_projection_time.ElapsedSeconds() << std::endl;
