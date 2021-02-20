@@ -403,7 +403,7 @@ class MorSecondOrderIRKAStrategy
         double construction_time;
 
         BuiltinTimer irka_overall_time;
-        while( iter < mMaxIter && error > mTolerance )
+        while( iter < mMaxIter )
         {
             BuiltinTimer irka_iteration_time;
             BuiltinTimer irka_projection_time;
@@ -411,12 +411,14 @@ class MorSecondOrderIRKAStrategy
 
             for( size_t i=0; i<n_sampling_points/2; ++i )
             {
-                // if already converged, skip the expansion point
-                if( error_vec[2*i] < mTolerance ) {
-                    KRATOS_INFO_IF("\tSkipping expansion points", BaseType::GetEchoLevel() > 1 && rank == 0)
-                        << 2*i << "/" << 2*i+1 << " with error " << error_vec[2*i] << std::endl;
-                    continue;
-                }
+                // // if already converged, skip the expansion point
+                // // this only makes sense, if the converged expansion points are not overwritten
+                // // in the following iteration
+                // if( error_vec[2*i] < mTolerance ) {
+                //     KRATOS_INFO_IF("\tSkipping expansion points", BaseType::GetEchoLevel() > 1 && rank == 0)
+                //         << 2*i << "/" << 2*i+1 << " with error " << error_vec[2*i] << std::endl;
+                //     continue;
+                // }
 
                 // build dynamic stiffness matrix
                 ComplexSparseSpaceType::SetToZero(r_kdyn);
@@ -531,6 +533,13 @@ class MorSecondOrderIRKAStrategy
             error /= norm_2(samplingPoints_old);
             for( std::size_t i=0; i<reduced_system_size; ++i ) {
                 error_vec[i] = std::abs((mSamplingPoints[i] - samplingPoints_old[i]) / samplingPoints_old[i]);
+            }
+
+            // if convergence is reached, save the previous expansion points as they have been used
+            // to compute the reduced matrices
+            if( error < mTolerance ) {
+                mSamplingPoints = samplingPoints_old;
+                break;
             }
 
             // update loop variables
