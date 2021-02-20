@@ -105,10 +105,6 @@ public:
         KRATOS_ERROR_IF(n_nodes == 0) << "The model has no nodes." << std::endl;
         KRATOS_ERROR_IF(n_elems == 0) << "The model has no elements." << std::endl;
 
-        // Set build level
-
-        mrModelPartPML.GetProcessInfo()[BUILD_LEVEL] = 401;
-
         // Generate a linear strategy
         typename SchemeType::Pointer pScheme = Kratos::make_shared< ResidualBasedIncrementalUpdateStaticScheme< TSparseSpace,TDenseSpace > >();
         typedef typename BuilderAndSolver<TSparseSpace,TDenseSpace,TLinearSolver>::Pointer BuilderSolverTypePointer;
@@ -155,28 +151,31 @@ public:
     {
         KRATOS_TRY
 
-        ModelPart::NodesContainerType& rInterfaceNodes = mrModelPartInterface.Nodes();
-        ModelPart::NodesContainerType& rBoundaryNodes = mrModelPartBoundary.Nodes();
-        VariableUtils().SetFlag(BOUNDARY, true, rBoundaryNodes);
+        VariableUtils().SetFlag(BOUNDARY, true, mrModelPartBoundary.Nodes());
 
+        const int num_nodes_pml = static_cast<int>( mrModelPartPML.Nodes().size() );
+        const int num_nodes_interface = static_cast<int>( mrModelPartInterface.Nodes().size() );
+        const int num_nodes_boundary = static_cast<int>( mrModelPartBoundary.Nodes().size() );
+
+
+        // Set build level
+        mrModelPartPML.GetProcessInfo()[BUILD_LEVEL] = 401;
 
 
         #pragma omp parallel for
-        for ( ModelPart::NodesContainerType::iterator it_node = rInterfaceNodes.begin();
-                it_node != rInterfaceNodes.end() ; ++it_node)
-        {
-            it_node->SetValue(PRESCRIBED_POTENTIAL, -1);        // the value used for the rhs
-            it_node->GetSolutionStepValue(PRESSURE, 0) = -1;    // to have a consistent result
-            it_node->Fix(PRESSURE);                             // dof must be fixed
+        for( int i=0; i<num_nodes_interface; ++i ) {
+            auto it_node = std::begin(mrModelPartInterface.Nodes()) + i;
+            it_node->SetValue(PML_PRESCRIBED_POTENTIAL, -1);        // the value used for the rhs
+            it_node->GetSolutionStepValue(PRESSURE, 0) = -1;        // to have a consistent result
+            it_node->Fix(PRESSURE);                                 // dof must be fixed
         }
 
         #pragma omp parallel for
-        for ( ModelPart::NodesContainerType::iterator it_node = rBoundaryNodes.begin();
-                it_node != rBoundaryNodes.end() ; ++it_node)
-        {
-            it_node->SetValue(PRESCRIBED_POTENTIAL, 1);         // the value used for the rhs
-            it_node->GetSolutionStepValue(PRESSURE, 0) = 1;     // to have a consistent result
-            it_node->Fix(PRESSURE);                             // dof must be fixed
+        for( int i=0; i<num_nodes_boundary; ++i ) {
+            auto it_node = std::begin(mrModelPartBoundary.Nodes()) + i;
+            it_node->SetValue(PML_PRESCRIBED_POTENTIAL, 1);         // the value used for the rhs
+            it_node->GetSolutionStepValue(PRESSURE, 0) = 1;         // to have a consistent result
+            it_node->Fix(PRESSURE);                                 // dof must be fixed
 
         }
 
@@ -184,13 +183,14 @@ public:
         mpSolvingStrategy->Solve();
 
         typedef ComputeNodalGradientProcess<ComputeNodalGradientProcessSettings::SaveAsNonHistoricalVariable> GradientType;
-        GradientType process = GradientType(mrModelPartPML, PRESSURE, ABSORBTION_VECTOR, NODAL_AREA, false);
+        GradientType process = GradientType(mrModelPartPML, PRESSURE, PML_DIRECTION, NODAL_AREA, false);
         process.Execute();
 
         // normalize gradients
         #pragma omp parallel for
-        for( auto& it_node : mrModelPartPML.Nodes() ) {
-            array_1d<double, 3>& grad = it_node.GetValue(ABSORBTION_VECTOR);
+        for( int i=0; i<num_nodes_pml; ++i ) {
+            auto it_node = std::begin(mrModelPartPML.Nodes()) + i;
+            array_1d<double, 3>& grad = it_node->GetValue(PML_DIRECTION);
             const double norm = norm_2( grad );
             if( std::abs(norm) > std::numeric_limits<double>::epsilon() ) {
                 std::for_each( grad.begin(), grad.end(), [norm] (double &a) {a /= norm;});
@@ -198,91 +198,92 @@ public:
         }
 
         // use mean of adjacent nodes for zero gradients
-        #pragma omp parallel for
         for( auto& it_elem : mrModelPartPML.Elements() ) {
             for( auto& it_node : it_elem.GetGeometry() ) {
-                array_1d<double, 3> grad = it_node.GetValue(ABSORBTION_VECTOR);
+                array_1d<double, 3> grad = it_node.GetValue(PML_DIRECTION);
                 double norm = norm_2( grad );
                 if( std::abs(norm) < std::numeric_limits<double>::epsilon() ) {
                     for( auto& it_elem_node : it_elem.GetGeometry() ) {
-                        grad += it_elem_node.GetValue(ABSORBTION_VECTOR);
+                        grad += it_elem_node.GetValue(PML_DIRECTION);
                     }
                     norm = norm_2( grad );
                     std::for_each( grad.begin(), grad.end(), [norm] (double &a) {a /= norm;});
-                    it_node.SetValue(ABSORBTION_VECTOR, grad);
+                    it_node.SetValue(PML_DIRECTION, grad);
                 }
             }
         }
 
         // unfix all dofs and reset PRESSURE to be able to start computation with a clean model
         #pragma omp parallel for
-        for( auto& it_node : mrModelPartPML.Nodes() ) {
-            it_node.Free(PRESSURE);
-            it_node.SetValue(PRESCRIBED_POTENTIAL, it_node.GetSolutionStepValue(PRESSURE, 0));
-            it_node.GetSolutionStepValue(PRESSURE, 0) = 0;
+        for( int i=0; i<num_nodes_pml; ++i ) {
+            auto it_node = std::begin(mrModelPartPML.Nodes()) + i;
+            it_node->Free(PRESSURE);
+            it_node->SetValue(PML_PRESCRIBED_POTENTIAL, it_node->GetSolutionStepValue(PRESSURE, 0));
+            it_node->GetSolutionStepValue(PRESSURE, 0) = 0;
         }
 
 
         // compute local pml width at boundary nodes
-        for( auto& boundary_node : mrModelPartBoundary.Nodes() ) {
+        #pragma omp parallel for
+        for( int i=0; i<num_nodes_boundary; ++i ) {
+            auto it_node = std::begin(mrModelPartBoundary.Nodes()) + i;
 
-                double min_width = 10e7;
-                double x_b = boundary_node.X();
-                double y_b = boundary_node.Y();
-                double z_b = boundary_node.Z();
+            double min_width = std::numeric_limits<double>::max();
+            const double x_b = it_node->X();
+            const double y_b = it_node->Y();
+            const double z_b = it_node->Z();
 
-                for( auto& interface_node : mrModelPartInterface.Nodes() ) {
-                    double x_i = interface_node.X();
-                    double y_i = interface_node.Y();
-                    double z_i = interface_node.Z();
-                    double width = std::sqrt(std::pow(x_b - x_i, 2) + std::pow(y_b - y_i, 2) + std::pow(z_b - z_i, 2));
-                    if (width < min_width) {
-                        min_width = width;
-                    }
-
+            for( auto& interface_node : mrModelPartInterface.Nodes() ) {
+                const double x_i = interface_node.X();
+                const double y_i = interface_node.Y();
+                const double z_i = interface_node.Z();
+                double width = std::sqrt(std::pow(x_b - x_i, 2) + std::pow(y_b - y_i, 2) + std::pow(z_b - z_i, 2));
+                if (width < min_width) {
+                    min_width = width;
                 }
-            boundary_node.SetValue(LOCAL_PML_WIDTH, min_width);
+
+            }
+            it_node->SetValue(PML_LOCAL_WIDTH, min_width);
         }
 
         // compute distance of node to interface, set local pml width of nodes
-        for( auto& pml_node : mrModelPartPML.Nodes() ) {
-            double x = pml_node.X();
-            double y = pml_node.Y();
-            double z = pml_node.Z();
-            double min_dist_i = 10e7;
-            double min_dist_b = 10e7;
+        for( int i=0; i<num_nodes_pml; ++i ) {
+            auto it_node = std::begin(mrModelPartPML.Nodes()) + i;
+
+            const double x = it_node->X();
+            const double y = it_node->Y();
+            const double z = it_node->Z();
+            double min_dist_i = std::numeric_limits<double>::max();
+            double min_dist_b = std::numeric_limits<double>::max();
             double width;
 
             for( auto& boundary_node : mrModelPartBoundary.Nodes() ) {
-                double x_b = boundary_node.X();
-                double y_b = boundary_node.Y();
-                double z_b = boundary_node.Z();
+                const double x_b = boundary_node.X();
+                const double y_b = boundary_node.Y();
+                const double z_b = boundary_node.Z();
+
                 double dist = std::sqrt(std::pow(x - x_b, 2) + std::pow(y - y_b, 2) + std::pow(z - z_b, 2));
                 if (dist < min_dist_b) {
                     min_dist_b = dist;
-                    width = boundary_node.GetValue(LOCAL_PML_WIDTH);
+                    width = boundary_node.GetValue(PML_LOCAL_WIDTH);
                 }
             }
 
             for( auto& interface_node : mrModelPartInterface.Nodes() ) {
-
-                double x_i = interface_node.X();
-                double y_i = interface_node.Y();
-                double z_i = interface_node.Z();
+                const double x_i = interface_node.X();
+                const double y_i = interface_node.Y();
+                const double z_i = interface_node.Z();
 
                 double dist = std::sqrt(std::pow(x - x_i, 2) + std::pow(y - y_i, 2) + std::pow(z - z_i, 2));
                 if (dist < min_dist_i) {
                     min_dist_i = dist;
                 }
-
-
             }
 
-            pml_node.SetValue(IMAG_DISTANCE, min_dist_i);
-            if( !pml_node.Is(BOUNDARY) ){
-                pml_node.SetValue(LOCAL_PML_WIDTH, width);
+            it_node->SetValue(PML_FACTOR, min_dist_i);
+            if( !it_node->Is(BOUNDARY) ){
+                it_node->SetValue(PML_LOCAL_WIDTH, width);
             }
-
 
         }
         KRATOS_CATCH("")

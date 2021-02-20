@@ -144,7 +144,7 @@ void AcousticPMLElement::GetDofList(DofsVectorType& rElementalDofList, ProcessIn
 
 void AcousticPMLElement::ComplexJacobian( ComplexMatrix& rResult, IndexType IntegrationPointIndex, IntegrationMethod ThisMethod, ProcessInfo& rCurrentProcessInfo)
 {
-    const GeometryType& geom = GetGeometry();
+    GeometryType& geom = GetGeometry();
     const SizeType working_space_dimension = geom.WorkingSpaceDimension();
     const SizeType local_space_dimension = geom.LocalSpaceDimension();
 
@@ -158,26 +158,23 @@ void AcousticPMLElement::ComplexJacobian( ComplexMatrix& rResult, IndexType Inte
 
     const SizeType points_number = geom.PointsNumber();
 
-    // Parameters for absorption function
-    const int m_exp = rCurrentProcessInfo[PARAMETER_EXPONENT];
-    const double alpha = rCurrentProcessInfo[PARAMETER_SPATIAL];
-
 
     for (IndexType j = 0; j < points_number; ++j ) {
         const array_1d<double, 3>& r_coordinates = geom[j].Coordinates();
 
-        // IMAG_DISTANCE, LOCAL_PML_WIDTH, ABSORPTION_VECTOR are calculated in pml_direction_process
-        const double dist = geom[j].GetValue(IMAG_DISTANCE);
-        const double width = geom[j].GetValue(LOCAL_PML_WIDTH);
-        KRATOS_ERROR_IF(width < 1e-8) << "PML width too small." << std::endl;
+        // PML_FACTOR is calculated in python
+        const double factor = geom[j].GetValue(PML_FACTOR);
+        const double bulk = GetProperties()[BULK_MODULUS];
+        const double density = GetProperties()[DENSITY];
+        const double wavespeed = std::sqrt(bulk/density);
 
         // Absorption function
-        const double factor = alpha / (m_exp*std::pow(width, m_exp-1)) * std::pow(dist, m_exp);
-        const array_1d<double, 3> r_imag = geom[j].GetValue(ABSORBTION_VECTOR) * factor;
+        const double wavenum = rCurrentProcessInfo[FREQUENCY]/wavespeed;
+        const array_1d<double, 3> r_imag = geom[j].GetValue(PML_DIRECTION) * factor / wavenum;
 
         for(IndexType k = 0; k< working_space_dimension; ++k)
         {
-            const std::complex<double> value(r_coordinates[k], r_imag[k]);  // Add imaginary part to coordinates (complex coordinate stretching)
+            const std::complex<double> value(r_coordinates[k], -r_imag[k]);  // Add imaginary part to coordinates (complex coordinate stretching)
             for(IndexType m = 0; m < local_space_dimension; ++m) {
                 rResult(k,m) += value * r_shape_functions_gradient_in_integration_point(j,m);
             }
@@ -212,72 +209,43 @@ void AcousticPMLElement::CalculateMassMatrix(MatrixType& rMassMatrix, ProcessInf
     SizeType working_space_dimension = geom.WorkingSpaceDimension();
     SizeType local_space_dimension = geom.LocalSpaceDimension();
 
-    if( rMassMatrix.size1() != number_of_nodes || rMassMatrix.size2() != number_of_nodes )
-    {
+    if( rMassMatrix.size1() != number_of_nodes || rMassMatrix.size2() != number_of_nodes ) {
         rMassMatrix.resize(number_of_nodes, number_of_nodes, false);
     }
 
     noalias(rMassMatrix) = ZeroMatrix( number_of_nodes, number_of_nodes );
+    ComplexMatrix ComplexMassMatrix = ComplexZeroMatrix( number_of_nodes, number_of_nodes );
 
-    if( rCurrentProcessInfo[BUILD_LEVEL] > 200 ) {
-        ComplexMatrix ComplexMassMatrix = ComplexZeroMatrix( number_of_nodes, number_of_nodes );
+    const double bulk = GetProperties()[BULK_MODULUS];
 
-        const double rho = GetProperties()[DENSITY];
-        const double G = GetProperties()[BULK_MODULUS];
+    for (IndexType g = 0; g < NumGauss; g++)
+    {
+        ComplexMatrix Jac (working_space_dimension, local_space_dimension);
+        ComplexMatrix Jinv (working_space_dimension, local_space_dimension);
+        ComplexJacobian(Jac, g, ThisIntegrationMethod, rCurrentProcessInfo);
+        std::complex<double> DetJ;
 
-        for (IndexType g = 0; g < NumGauss; g++)
+        MathUtils<std::complex<double>>::InvertMatrix(Jac, Jinv, DetJ);
+        for (IndexType i = 0; i < number_of_nodes; i++)
         {
-            ComplexMatrix Jac (working_space_dimension, local_space_dimension);
-            ComplexJacobian(Jac, g, ThisIntegrationMethod, rCurrentProcessInfo);
-            std::complex<double> DetJ;
-            if (local_space_dimension == 3)
+            for (IndexType j = 0; j < number_of_nodes; j++)
             {
-                std::complex<double> a = Jac(1,1)*Jac(2,2) - Jac(1,2)*Jac(2,1);
-                std::complex<double> b = Jac(1,0)*Jac(2,2) - Jac(1,2)*Jac(2,0);
-                std::complex<double> c = Jac(1,0)*Jac(2,1) - Jac(1,1)*Jac(2,0);
-                DetJ = Jac(0,0)*a - Jac(0,1)*b + Jac(0,2)*c;
-            }
-            else
-            {
-                DetJ = (Jac(0,0)*Jac(1,1)-Jac(0,1)*Jac(1,0));
-            }
-            for (IndexType i = 0; i < number_of_nodes; i++)
-            {
-                for (IndexType j = 0; j < number_of_nodes; j++)
-                {
-                    double GaussWeight = integration_points[g].Weight();
-                    ComplexMassMatrix(i,j) += DetJ * NContainer(g, i) * NContainer(g, j) * GaussWeight * rho / G;
-                }
+                double GaussWeight = integration_points[g].Weight();
+                ComplexMassMatrix(i,j) += DetJ * NContainer(g, i) * NContainer(g, j) * GaussWeight / bulk;
             }
         }
+    }
 
-        // if (rCurrentProcessInfo[BUILD_LEVEL] == 291)
-        // {
-            // for (IndexType i =0; i < number_of_nodes; i++)
-            // {
-            //     for (IndexType j = 0; j < number_of_nodes; j++)
-            //     {
-            //         rMassMatrix(i, j) = ComplexMassMatrix(i,j).real();
-            //     }
-            // }
-        // }
-
-        if (rCurrentProcessInfo[BUILD_LEVEL] == 291)
-        {
-            for (IndexType i =0; i < number_of_nodes; i++)
-            {
-                for (IndexType j = 0; j < number_of_nodes; j++)
-                {
-                    rMassMatrix(i, j) = ComplexMassMatrix(i,j).imag();
-                }
+    if (rCurrentProcessInfo[BUILD_LEVEL] == 291) {
+        for (IndexType i =0; i < number_of_nodes; i++) {
+            for (IndexType j = 0; j < number_of_nodes; j++) {
+                rMassMatrix(i, j) = ComplexMassMatrix(i,j).imag();
             }
-        } else {
-            for (IndexType i =0; i < number_of_nodes; i++)
-            {
-                for (IndexType j = 0; j < number_of_nodes; j++)
-                {
-                    rMassMatrix(i, j) = ComplexMassMatrix(i,j).real();
-                }
+        }
+    } else {
+        for (IndexType i =0; i < number_of_nodes; i++) {
+            for (IndexType j = 0; j < number_of_nodes; j++) {
+                rMassMatrix(i, j) = ComplexMassMatrix(i,j).real();
             }
         }
     }
@@ -316,20 +284,17 @@ void AcousticPMLElement::CalculateAll(MatrixType& rLeftHandSideMatrix, VectorTyp
     const SizeType working_space_dimension = geom.WorkingSpaceDimension();
     const SizeType local_space_dimension = geom.LocalSpaceDimension();
 
-    if (CalculateStiffnessMatrixFlag)
-    {
+    if (CalculateStiffnessMatrixFlag) {
 
-        if( rLeftHandSideMatrix.size1() != number_of_nodes || rLeftHandSideMatrix.size2() != number_of_nodes )
-        {
+        if( rLeftHandSideMatrix.size1() != number_of_nodes || rLeftHandSideMatrix.size2() != number_of_nodes ) {
             rLeftHandSideMatrix.resize(number_of_nodes, number_of_nodes, false);
         }
 
         noalias(rLeftHandSideMatrix) = ZeroMatrix( number_of_nodes, number_of_nodes );
 
         // for solving acoustic problem
-        if (rCurrentProcessInfo[BUILD_LEVEL] < 100 )
-        {
-            const double rho = GetProperties()[DENSITY];
+        if (rCurrentProcessInfo[BUILD_LEVEL] < 100 ) {
+            const double density = GetProperties()[DENSITY];
             ComplexMatrix ComplexLeftHandSideMatrix = ComplexZeroMatrix( number_of_nodes, number_of_nodes );
             ShapeFunctionDerivativesArrayType DN_DE = geom.ShapeFunctionsLocalGradients(ThisIntegrationMethod);
             std::complex<double> DetJ;
@@ -342,34 +307,18 @@ void AcousticPMLElement::CalculateAll(MatrixType& rLeftHandSideMatrix, VectorTyp
                 MathUtils<std::complex<double>>::InvertMatrix(Jac, Jinv, DetJ);
                 double weight = integration_points[point_number].Weight();
                 ComplexMatrix DN_DX = prod( DN_DE[point_number], Jinv);
-                noalias( ComplexLeftHandSideMatrix ) += DetJ * weight/rho * prod( DN_DX, trans(DN_DX));
+                noalias( ComplexLeftHandSideMatrix ) += DetJ * weight/density * prod( DN_DX, trans(DN_DX));
             }
 
-            // // real part
-            // if (rCurrentProcessInfo[BUILD_LEVEL] == 1)
-            // {
-            //     for (IndexType i =0; i < number_of_nodes; i++)
-            //     {
-            //         for (IndexType j = 0; j < number_of_nodes; j++)
-            //         {
-            //             rLeftHandSideMatrix(i, j) = ComplexLeftHandSideMatrix(i,j).real();
-            //         }
-            //     }
-            // }
-            // imaginary part
             if (rCurrentProcessInfo[BUILD_LEVEL] == 91) {
-                for (IndexType i =0; i < number_of_nodes; i++)
-                {
-                    for (IndexType j = 0; j < number_of_nodes; j++)
-                    {
+                for (IndexType i =0; i < number_of_nodes; i++) {
+                    for (IndexType j = 0; j < number_of_nodes; j++) {
                         rLeftHandSideMatrix(i, j) = ComplexLeftHandSideMatrix(i,j).imag();
                     }
                 }
             } else {
-                for (IndexType i =0; i < number_of_nodes; i++)
-                {
-                    for (IndexType j = 0; j < number_of_nodes; j++)
-                    {
+                for (IndexType i =0; i < number_of_nodes; i++) {
+                    for (IndexType j = 0; j < number_of_nodes; j++) {
                         rLeftHandSideMatrix(i, j) = ComplexLeftHandSideMatrix(i,j).real();
                     }
                 }
@@ -377,14 +326,12 @@ void AcousticPMLElement::CalculateAll(MatrixType& rLeftHandSideMatrix, VectorTyp
         }
 
         // for solving problem of pml_direction_process
-        if (rCurrentProcessInfo[BUILD_LEVEL] == 401)
-        {
+        if (rCurrentProcessInfo[BUILD_LEVEL] == 401) {
             noalias(rLeftHandSideMatrix) = ZeroMatrix( number_of_nodes, number_of_nodes );
             Vector DetJ;
             ShapeFunctionDerivativesArrayType DN_DX;
             geom.ShapeFunctionsIntegrationPointsGradients(DN_DX, DetJ, ThisIntegrationMethod);
-            for ( IndexType point_number = 0; point_number < integration_points.size(); ++point_number )
-            {
+            for ( IndexType point_number = 0; point_number < integration_points.size(); ++point_number ) {
                 double int_weight = integration_points[point_number].Weight() * DetJ(point_number);
                 rLeftHandSideMatrix += int_weight * prod( DN_DX[point_number], trans(DN_DX[point_number]));
             }
@@ -395,18 +342,16 @@ void AcousticPMLElement::CalculateAll(MatrixType& rLeftHandSideMatrix, VectorTyp
     if(CalculateResidualVectorFlag)
     {
         // For acoustic problem
-        if ( rRightHandSideVector.size() != number_of_nodes )
-        rRightHandSideVector.resize( number_of_nodes, false );
-
+        if ( rRightHandSideVector.size() != number_of_nodes ) {
+            rRightHandSideVector.resize( number_of_nodes, false );
+        }
         rRightHandSideVector = ZeroVector( number_of_nodes ); //resetting RHS
 
-        // For pml_direction_process
-        if (rCurrentProcessInfo[BUILD_LEVEL] == 401)
-        {
+        // Dirichlet condition for pml_direction_process
+        if (rCurrentProcessInfo[BUILD_LEVEL] == 401) {
             VectorType p_potential = ZeroVector(number_of_nodes);
-            for (SizeType i = 0; i < number_of_nodes; i++)
-            {
-                p_potential[i] = geom[i].GetValue(PRESCRIBED_POTENTIAL);
+            for (SizeType i = 0; i < number_of_nodes; i++) {
+                p_potential[i] = geom[i].GetValue(PML_PRESCRIBED_POTENTIAL);
             }
             noalias(rRightHandSideVector) = -prod(rLeftHandSideMatrix, p_potential);
         }
