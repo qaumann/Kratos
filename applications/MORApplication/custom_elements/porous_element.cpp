@@ -104,7 +104,7 @@ int PorousElement::Check( const ProcessInfo& rCurrentProcessInfo ) const
 void PorousElement::Initialize()
 {
     KRATOS_TRY
-    std::cout << "I am initializing a porous element\n";
+    // std::cout << "I am initializing a porous element\n";
     KRATOS_CATCH("")
 }
 
@@ -463,12 +463,6 @@ void PorousElement::CalculateLeftHandSide(MatrixType& rLeftHandSideMatrix, Proce
 				range(number_of_nodes * dimension, number_of_nodes * (dimension + 1)))) = Kf_Matrix;
 
 		}
-		else if (rCurrentProcessInfo.Has(BUILD_LEVEL) && rCurrentProcessInfo[BUILD_LEVEL] == 83)
-		{
-			// compensate 1s on the diagonal by -1s
-			noalias(project(rLeftHandSideMatrix, range(number_of_nodes * dimension, number_of_nodes * (dimension + 1)),
-				range(number_of_nodes * dimension, number_of_nodes * (dimension + 1)))) -= IdentityMatrix(number_of_nodes, number_of_nodes);
-		}
 		else
 		{
 
@@ -477,10 +471,6 @@ void PorousElement::CalculateLeftHandSide(MatrixType& rLeftHandSideMatrix, Proce
 			noalias(project(rLeftHandSideMatrix, range(0, number_of_nodes * dimension),
 				range(number_of_nodes * dimension, number_of_nodes * (dimension + 1)))) = - C1_Matrix - C2_Matrix;
 
-			// put dummy 1s on the diagonal to prevent the Dirichlet utility from setting a value there
-			// they will be compensated by -1s in BUILD_LEVEL 83
-			noalias(project(rLeftHandSideMatrix, range(number_of_nodes * dimension, number_of_nodes * (dimension + 1)),
-				range(number_of_nodes * dimension, number_of_nodes * (dimension + 1)))) += IdentityMatrix(number_of_nodes, number_of_nodes);
 
 		}
 

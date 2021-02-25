@@ -116,10 +116,6 @@ class FrequencyDependentMaterialProcess(KratosMultiphysics.Process):
             1j*viscous_drag(omega)/omega)
         self.strategy.SetFrequencyDependentMaterial(self.settings['k2'])
 
-        self.settings['k3'] = MOR.FrequencyDependentMaterialSettings(self.model_part, 83, True, False)
-        self.functions['k3'] = lambda omega: 1
-        self.strategy.SetFrequencyDependentMaterial(self.settings['k3'])
-
         self.settings['m3'] = MOR.FrequencyDependentMaterialSettings(self.model_part, 281, True, False)
         self.functions['m3'] = \
             lambda omega: -omega**2 * (-porosity * (-apparent_mass_density + 1j*viscous_drag(omega)/omega) / \
@@ -140,7 +136,8 @@ class FrequencyDependentMaterialProcess(KratosMultiphysics.Process):
 
     def _SetUpAcousticLoad(self):
         self.settings['load'] = MOR.FrequencyDependentMaterialSettings(self.model_part, 311, False, True)
-        self.functions['load'] = lambda omega: -1.j*omega
+        self.functions['load'] = lambda omega: -omega**2
+        # self.functions['load'] = lambda omega: 1
         # self.functions['load'] = lambda omega: -1.j*omega * exp(-1.j*omega/343) / (4*pi)
         # self.functions['load'] = lambda omega: .525e-3 * omega**2 * exp(-1.j*omega/343) / (4*pi)
         self.strategy.SetFrequencyDependentMaterial(self.settings['load'])
@@ -152,10 +149,10 @@ class FrequencyDependentMaterialProcess(KratosMultiphysics.Process):
 
     def _SetUpPML(self):
         self.settings['k'] = MOR.FrequencyDependentMaterialSettings(self.model_part, 91, True, False)
-        self.functions['k'] = lambda omega: 0+1j
+        self.functions['k'] = lambda omega: 0+1.j
         self.strategy.SetFrequencyDependentMaterial(self.settings['k'])
         self.settings['m'] = MOR.FrequencyDependentMaterialSettings(self.model_part, 291, True, False)
-        self.functions['m'] = lambda omega: (0-1j) * omega**2
+        self.functions['m'] = lambda omega: (0-1.j) * omega**2
         self.strategy.SetFrequencyDependentMaterial(self.settings['m'])
 
     def _RetrieveProperty(self, property_type):
