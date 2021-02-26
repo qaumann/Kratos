@@ -394,7 +394,7 @@ class MorSecondOrderIRKAStrategy
         }
 
         // create loop variables
-        size_t iter = 0;
+        mIter = 0;
         double error = 1;
         std::vector<double> error_vec(reduced_system_size, 1);
         ComplexVector eigenvalues;
@@ -403,7 +403,7 @@ class MorSecondOrderIRKAStrategy
         double construction_time;
 
         BuiltinTimer irka_overall_time;
-        while( iter < mMaxIter )
+        while( mIter < mMaxIter )
         {
             BuiltinTimer irka_iteration_time;
             BuiltinTimer irka_projection_time;
@@ -543,10 +543,10 @@ class MorSecondOrderIRKAStrategy
             }
 
             // update loop variables
-            iter++;
+            mIter++;
             samplingPoints_old = mSamplingPoints;
 
-            KRATOS_INFO_IF("IRKA error after iteration " + std::to_string(iter), BaseType::GetEchoLevel() > 0 && rank == 0)
+            KRATOS_INFO_IF("IRKA error after iteration " + std::to_string(mIter), BaseType::GetEchoLevel() > 0 && rank == 0)
                 << "e=" << error << std::endl;
             KRATOS_INFO_IF("IRKA Iteration Solve Time", BaseType::GetEchoLevel() > 0 && rank == 0)
                 << irka_iteration_time.ElapsedSeconds() << std::endl;
@@ -563,7 +563,7 @@ class MorSecondOrderIRKAStrategy
         KRATOS_INFO_IF("IRKA Complete Solve Time", BaseType::GetEchoLevel() > 0 && rank == 0)
             << irka_overall_time.ElapsedSeconds() << std::endl;
 
-        if( iter == mMaxIter ) {
+        if( mIter == mMaxIter ) {
             this->MaxIterationsExceeded();
         }
 
@@ -622,6 +622,11 @@ class MorSecondOrderIRKAStrategy
     ///@name Inquiry
     ///@{
 
+    std::size_t GetIterationNumber()
+    {
+        return mIter;
+    }
+
     ///@}
     ///@name Friends
     ///@{
@@ -672,7 +677,8 @@ class MorSecondOrderIRKAStrategy
     complex mLimitLow; //lower frequency limit
     complex mLimitHigh; //higher frequency limit
 
-    size_t mMaxIter; //maximum iterations
+    std::size_t mMaxIter; //maximum iterations
+    std::size_t mIter = 0;
     double mTolerance; // tolerance
 
     ///@}

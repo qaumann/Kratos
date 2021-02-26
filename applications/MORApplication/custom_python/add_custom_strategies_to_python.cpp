@@ -230,6 +230,7 @@ void  AddCustomStrategiesToPython(pybind11::module& m)
         .def(py::init < ModelPart&, BaseSchemeType::Pointer, BuilderAndSolverType::Pointer, ComplexLinearSolverPointer, ComplexVector, complex, complex, size_t, double >())
         .def(py::init < ModelPart&, BaseSchemeType::Pointer, BuilderAndSolverType::Pointer, ComplexLinearSolverPointer, ComplexLinearSolverPointer, ComplexVector, complex, complex, size_t, double >())
         .def("GetSamplingPoints", &MorSecondOrderIrkaRealStrategyType::GetSamplingPoints)
+        .def("GetIterationNumber", &MorSecondOrderIrkaRealStrategyType::GetIterationNumber)
         ;
 
     py::class_< MorSecondOrderIrkaComplexStrategyType, typename MorSecondOrderIrkaComplexStrategyType::Pointer, MorSecondOrderRealInComplexOutOfflineStrategyType >(m,"MorSecondOrderComplexIrkaStrategy")
@@ -238,6 +239,7 @@ void  AddCustomStrategiesToPython(pybind11::module& m)
         .def(py::init < ModelPart&, BaseSchemeType::Pointer, BuilderAndSolverType::Pointer, ComplexLinearSolverPointer, ComplexVector, complex, complex, size_t, double >())
         .def(py::init < ModelPart&, BaseSchemeType::Pointer, BuilderAndSolverType::Pointer, ComplexLinearSolverPointer, ComplexLinearSolverPointer, ComplexVector, complex, complex, size_t, double >())
         .def("GetSamplingPoints", &MorSecondOrderIrkaComplexStrategyType::GetSamplingPoints)
+        .def("GetIterationNumber", &MorSecondOrderIrkaComplexStrategyType::GetIterationNumber)
         ;
 
     py::class_< MorSecondOrderComplexTOARStrategyType, typename MorSecondOrderComplexTOARStrategyType::Pointer, MorSecondOrderRealInComplexOutOfflineStrategyType >(m,"MorSecondOrderComplexTOARStrategy")
