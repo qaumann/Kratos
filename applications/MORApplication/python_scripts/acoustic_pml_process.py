@@ -113,6 +113,9 @@ class AcousticPMLProcess(KratosMultiphysics.Process):
     def ExecuteInitializeSolutionStep(self):
         self.pml_process.ExecuteInitializeSolutionStep()
 
+    def Export(self, ftype):
+        self.pml_process.Export(ftype)
+
     def _GetFullModelPartPath(self):
         this_mp = self.pml_model_part
         mp_path = this_mp.Name
