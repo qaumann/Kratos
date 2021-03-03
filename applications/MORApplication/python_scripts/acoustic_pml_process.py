@@ -4,6 +4,8 @@ import KratosMultiphysics
 import KratosMultiphysics.MORApplication as MOR
 from KratosMultiphysics.MORApplication.frequency_dependent_material_process import FrequencyDependentMaterialProcess
 
+from math import exp
+
 import sys
 
 def Factory(settings, Model):
@@ -43,7 +45,7 @@ class AcousticPMLProcess(KratosMultiphysics.Process):
         stretching_function_type = settings["stretching_function_type"].GetString()
 
         if settings["stretching_function_type"].GetString() == "polynomial":
-            #"polynomial" is of the form (a*r**m)/(m*d**(m-1)), r is the distance between point and interface, d the thickness of the PML
+            # "polynomial" is of the form (a*r**m)/(m*d**(m-1)), r is the distance between point and interface, d the thickness of the PML
             a = settings["stretching_function_parameters"]["a"].GetDouble()
             if a <= 0.0:
                 err_msg  = 'Please provide a > 0.0 .'
@@ -53,9 +55,23 @@ class AcousticPMLProcess(KratosMultiphysics.Process):
                 err_msg  = 'Please provide an integer m > 0 .'
                 raise Exception(err_msg)
             self.stretching_function = lambda r,d: (a*r**m)/(m*d**(m-1))
+        elif settings["stretching_function_type"].GetString() == "exponential":
+            # "exponential" is of the form (r/d)*(exp(a*r/d)-1). See Shirron and Giddings 2006
+            a = settings["stretching_function_parameters"]["a"].GetDouble()
+            if a <= 0.0:
+                err_msg  = 'Please provide a > 0.0 .'
+                raise Exception(err_msg)
+            self.stretching_function = lambda r,d: (r/d)*(exp(a*r/d)-1)
+        elif settings["stretching_function_type"].GetString() == "unbounded":
+            # "unbounded" is of the form a/(d-r). See Bermudez et al. 2007
+            a = settings["stretching_function_parameters"]["a"].GetDouble()
+            if a <= 0.0:
+                err_msg  = 'Please provide a > 0.0 .'
+                raise Exception(err_msg)
+            self.stretching_function = lambda r,d: a/d if r == d else a/(d-r)
         else:
             err_msg  = 'Unknown stretching function type "{}". '.format(stretching_function_type)
-            err_msg += 'Possible choices are "polynomial".'
+            err_msg += 'Possible choices are "polynomial", "exponential", "unbounded".'
             raise Exception(err_msg)
 
     def ExecuteInitialize(self):
@@ -77,8 +93,15 @@ class AcousticPMLProcess(KratosMultiphysics.Process):
         for n in self.pml_model_part.Nodes:
             d = n.GetValue(MOR.PML_LOCAL_WIDTH)
             r = n.GetValue(MOR.PML_FACTOR)
-            val = self.stretching_function(r,d)
+            if r == 0.0:
+                val = 0.0
+            else:
+                val = self.stretching_function(r,d)
             n.SetValue(MOR.PML_FACTOR, val)
+
+        # set the pressure to zero at the outer boundary
+        for n in self.boundary_model_part.Nodes:
+            n.Fix(KratosMultiphysics.PRESSURE)
 
         # define the frequency dependent process
         frequency_dependent_process_settings = KratosMultiphysics.Parameters()
