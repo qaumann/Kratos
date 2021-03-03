@@ -65,10 +65,10 @@ class FrequencyDependentMaterialProcess(KratosMultiphysics.Process):
         if ftype == "mm":
             for key in self.settings.keys():
                 if self.settings[key].has_vector_contribution:
-                    scipy.io.mmwrite("export_vec_" + key, numpy.mat(self.settings[key].vector).T, comment='', field='real', precision=8)
+                    scipy.io.mmwrite("export_vec_" + key+ "_" + self.model_part.Name, numpy.mat(self.settings[key].vector).T, comment='', field='real', precision=8)
                 if self.settings[key].has_matrix_contribution:
                     mat = KratosMultiphysics.scipy_conversion_tools.to_csr(self.settings[key].matrix)
-                    scipy.io.mmwrite("export_mat_" + key, mat, comment='', field='real', precision=8)
+                    scipy.io.mmwrite("export_mat_" + key + "_" + self.model_part.Name, mat, comment='', field='real', precision=8)
         elif ftype == "mat":
             data = dict()
             for key in self.settings.keys():
@@ -76,7 +76,7 @@ class FrequencyDependentMaterialProcess(KratosMultiphysics.Process):
                     data[key + '_vec'] = numpy.mat(self.settings[key].vector).T
                 if self.settings[key].has_matrix_contribution:
                     data[key + '_mat'] = KratosMultiphysics.scipy_conversion_tools.to_csr(self.settings[key].matrix)
-            scipy.io.savemat('export_' + self.contribution_type + '.mat', data)
+            scipy.io.savemat('export_' + self.contribution_type + '_' + self.model_part.Name + '.mat', data)
         else:
             KratosMultiphysics.Logger.PrintWarning("FrequencyDependentMaterialProcess", \
                 "Unknown filetype, skipping export. Please use either \"mm\" or \"mat\".")
