@@ -144,36 +144,39 @@ void AcousticPMLElement::GetDofList(DofsVectorType& rElementalDofList, ProcessIn
 
 void AcousticPMLElement::ComplexJacobian( ComplexMatrix& rResult, IndexType IntegrationPointIndex, IntegrationMethod ThisMethod, ProcessInfo& rCurrentProcessInfo)
 {
-    GeometryType& geom = GetGeometry();
+    const GeometryType& geom = GetGeometry();
     const SizeType working_space_dimension = geom.WorkingSpaceDimension();
     const SizeType local_space_dimension = geom.LocalSpaceDimension();
 
-    if(rResult.size1() != working_space_dimension || rResult.size2() != local_space_dimension)
+    if(rResult.size1() != working_space_dimension || rResult.size2() != local_space_dimension) {
         rResult.resize( working_space_dimension, local_space_dimension, false );
-
+    }
 
     const Matrix& r_shape_functions_gradient_in_integration_point = geom.ShapeFunctionsLocalGradients( ThisMethod )[ IntegrationPointIndex ];
-
     rResult.clear();
 
-    const SizeType points_number = geom.PointsNumber();
+    const double bulk = GetProperties()[BULK_MODULUS];
+    const double density = GetProperties()[DENSITY];
+    const double wavespeed = std::sqrt(bulk/density);
+    double wavenum = 0.0;
+    if( rCurrentProcessInfo.Has(PML_TUNING_FREQUENCY) && rCurrentProcessInfo[PML_TUNING_FREQUENCY] > std::numeric_limits<double>::epsilon() ) {
+        wavenum = rCurrentProcessInfo[PML_TUNING_FREQUENCY] / wavespeed;
+    } else {
+        wavenum = rCurrentProcessInfo[FREQUENCY]/wavespeed;
+    }
 
+    const SizeType points_number = geom.PointsNumber();
 
     for (IndexType j = 0; j < points_number; ++j ) {
         const array_1d<double, 3>& r_coordinates = geom[j].Coordinates();
 
-        // PML_FACTOR is calculated in python
+        // PML_FACTOR is calculated in Python
         const double factor = geom[j].GetValue(PML_FACTOR);
-        const double bulk = GetProperties()[BULK_MODULUS];
-        const double density = GetProperties()[DENSITY];
-        const double wavespeed = std::sqrt(bulk/density);
 
         // Absorption function
-        const double wavenum = rCurrentProcessInfo[FREQUENCY]/wavespeed;
         const array_1d<double, 3> r_imag = geom[j].GetValue(PML_DIRECTION) * factor / wavenum;
 
-        for(IndexType k = 0; k< working_space_dimension; ++k)
-        {
+        for(IndexType k = 0; k< working_space_dimension; ++k) {
             const std::complex<double> value(r_coordinates[k], -r_imag[k]);  // Add imaginary part to coordinates (complex coordinate stretching)
             for(IndexType m = 0; m < local_space_dimension; ++m) {
                 rResult(k,m) += value * r_shape_functions_gradient_in_integration_point(j,m);
