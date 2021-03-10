@@ -130,7 +130,7 @@ namespace DirichletUtility
         bool empty = true;
 
         // add contribution to rhs
-        #pragma omp parallel for
+        // #pragma omp parallel for
         for( int i=0; i<num_nodes; ++i ) {
             auto it_node = std::begin(rModelPart.Nodes()) + i;
             if( it_node->HasDofFor(rVariable) ) {
