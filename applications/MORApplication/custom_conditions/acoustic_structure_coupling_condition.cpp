@@ -111,8 +111,8 @@ AcousticStructureCouplingCondition<TDim, TIsMapping>::~AcousticStructureCoupling
 template<std::size_t TDim, bool TIsMapping>
 void AcousticStructureCouplingCondition<TDim, TIsMapping>::EquationIdVector(
     EquationIdVectorType& rResult,
-    ProcessInfo& rCurrentProcessInfo
-    )
+    const ProcessInfo& rCurrentProcessInfo
+    ) const
 {
     KRATOS_TRY
 
@@ -179,7 +179,7 @@ void AcousticStructureCouplingCondition<TDim, TIsMapping>::EquationIdVector(
             //     rResult.resize(n_mapped_nodes * (this->GetBlockSize() - 1) + number_of_nodes, false);
             // }
             rResult.resize(0);
-            rResult.reserve(this->GetSystemSize());
+            rResult.reserve(GetSystemSize());
             // rResult.reserve(n_mapped_nodes * (this->GetBlockSize() - 1) + number_of_nodes);
             if(dim == 2) {
                 for (SizeType i = 0; i < n_mapped_nodes; ++i) {
@@ -238,8 +238,8 @@ void AcousticStructureCouplingCondition<TDim, TIsMapping>::EquationIdVector(
 template<std::size_t TDim, bool TIsMapping>
 void AcousticStructureCouplingCondition<TDim, TIsMapping>::GetDofList(
     DofsVectorType& ElementalDofList,
-    ProcessInfo& rCurrentProcessInfo
-    )
+    const ProcessInfo& rCurrentProcessInfo
+    ) const
 {
     KRATOS_TRY
     // std::cout << "get dof list\n";
@@ -369,7 +369,7 @@ double AcousticStructureCouplingCondition<TDim, TIsMapping>::GetIntegrationWeigh
 template<std::size_t TDim, bool TIsMapping>
 void AcousticStructureCouplingCondition<TDim, TIsMapping>::CalculateRightHandSide(
     VectorType& rRightHandSideVector,
-    ProcessInfo& rCurrentProcessInfo
+    const ProcessInfo& rCurrentProcessInfo
     )
 {
     MatrixType temp = Matrix();
@@ -387,7 +387,7 @@ template<std::size_t TDim, bool TIsMapping>
 void AcousticStructureCouplingCondition<TDim, TIsMapping>::CalculateLocalSystem(
     MatrixType& rLeftHandSideMatrix,
     VectorType& rRightHandSideVector,
-    ProcessInfo& rCurrentProcessInfo
+    const ProcessInfo& rCurrentProcessInfo
     )
 {
     const bool calculate_stiffness_matrix_flag = true;
@@ -403,7 +403,7 @@ void AcousticStructureCouplingCondition<TDim, TIsMapping>::CalculateLocalSystem(
 template<std::size_t TDim, bool TIsMapping>
 void AcousticStructureCouplingCondition<TDim, TIsMapping>::CalculateMassMatrix(
     MatrixType& rMassMatrix,
-    ProcessInfo& rCurrentProcessInfo
+    const ProcessInfo& rCurrentProcessInfo
     )
 {
     const bool calculate_stiffness_matrix_flag = false;
@@ -420,7 +420,7 @@ void AcousticStructureCouplingCondition<TDim, TIsMapping>::CalculateMassMatrix(
 template<std::size_t TDim, bool TIsMapping>
 void AcousticStructureCouplingCondition<TDim, TIsMapping>::CalculateDampingMatrix(
     MatrixType& rDampingMatrix,
-    ProcessInfo& rCurrentProcessInfo
+    const ProcessInfo& rCurrentProcessInfo
     )
 {
     const SizeType number_of_nodes = GetGeometry().size();
@@ -430,7 +430,7 @@ void AcousticStructureCouplingCondition<TDim, TIsMapping>::CalculateDampingMatri
     if( !TIsMapping )
         mat_size = number_of_nodes * block_size;
     else
-        mat_size = this->GetSystemSize();
+        mat_size = GetSystemSize();
 
     if( rDampingMatrix.size1() != mat_size || rDampingMatrix.size2() != mat_size ) {
         rDampingMatrix.resize(mat_size, mat_size, false);
@@ -466,7 +466,7 @@ void AcousticStructureCouplingCondition<TDim, TIsMapping>::CalculateAll(
 
     // Resizing as needed the LHS
     const SizeType mat_size = number_of_nodes * block_size;
-    const SizeType mapping_mat_size = this->GetSystemSize();
+    const SizeType mapping_mat_size = GetSystemSize();
     // } else {
     //     // auto& mapped_nodes = this->GetValue(MAPPING_NODES);
     //     // const SizeType n_mapped_nodes = mapped_nodes.size();

@@ -102,8 +102,8 @@ AcousticLoadCondition::~AcousticLoadCondition()
  */
 void AcousticLoadCondition::EquationIdVector(
     EquationIdVectorType& rResult,
-    ProcessInfo& rCurrentProcessInfo
-    )
+    const ProcessInfo& rCurrentProcessInfo
+    ) const
 {
     KRATOS_TRY
 
@@ -125,8 +125,8 @@ void AcousticLoadCondition::EquationIdVector(
 /***********************************************************************************/
 void AcousticLoadCondition::GetDofList(
     DofsVectorType& ElementalDofList,
-    ProcessInfo& rCurrentProcessInfo
-    )
+    const ProcessInfo& rCurrentProcessInfo
+    ) const
 {
     KRATOS_TRY
 
@@ -205,7 +205,7 @@ double AcousticLoadCondition::GetIntegrationWeight(
 
 void AcousticLoadCondition::CalculateRightHandSide(
     VectorType& rRightHandSideVector,
-    ProcessInfo& rCurrentProcessInfo
+    const ProcessInfo& rCurrentProcessInfo
     )
 {
     KRATOS_TRY
@@ -266,7 +266,7 @@ void AcousticLoadCondition::CalculateRightHandSide(
 void AcousticLoadCondition::CalculateLocalSystem(
     MatrixType& rLeftHandSideMatrix,
     VectorType& rRightHandSideVector,
-    ProcessInfo& rCurrentProcessInfo
+    const ProcessInfo& rCurrentProcessInfo
     )
 {
     const SizeType number_of_nodes = GetGeometry().size();
@@ -285,7 +285,7 @@ void AcousticLoadCondition::CalculateLocalSystem(
 
 void AcousticLoadCondition::CalculateMassMatrix(
     MatrixType& rMassMatrix,
-    ProcessInfo& rCurrentProcessInfo
+    const ProcessInfo& rCurrentProcessInfo
     )
 {
     const SizeType number_of_nodes = GetGeometry().size();
@@ -302,7 +302,7 @@ void AcousticLoadCondition::CalculateMassMatrix(
 
 void AcousticLoadCondition::CalculateDampingMatrix(
     MatrixType& rDampingMatrix,
-    ProcessInfo& rCurrentProcessInfo
+    const ProcessInfo& rCurrentProcessInfo
     )
 {
     const SizeType number_of_nodes = GetGeometry().size();

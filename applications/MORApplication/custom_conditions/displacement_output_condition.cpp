@@ -90,8 +90,8 @@ Condition::Pointer DisplacementOutputCondition::Clone (
 
 void DisplacementOutputCondition::EquationIdVector(
     EquationIdVectorType& rResult,
-    ProcessInfo& rCurrentProcessInfo
-    )
+    const ProcessInfo& rCurrentProcessInfo
+    ) const
 {
     KRATOS_TRY
 
@@ -127,8 +127,8 @@ void DisplacementOutputCondition::EquationIdVector(
 // /***********************************************************************************/
 void DisplacementOutputCondition::GetDofList(
     DofsVectorType& ElementalDofList,
-    ProcessInfo& rCurrentProcessInfo
-    )
+    const ProcessInfo& rCurrentProcessInfo
+    ) const
 {
     KRATOS_TRY
 
@@ -183,7 +183,7 @@ void DisplacementOutputCondition::GetValuesVector(
 
 void DisplacementOutputCondition::CalculateRightHandSide(
     VectorType& rRightHandSideVector,
-    ProcessInfo& rCurrentProcessInfo
+    const ProcessInfo& rCurrentProcessInfo
     )
 {
     // Calculation flags
@@ -199,7 +199,7 @@ void DisplacementOutputCondition::CalculateRightHandSide(
 void DisplacementOutputCondition::CalculateLocalSystem(
     MatrixType& rLeftHandSideMatrix,
     VectorType& rRightHandSideVector,
-    ProcessInfo& rCurrentProcessInfo
+    const ProcessInfo& rCurrentProcessInfo
     )
 {
     //calculation flags
@@ -214,7 +214,7 @@ void DisplacementOutputCondition::CalculateLocalSystem(
 
 void DisplacementOutputCondition::CalculateMassMatrix(
     MatrixType& rMassMatrix,
-    ProcessInfo& rCurrentProcessInfo
+    const ProcessInfo& rCurrentProcessInfo
     )
 {
     if(rMassMatrix.size1() != 0) {
@@ -227,7 +227,7 @@ void DisplacementOutputCondition::CalculateMassMatrix(
 
 void DisplacementOutputCondition::CalculateDampingMatrix(
     MatrixType& rDampingMatrix,
-    ProcessInfo& rCurrentProcessInfo
+    const ProcessInfo& rCurrentProcessInfo
     )
 {
     if(rDampingMatrix.size1() != 0) {

@@ -104,8 +104,8 @@ AcousticRobinCondition::~AcousticRobinCondition()
  */
 void AcousticRobinCondition::EquationIdVector(
     EquationIdVectorType& rResult,
-    ProcessInfo& rCurrentProcessInfo
-    )
+    const ProcessInfo& rCurrentProcessInfo
+    ) const
 {
     KRATOS_TRY
 
@@ -127,8 +127,8 @@ void AcousticRobinCondition::EquationIdVector(
 /***********************************************************************************/
 void AcousticRobinCondition::GetDofList(
     DofsVectorType& ElementalDofList,
-    ProcessInfo& rCurrentProcessInfo
-    )
+    const ProcessInfo& rCurrentProcessInfo
+    ) const
 {
     KRATOS_TRY
 
@@ -213,7 +213,7 @@ double AcousticRobinCondition::GetIntegrationWeight(
 
 void AcousticRobinCondition::CalculateRightHandSide(
     VectorType& rRightHandSideVector,
-    ProcessInfo& rCurrentProcessInfo
+    const ProcessInfo& rCurrentProcessInfo
     )
 {
     const SizeType number_of_nodes = GetGeometry().size();
@@ -229,7 +229,7 @@ void AcousticRobinCondition::CalculateRightHandSide(
 void AcousticRobinCondition::CalculateLocalSystem(
     MatrixType& rLeftHandSideMatrix,
     VectorType& rRightHandSideVector,
-    ProcessInfo& rCurrentProcessInfo
+    const ProcessInfo& rCurrentProcessInfo
     )
 {
     const SizeType number_of_nodes = GetGeometry().size();
@@ -251,7 +251,7 @@ void AcousticRobinCondition::CalculateLocalSystem(
 
 void AcousticRobinCondition::CalculateMassMatrix(
     MatrixType& rMassMatrix,
-    ProcessInfo& rCurrentProcessInfo
+    const ProcessInfo& rCurrentProcessInfo
     )
 {
     const SizeType number_of_nodes = GetGeometry().size();
@@ -268,7 +268,7 @@ void AcousticRobinCondition::CalculateMassMatrix(
 
 void AcousticRobinCondition::CalculateDampingMatrix(
     MatrixType& rDampingMatrix,
-    ProcessInfo& rCurrentProcessInfo
+    const ProcessInfo& rCurrentProcessInfo
     )
 {
     const auto& r_geometry = GetGeometry();

@@ -87,8 +87,8 @@ Condition::Pointer PressureOutputCondition::Clone (
 
 void PressureOutputCondition::EquationIdVector(
     EquationIdVectorType& rResult,
-    ProcessInfo& rCurrentProcessInfo
-    )
+    const ProcessInfo& rCurrentProcessInfo
+    ) const
 {
     KRATOS_TRY
 
@@ -109,8 +109,8 @@ void PressureOutputCondition::EquationIdVector(
 // /***********************************************************************************/
 void PressureOutputCondition::GetDofList(
     DofsVectorType& ElementalDofList,
-    ProcessInfo& rCurrentProcessInfo
-    )
+    const ProcessInfo& rCurrentProcessInfo
+    ) const
 {
     KRATOS_TRY
 
@@ -130,7 +130,7 @@ void PressureOutputCondition::GetDofList(
 
 void PressureOutputCondition::CalculateRightHandSide(
     VectorType& rRightHandSideVector,
-    ProcessInfo& rCurrentProcessInfo
+    const ProcessInfo& rCurrentProcessInfo
     )
 {
     // Calculation flags
@@ -146,7 +146,7 @@ void PressureOutputCondition::CalculateRightHandSide(
 void PressureOutputCondition::CalculateLocalSystem(
     MatrixType& rLeftHandSideMatrix,
     VectorType& rRightHandSideVector,
-    ProcessInfo& rCurrentProcessInfo
+    const ProcessInfo& rCurrentProcessInfo
     )
 {
     //calculation flags
@@ -161,7 +161,7 @@ void PressureOutputCondition::CalculateLocalSystem(
 
 void PressureOutputCondition::CalculateMassMatrix(
     MatrixType& rMassMatrix,
-    ProcessInfo& rCurrentProcessInfo
+    const ProcessInfo& rCurrentProcessInfo
     )
 {
     if(rMassMatrix.size1() != 0) {
@@ -174,7 +174,7 @@ void PressureOutputCondition::CalculateMassMatrix(
 
 void PressureOutputCondition::CalculateDampingMatrix(
     MatrixType& rDampingMatrix,
-    ProcessInfo& rCurrentProcessInfo
+    const ProcessInfo& rCurrentProcessInfo
     )
 {
     if(rDampingMatrix.size1() != 0) {
