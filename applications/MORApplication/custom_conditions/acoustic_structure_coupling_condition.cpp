@@ -342,6 +342,8 @@ int AcousticStructureCouplingCondition<TDim, TIsMapping>::Check( const ProcessIn
             KRATOS_CHECK_DOF_IN_NODE(DISPLACEMENT_Y, r_node)
             if( TDim == 3)
                 KRATOS_CHECK_DOF_IN_NODE(DISPLACEMENT_Z, r_node)
+        } else {
+            KRATOS_ERROR_IF(GetValue(MAPPING_NODES).size() < 1) << "No MAPPING_NODES defined for condition #" << this->Id() << ". Run MonolithicMappingProcess first." << std::endl;
         }
     }
 
