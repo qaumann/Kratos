@@ -186,14 +186,14 @@ public:
     }
 
     void EquationIdVector(
-            EquationIdVectorType& rResult,
-            ProcessInfo& rCurrentProcessInfo) override;
+        EquationIdVectorType& rResult,
+        const ProcessInfo& rCurrentProcessInfo) const override;
 
     void GetDofList(
         DofsVectorType& rElementalDofList,
-        ProcessInfo& rCurrentProcessInfo) override;
+        const ProcessInfo& rCurrentProcessInfo) const override;
 
-    void Initialize() override;
+    // void Initialize() override;
 
 
 protected:
@@ -202,20 +202,35 @@ protected:
     // ///@name Protected Operations
     // ///@{
 
-    void CalculateLeftHandSide(MatrixType& rLeftHandSideMatrix, ProcessInfo& rCurrentProcessInfo) override;
+    void CalculateLeftHandSide(
+        MatrixType& rLeftHandSideMatrix,
+        const ProcessInfo& rCurrentProcessInfo) override;
 
-    void CalculateMassMatrix(MatrixType& rMassMatrix, ProcessInfo& rCurrentProcessInfo) override;
+    void CalculateMassMatrix(
+        MatrixType& rMassMatrix,
+        const ProcessInfo& rCurrentProcessInfo) override;
 
-    void CalculateRightHandSide(VectorType& rRightHandSideVector, ProcessInfo& rCurrentProcessInfo) override;
+    void CalculateRightHandSide(
+        VectorType& rRightHandSideVector,
+        const ProcessInfo& rCurrentProcessInfo) override;
 
-    void ComplexJacobian(ComplexMatrix& rResult, IndexType IntegrationPointIndex, IntegrationMethod ThisMethod, ProcessInfo& rCurrentProcessInfo);
+    void ComplexJacobian(
+        ComplexMatrix& rResult,
+        IndexType IntegrationPointIndex,
+        IntegrationMethod ThisMethod,
+        const ProcessInfo& rCurrentProcessInfo);
 
-    void CalculateAll(MatrixType& rLeftHandSideMatrix, VectorType& rRightHandSideVector, ProcessInfo& rCurrentProcessInfo, bool CalculateStiffnessMatrixFlag, bool CalculateResidualVectorFlag);
+    void CalculateAll(
+        MatrixType& rLeftHandSideMatrix,
+        VectorType& rRightHandSideVector,
+        const ProcessInfo& rCurrentProcessInfo,
+        bool CalculateStiffnessMatrixFlag,
+        bool CalculateResidualVectorFlag);
 
     void CalculateLocalSystem(
       MatrixType& rLeftHandSideMatrix,
       VectorType& rRightHandSideVector,
-      ProcessInfo& rCurrentProcessInfo) override;
+      const ProcessInfo& rCurrentProcessInfo) override;
 
     ///@name Serialization
     ///@{

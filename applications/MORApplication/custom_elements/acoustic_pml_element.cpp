@@ -99,17 +99,16 @@ int  AcousticPMLElement::Check( const ProcessInfo& rCurrentProcessInfo ) const
 /***********************************************************************************/
 /***********************************************************************************/
 
-void AcousticPMLElement::Initialize()
-{
-    KRATOS_TRY
-    KRATOS_CATCH("")
-}
+// void AcousticPMLElement::Initialize()
+// {
+//     KRATOS_TRY
+//     KRATOS_CATCH("")
+// }
 
 /***********************************************************************************/
 /***********************************************************************************/
 
-void AcousticPMLElement::EquationIdVector(EquationIdVectorType& rResult,
-                                        ProcessInfo& rCurrentProcessInfo)
+void AcousticPMLElement::EquationIdVector(EquationIdVectorType& rResult, const ProcessInfo& rCurrentProcessInfo) const
 {
     KRATOS_TRY;
 
@@ -127,7 +126,7 @@ void AcousticPMLElement::EquationIdVector(EquationIdVectorType& rResult,
 /***********************************************************************************/
 /***********************************************************************************/
 
-void AcousticPMLElement::GetDofList(DofsVectorType& rElementalDofList, ProcessInfo& CurrentProcessInfo)
+void AcousticPMLElement::GetDofList(DofsVectorType& rElementalDofList, const ProcessInfo& CurrentProcessInfo) const
 {
     const SizeType num_nodes = GetGeometry().PointsNumber();
 
@@ -142,7 +141,7 @@ void AcousticPMLElement::GetDofList(DofsVectorType& rElementalDofList, ProcessIn
 /***********************************************************************************/
 /***********************************************************************************/
 
-void AcousticPMLElement::ComplexJacobian( ComplexMatrix& rResult, IndexType IntegrationPointIndex, IntegrationMethod ThisMethod, ProcessInfo& rCurrentProcessInfo)
+void AcousticPMLElement::ComplexJacobian(ComplexMatrix& rResult, IndexType IntegrationPointIndex, IntegrationMethod ThisMethod, const ProcessInfo& rCurrentProcessInfo)
 {
     const GeometryType& geom = GetGeometry();
     const SizeType working_space_dimension = geom.WorkingSpaceDimension();
@@ -188,7 +187,7 @@ void AcousticPMLElement::ComplexJacobian( ComplexMatrix& rResult, IndexType Inte
 /***********************************************************************************/
 /***********************************************************************************/
 
-void AcousticPMLElement::CalculateLeftHandSide(MatrixType& rLeftHandSideMatrix, ProcessInfo& rCurrentProcessInfo)
+void AcousticPMLElement::CalculateLeftHandSide(MatrixType& rLeftHandSideMatrix, const ProcessInfo& rCurrentProcessInfo)
 {
     SizeType number_of_nodes = GetGeometry().PointsNumber();
     VectorType rRightHandSideVector = ZeroVector( number_of_nodes );
@@ -198,7 +197,7 @@ void AcousticPMLElement::CalculateLeftHandSide(MatrixType& rLeftHandSideMatrix, 
 /***********************************************************************************/
 /***********************************************************************************/
 
-void AcousticPMLElement::CalculateMassMatrix(MatrixType& rMassMatrix, ProcessInfo& rCurrentProcessInfo)
+void AcousticPMLElement::CalculateMassMatrix(MatrixType& rMassMatrix, const ProcessInfo& rCurrentProcessInfo)
 {
     const GeometryType& geom = GetGeometry();
     IntegrationMethod ThisIntegrationMethod = geom.GetDefaultIntegrationMethod();
@@ -257,7 +256,7 @@ void AcousticPMLElement::CalculateMassMatrix(MatrixType& rMassMatrix, ProcessInf
 /***********************************************************************************/
 /***********************************************************************************/
 
-void AcousticPMLElement::CalculateRightHandSide(VectorType& rRightHandSideVector, ProcessInfo& rCurrentProcessInfo)
+void AcousticPMLElement::CalculateRightHandSide(VectorType& rRightHandSideVector, const ProcessInfo& rCurrentProcessInfo)
 {
 
     const GeometryType& geom = GetGeometry();
@@ -278,7 +277,12 @@ void AcousticPMLElement::CalculateRightHandSide(VectorType& rRightHandSideVector
 /***********************************************************************************/
 /***********************************************************************************/
 
-void AcousticPMLElement::CalculateAll(MatrixType& rLeftHandSideMatrix, VectorType& rRightHandSideVector, ProcessInfo& rCurrentProcessInfo, bool CalculateStiffnessMatrixFlag, bool CalculateResidualVectorFlag)
+void AcousticPMLElement::CalculateAll(
+    MatrixType& rLeftHandSideMatrix,
+    VectorType& rRightHandSideVector,
+    const ProcessInfo& rCurrentProcessInfo,
+    bool CalculateStiffnessMatrixFlag,
+    bool CalculateResidualVectorFlag)
 {
     const GeometryType& geom = GetGeometry();
     IntegrationMethod ThisIntegrationMethod = geom.GetDefaultIntegrationMethod();
@@ -366,7 +370,7 @@ void AcousticPMLElement::CalculateAll(MatrixType& rLeftHandSideMatrix, VectorTyp
 /***********************************************************************************/
 /***********************************************************************************/
 
-void AcousticPMLElement::CalculateLocalSystem(MatrixType& rLeftHandSideMatrix, VectorType& rRightHandSideVector, ProcessInfo& rCurrentProcessInfo)
+void AcousticPMLElement::CalculateLocalSystem(MatrixType& rLeftHandSideMatrix, VectorType& rRightHandSideVector, const ProcessInfo& rCurrentProcessInfo)
 {
     KRATOS_TRY;
     CalculateAll(rLeftHandSideMatrix, rRightHandSideVector, rCurrentProcessInfo, true, true);

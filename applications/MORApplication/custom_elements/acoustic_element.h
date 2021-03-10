@@ -188,14 +188,14 @@ public:
     }
 
     void EquationIdVector(
-            EquationIdVectorType& rResult,
-            ProcessInfo& rCurrentProcessInfo) override;
+        EquationIdVectorType& rResult,
+        const ProcessInfo& rCurrentProcessInfo) const override;
 
     void GetDofList(
         DofsVectorType& rElementalDofList,
-        ProcessInfo& rCurrentProcessInfo) override;
+        const ProcessInfo& rCurrentProcessInfo) const override;
 
-    void Initialize() override;
+    // void Initialize(const ProcessInfo& rCurrentProcessInfo) override;
 
 
 protected:
@@ -222,20 +222,24 @@ protected:
 
     void CalculateLeftHandSide(
         MatrixType& rLeftHandSideMatrix,
-        ProcessInfo& rCurrentProcessInfo) override;
+        const ProcessInfo& rCurrentProcessInfo) override;
 
     void CalculateRightHandSide(
         VectorType& rRightHandSideVector,
-        ProcessInfo& rCurrentProcessInfo) override;
+        const ProcessInfo& rCurrentProcessInfo) override;
 
     void CalculateLocalSystem(
         MatrixType& rLeftHandSideMatrix,
         VectorType& rRightHandSideVector,
-        ProcessInfo& rCurrentProcessInfo) override;
+        const ProcessInfo& rCurrentProcessInfo) override;
 
-    void CalculateMassMatrix(MatrixType& rMassMatrix, ProcessInfo& rCurrentProcessInfo) override;
+    void CalculateMassMatrix(
+        MatrixType& rMassMatrix,
+        const ProcessInfo& rCurrentProcessInfo) override;
 
-    void CalculateDampingMatrix(MatrixType& rDampingMatrix, ProcessInfo& rCurrentProcessInfo) override;
+    void CalculateDampingMatrix(
+        MatrixType& rDampingMatrix,
+        const ProcessInfo& rCurrentProcessInfo) override;
 
 
     void SetIntegrationMethod(const IntegrationMethod& ThisIntegrationMethod)

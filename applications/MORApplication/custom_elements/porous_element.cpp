@@ -101,19 +101,18 @@ int PorousElement::Check( const ProcessInfo& rCurrentProcessInfo ) const
     KRATOS_CATCH( "" );
 }
 
-void PorousElement::Initialize()
-{
-    KRATOS_TRY
-    // std::cout << "I am initializing a porous element\n";
-    KRATOS_CATCH("")
-}
+// void PorousElement::Initialize()
+// {
+//     KRATOS_TRY
+//     // std::cout << "I am initializing a porous element\n";
+//     KRATOS_CATCH("")
+// }
 
 
 /***********************************************************************************/
 /***********************************************************************************/
 
-void PorousElement::EquationIdVector(EquationIdVectorType& rResult,
-                                        ProcessInfo& rCurrentProcessInfo)
+void PorousElement::EquationIdVector(EquationIdVectorType& rResult, const ProcessInfo& rCurrentProcessInfo) const
 {
     KRATOS_TRY;
 
@@ -161,7 +160,7 @@ void PorousElement::EquationIdVector(EquationIdVectorType& rResult,
 /***********************************************************************************/
 /***********************************************************************************/
 
-void PorousElement::GetDofList(DofsVectorType& rElementalDofList, ProcessInfo& CurrentProcessInfo)
+void PorousElement::GetDofList(DofsVectorType& rElementalDofList, const ProcessInfo& CurrentProcessInfo) const
 {
 	const SizeType dimension = GetGeometry().WorkingSpaceDimension();
 
@@ -196,29 +195,6 @@ void PorousElement::GetDofList(DofsVectorType& rElementalDofList, ProcessInfo& C
 		}
 	}
 }
-
-/***********************************************************************************/
-/***********************************************************************************/
-
-// double AcousticElement::CalculateDerivativesOnReferenceConfiguration(
-//     Matrix& rJ0,
-//     Matrix& rInvJ0,
-//     Matrix& rDN_DX,
-//     const IndexType PointNumber,
-//     IntegrationMethod ThisIntegrationMethod
-//     ) const
-// {
-//     const GeometryType& r_geom = GetGeometry();
-//     GeometryUtils::JacobianOnInitialConfiguration(
-//         r_geom,
-//         r_geom.IntegrationPoints(ThisIntegrationMethod)[PointNumber], rJ0);
-//     double detJ0;
-//     MathUtils<double>::InvertMatrix(rJ0, rInvJ0, detJ0);
-//     const Matrix& rDN_De =
-//         GetGeometry().ShapeFunctionsLocalGradients(ThisIntegrationMethod)[PointNumber];
-//     GeometryUtils::ShapeFunctionsGradients(rDN_De, rInvJ0, rDN_DX);
-//     return detJ0;
-// }
 
 /***********************************************************************************/
 /***********************************************************************************/
@@ -309,33 +285,7 @@ Vector PorousElement::CalculateBuMatrix(
 /***********************************************************************************/
 /***********************************************************************************/
 
-// void AcousticElement::CalculateKinematicVariables(
-//     KinematicVariables& rThisKinematicVariables,
-//     const IndexType PointNumber,
-//     const GeometryType::IntegrationMethod& rIntegrationMethod
-//     )
-// {
-//     const auto& r_geometry = GetGeometry();
-//     const SizeType number_of_nodes = r_geometry.PointsNumber();
-//     const SizeType dimension = r_geometry.WorkingSpaceDimension();
-
-//     const GeometryType::IntegrationPointsArrayType& r_integration_points = r_geometry.IntegrationPoints(rIntegrationMethod);
-//     // Shape functions
-//     rThisKinematicVariables.N = r_geometry.ShapeFunctionsValues(Vector &rResult, const CoordinatesArrayType& rCoordinates);
-//     rThisKinematicVariables.detJ0 = CalculateDerivativesOnReferenceConfiguration(rThisKinematicVariables.J0, rThisKinematicVariables.InvJ0, rThisKinematicVariables.DN_DX, PointNumber, rIntegrationMethod);
-
-//     KRATOS_ERROR_IF(rThisKinematicVariables.detJ0 < 0.0) << "WARNING:: ELEMENT ID: " << this->Id() << " INVERTED. DETJ0: " << rThisKinematicVariables.detJ0 << std::endl;
-
-//     // Compute B
-
-//     rThisKinematicVariables.B = rThisKinematicVariables.DN_DX
-
-// }
-
-/***********************************************************************************/
-/***********************************************************************************/
-
-void PorousElement::CalculateLeftHandSide(MatrixType& rLeftHandSideMatrix, ProcessInfo& rCurrentProcessInfo)
+void PorousElement::CalculateLeftHandSide(MatrixType& rLeftHandSideMatrix, const ProcessInfo& rCurrentProcessInfo)
 {
         // (Matrix& rJ0,
         // Matrix& rInvJ0,
@@ -490,7 +440,7 @@ void PorousElement::CalculateLeftHandSide(MatrixType& rLeftHandSideMatrix, Proce
 /***********************************************************************************/
 /***********************************************************************************/
 
-void PorousElement::CalculateMassMatrix(MatrixType& rMassMatrix, ProcessInfo& rCurrentProcessInfo)
+void PorousElement::CalculateMassMatrix(MatrixType& rMassMatrix, const ProcessInfo& rCurrentProcessInfo)
 {
 	// obtain parameters from geometry
 	const GeometryType& geom = GetGeometry();
@@ -608,7 +558,7 @@ void PorousElement::CalculateMassMatrix(MatrixType& rMassMatrix, ProcessInfo& rC
 
 
 /***********************************************************************************/
-void PorousElement::CalculateDampingMatrix(MatrixType& rDampingMatrix, ProcessInfo& rCurrentProcessInfo)
+void PorousElement::CalculateDampingMatrix(MatrixType& rDampingMatrix, const ProcessInfo& rCurrentProcessInfo)
 {
 
 	const SizeType number_of_nodes = GetGeometry().size();
@@ -624,7 +574,7 @@ void PorousElement::CalculateDampingMatrix(MatrixType& rDampingMatrix, ProcessIn
 
 /***********************************************************************************/
 
-void PorousElement::CalculateRightHandSide(VectorType& rRightHandSideVector, ProcessInfo& rCurrentProcessInfo)
+void PorousElement::CalculateRightHandSide(VectorType& rRightHandSideVector, const ProcessInfo& rCurrentProcessInfo)
 {
 
 	const SizeType number_of_nodes = GetGeometry().size();
@@ -645,7 +595,7 @@ void PorousElement::CalculateRightHandSide(VectorType& rRightHandSideVector, Pro
 /***********************************************************************************/
 /***********************************************************************************/
 
-void PorousElement::CalculateLocalSystem(MatrixType& rLeftHandSideMatrix, VectorType& rRightHandSideVector, ProcessInfo& rCurrentProcessInfo)
+void PorousElement::CalculateLocalSystem(MatrixType& rLeftHandSideMatrix, VectorType& rRightHandSideVector, const ProcessInfo& rCurrentProcessInfo)
 {
     KRATOS_TRY;
 

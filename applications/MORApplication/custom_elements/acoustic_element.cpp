@@ -117,18 +117,17 @@ int AcousticElement::Check( const ProcessInfo& rCurrentProcessInfo ) const
     KRATOS_CATCH( "" );
 }
 
-void AcousticElement::Initialize()
-{
-    KRATOS_TRY
-    KRATOS_CATCH("")
-}
+// void AcousticElement::Initialize()
+// {
+//     KRATOS_TRY
+//     KRATOS_CATCH("")
+// }
 
 
 /***********************************************************************************/
 /***********************************************************************************/
 
-void AcousticElement::EquationIdVector(EquationIdVectorType& rResult,
-                                        ProcessInfo& rCurrentProcessInfo)
+void AcousticElement::EquationIdVector(EquationIdVectorType& rResult, const ProcessInfo& rCurrentProcessInfo) const
 {
     KRATOS_TRY;
 
@@ -146,7 +145,7 @@ void AcousticElement::EquationIdVector(EquationIdVectorType& rResult,
 /***********************************************************************************/
 /***********************************************************************************/
 
-void AcousticElement::GetDofList(DofsVectorType& rElementalDofList, ProcessInfo& CurrentProcessInfo)
+void AcousticElement::GetDofList(DofsVectorType& rElementalDofList, const ProcessInfo& CurrentProcessInfo) const
 {
     KRATOS_TRY;
 
@@ -164,7 +163,7 @@ void AcousticElement::GetDofList(DofsVectorType& rElementalDofList, ProcessInfo&
 /***********************************************************************************/
 /***********************************************************************************/
 
-void AcousticElement::CalculateLeftHandSide(MatrixType& rLeftHandSideMatrix, ProcessInfo& rCurrentProcessInfo)
+void AcousticElement::CalculateLeftHandSide(MatrixType& rLeftHandSideMatrix, const ProcessInfo& rCurrentProcessInfo)
 {
 
     const GeometryType& geom = GetGeometry();
@@ -194,7 +193,7 @@ void AcousticElement::CalculateLeftHandSide(MatrixType& rLeftHandSideMatrix, Pro
 /***********************************************************************************/
 /***********************************************************************************/
 
-void AcousticElement::CalculateMassMatrix(MatrixType& rMassMatrix, ProcessInfo& rCurrentProcessInfo)
+void AcousticElement::CalculateMassMatrix(MatrixType& rMassMatrix, const ProcessInfo& rCurrentProcessInfo)
 {
     const GeometryType& geom = GetGeometry();
     IntegrationMethod ThisIntegrationMethod = geom.GetDefaultIntegrationMethod();
@@ -224,7 +223,7 @@ void AcousticElement::CalculateMassMatrix(MatrixType& rMassMatrix, ProcessInfo& 
 
 
 /***********************************************************************************/
-void AcousticElement::CalculateDampingMatrix(MatrixType& rDampingMatrix, ProcessInfo& rCurrentProcessInfo)
+void AcousticElement::CalculateDampingMatrix(MatrixType& rDampingMatrix, const ProcessInfo& rCurrentProcessInfo)
 {
     const GeometryType& geom = GetGeometry();
     const SizeType number_of_nodes = geom.PointsNumber();
@@ -237,7 +236,7 @@ void AcousticElement::CalculateDampingMatrix(MatrixType& rDampingMatrix, Process
 
 /***********************************************************************************/
 
-void AcousticElement::CalculateRightHandSide(VectorType& rRightHandSideVector, ProcessInfo& rCurrentProcessInfo)
+void AcousticElement::CalculateRightHandSide(VectorType& rRightHandSideVector, const ProcessInfo& rCurrentProcessInfo)
 {
 
     const GeometryType& geom = GetGeometry();
@@ -255,7 +254,7 @@ void AcousticElement::CalculateRightHandSide(VectorType& rRightHandSideVector, P
 /***********************************************************************************/
 /***********************************************************************************/
 
-void AcousticElement::CalculateLocalSystem(MatrixType& rLeftHandSideMatrix, VectorType& rRightHandSideVector, ProcessInfo& rCurrentProcessInfo)
+void AcousticElement::CalculateLocalSystem(MatrixType& rLeftHandSideMatrix, VectorType& rRightHandSideVector, const ProcessInfo& rCurrentProcessInfo)
 {
     KRATOS_TRY;
 

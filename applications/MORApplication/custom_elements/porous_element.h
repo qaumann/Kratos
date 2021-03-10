@@ -187,47 +187,19 @@ public:
 
     void EquationIdVector(
             EquationIdVectorType& rResult,
-            ProcessInfo& rCurrentProcessInfo) override;
+            const ProcessInfo& rCurrentProcessInfo) const override;
 
     void GetDofList(
         DofsVectorType& rElementalDofList,
-        ProcessInfo& rCurrentProcessInfo) override;
+        const ProcessInfo& rCurrentProcessInfo) const override;
 
-    void Initialize() override;
+    // void Initialize() override;
 
 
 protected:
     ///@name Protected static Member Variables
     ///@{
-    // struct KinematicVariables
-    // {
-    //     Vector  N;
-    //     Matrix  B;
-    //     double  detF;
-    //     Matrix  F;
-    //     double  detJ0;
-    //     Matrix  J0;
-    //     Matrix  InvJ0;
-    //     Matrix  DN_DX;
-    //     Vector Displacements;
 
-    //     /**
-    //      * The default constructor
-    //      * @param NumberOfNodes The number of nodes in the element
-    //      */
-    //     KinematicVariables(const SizeType NumberOfNodes, const SizeType Dimension)
-    //     {
-    //         detF = 1.0;
-    //         detJ0 = 1.0;
-    //         N = ZeroVector(NumberOfNodes);
-    //         B = ZeroMatrix(3*Dimension - 3, Dimension * NumberOfNodes);
-    //         F = IdentityMatrix(Dimension);
-    //         DN_DX = ZeroMatrix(NumberOfNodes, Dimension);
-    //         J0 = ZeroMatrix(Dimension, Dimension);
-    //         InvJ0 = ZeroMatrix(Dimension, Dimension);
-    //         Displacements = ZeroVector(Dimension * NumberOfNodes);
-    //     }
-    // };
     ///@}
     ///@name Protected member Variables
     ///@{
@@ -247,21 +219,25 @@ protected:
     ///@{
 
     void CalculateLeftHandSide(
-    MatrixType& rLeftHandSideMatrix,
-    ProcessInfo& rCurrentProcessInfo) override;
+        MatrixType& rLeftHandSideMatrix,
+        const ProcessInfo& rCurrentProcessInfo) override;
 
     void CalculateRightHandSide(
-      VectorType& rRightHandSideVector,
-      ProcessInfo& rCurrentProcessInfo) override;
+        VectorType& rRightHandSideVector,
+        const ProcessInfo& rCurrentProcessInfo) override;
 
     void CalculateLocalSystem(
-      MatrixType& rLeftHandSideMatrix,
-      VectorType& rRightHandSideVector,
-      ProcessInfo& rCurrentProcessInfo) override;
+        MatrixType& rLeftHandSideMatrix,
+        VectorType& rRightHandSideVector,
+        const ProcessInfo& rCurrentProcessInfo) override;
 
-    void CalculateMassMatrix(MatrixType& rMassMatrix, ProcessInfo& rCurrentProcessInfo) override;
+    void CalculateMassMatrix(
+        MatrixType& rMassMatrix,
+        const ProcessInfo& rCurrentProcessInfo) override;
 
-    void CalculateDampingMatrix(MatrixType& rDampingMatrix, ProcessInfo& rCurrentProcessInfo) override;
+    void CalculateDampingMatrix(
+        MatrixType& rDampingMatrix,
+        const ProcessInfo& rCurrentProcessInfo) override;
 
 
     void SetIntegrationMethod(const IntegrationMethod& ThisIntegrationMethod)
