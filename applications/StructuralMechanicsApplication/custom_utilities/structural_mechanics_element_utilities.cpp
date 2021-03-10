@@ -218,42 +218,33 @@ void CalculateRayleighDampingMatrix(
     KRATOS_TRY;
     // Rayleigh Damping Matrix: alpha*M + beta*K
 
-    // 1.-Resizing if needed
-    if (rDampingMatrix.size1() != MatrixSize || rDampingMatrix.size2() != MatrixSize) {
-        rDampingMatrix.resize(MatrixSize, MatrixSize, false);
-    }
-    noalias(rDampingMatrix) = ZeroMatrix(MatrixSize, MatrixSize);
+    const double alpha = GetRayleighAlpha(rElement.GetProperties(), rCurrentProcessInfo);
+    const double beta = GetRayleighBeta(rElement.GetProperties(), rCurrentProcessInfo);
 
-    if( rCurrentProcessInfo.Has(BUILD_LEVEL) && 
-        (rCurrentProcessInfo[BUILD_LEVEL] > 110 && rCurrentProcessInfo[BUILD_LEVEL] < 120) )
-    {
-        const double damping_ratio = GetSystemDampingRatio(rElement.GetProperties(), rCurrentProcessInfo);
-        if (std::abs(damping_ratio) > 0.0)
-        {
-            Element::MatrixType stiffness_matrix;
-            rElement.CalculateLeftHandSide(stiffness_matrix, rCurrentProcessInfo);
-            noalias(rDampingMatrix) += damping_ratio * stiffness_matrix;
+    if (std::abs(alpha) < 1E-12 && std::abs(beta) < 1E-12) {
+        // no damping specified, only setting the matrix to zero
+        if (rDampingMatrix.size1() != MatrixSize || rDampingMatrix.size2() != MatrixSize) {
+            rDampingMatrix.resize(MatrixSize, MatrixSize, false);
         }
-    }
-    else
-    {
-        // 2.-Calculate StiffnessMatrix (if needed):
-        const double beta = GetRayleighBeta(rElement.GetProperties(), rCurrentProcessInfo);
-        if (std::abs(beta) > 0.0) {
-            Element::MatrixType stiffness_matrix;
-            rElement.CalculateLeftHandSide(stiffness_matrix, rCurrentProcessInfo);
-            noalias(rDampingMatrix) += beta  * stiffness_matrix;
-        }
+        noalias(rDampingMatrix) = ZeroMatrix(MatrixSize, MatrixSize);
+    } else if (std::abs(alpha) > 1E-12 && std::abs(beta) < 1E-12) {
+        // damping only required with the mass matrix
+        rElement.CalculateMassMatrix(rDampingMatrix, rCurrentProcessInfo); // pass damping matrix to avoid creating a temporary
+        rDampingMatrix *= alpha;
+    } else if (std::abs(alpha) < 1E-12 && std::abs(beta) > 1E-12) {
+        // damping only required with the stiffness matrix
+        rElement.CalculateLeftHandSide(rDampingMatrix, rCurrentProcessInfo); // pass damping matrix to avoid creating a temporary
+        rDampingMatrix *= beta;
+    } else {
+        // damping with both mass matrix and stiffness matrix required
+        rElement.CalculateLeftHandSide(rDampingMatrix, rCurrentProcessInfo); // pass damping matrix to avoid creating a temporary
+        rDampingMatrix *= beta;
 
-        // 3.-Calculate MassMatrix (if needed):
-        const double alpha = GetRayleighAlpha(rElement.GetProperties(), rCurrentProcessInfo);
-        if (std::abs(alpha) > 0.0) {
-            Element::MatrixType mass_matrix;
-            rElement.CalculateMassMatrix(mass_matrix, rCurrentProcessInfo);
-            noalias(rDampingMatrix) += alpha * mass_matrix;
-        }
+        Matrix mass_matrix;
+        rElement.CalculateMassMatrix(mass_matrix, rCurrentProcessInfo);
+        noalias(rDampingMatrix) += alpha  * mass_matrix;
     }
-    
+
 
     KRATOS_CATCH("CalculateRayleighDampingMatrix")
 }
