@@ -269,6 +269,12 @@ void  AddCustomStrategiesToPython(pybind11::module& m)
         .def("SetFrequencyDependentMaterial", & FrequencyResponseAnalysisStrategyType::SetFrequencyDependentMaterial)
         .def("EchoInfo", &FrequencyResponseAnalysisStrategyType::EchoInfo)
         .def("MaterialSettingsInfo", &FrequencyResponseAnalysisStrategyType::MaterialSettingsInfo)
+        .def("GetSystemMatrix", &FrequencyResponseAnalysisStrategyType::GetAssembledSystemMatrix)
+        .def("GetStiffnessMatrix", &FrequencyResponseAnalysisStrategyType::GetStiffnessMatrix)
+        .def("GetImaginaryStiffnessMatrix", &FrequencyResponseAnalysisStrategyType::GetImaginaryStiffnessMatrix)
+        .def("GetMassMatrix", &FrequencyResponseAnalysisStrategyType::GetMassMatrix)
+        .def("GetDampingMatrix", &FrequencyResponseAnalysisStrategyType::GetDampingMatrix)
+        .def("GetSystemVector", &FrequencyResponseAnalysisStrategyType::GetAssembledSystemVector)
         ;
 
     //********************************************************************

@@ -690,11 +690,25 @@ class FrequencyResponseAnalysisStrategy
      * @brief This method returns the LHS matrix
      * @return The LHS matrix
      */
-    TSystemMatrixType &GetSystemMatrix() override
+    TSolutionMatrixType &GetAssembledSystemMatrix()
     {
-        TSystemMatrixType &mA = *mpK;
+        TSolutionMatrixType &mA = *mpA;
 
         return mA;
+    }
+
+    TSystemMatrixType &GetStiffnessMatrix()
+    {
+        TSystemMatrixType &mK = *mpK;
+
+        return mK;
+    }
+
+    TSystemMatrixType &GetImaginaryStiffnessMatrix()
+    {
+        TSystemMatrixType &mKi = *mpKi;
+
+        return mKi;
     }
 
     TSystemMatrixType &GetMassMatrix()
@@ -704,23 +718,23 @@ class FrequencyResponseAnalysisStrategy
         return mM;
     }
 
-    // TSystemMatrixType &GetDampingMatrix()
-    // {
-    //     TSystemMatrixType &mS = *mpC;
+    TSystemMatrixType &GetDampingMatrix()
+    {
+        TSystemMatrixType &mS = *mpC;
 
-    //     return mS;
-    // }
+        return mS;
+    }
 
     /**
      * @brief This method returns the RHS vector
      * @return The RHS vector
      */
-    // TSystemVectorType& GetSystemVector()
-    // {
-    //     TSystemVectorType& mb = *mpRHS;
+    TSolutionVectorType& GetAssembledSystemVector()
+    {
+        TSolutionVectorType& mb = *mpRHS;
 
-    //     return mb;
-    // }
+        return mb;
+    }
 
     ///@}
     ///@name Inquiry
@@ -915,6 +929,15 @@ class FrequencyResponseAnalysisStrategy
         typename TBuilderAndSolverType::Pointer p_builder_and_solver = GetBuilderAndSolver();
         std::vector<unsigned int> fixed_dofs;
         DirichletUtility::GetDirichletConstraints<typename TBuilderAndSolverType::DofsArrayType>(p_builder_and_solver->GetDofSet(), fixed_dofs);
+
+        if( BaseType::GetEchoLevel() > 4 ) {
+            Vector fixed = Vector(fixed_dofs.size());
+            #pragma omp parallel for
+            for( int i=0; i<static_cast<int>(fixed.size()); ++i ) {
+                fixed(i) = fixed_dofs[i];
+            }
+            VectorOutput<TSparseSpace>(fixed, "fixed_dofs");
+        }
 
         // this should not be hard coded
         DirichletUtility::SetComplexDirichletConditions<TSolutionSpace>(
