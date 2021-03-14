@@ -19,7 +19,8 @@ class FrequencyDependentMaterialProcess(KratosMultiphysics.Process):
             {
                 "help"              : "This process adds and updates frequency dependent material properties.",
                 "model_part_name"   : "Structure",
-                "contribution_type" : "type"
+                "contribution_type" : "type",
+                "parameter"         : 0.0
             }
             """
         )
@@ -29,6 +30,7 @@ class FrequencyDependentMaterialProcess(KratosMultiphysics.Process):
         KratosMultiphysics.Process.__init__(self)
         self.model_part = Model[settings["model_part_name"].GetString()]
         self.contribution_type = settings["contribution_type"].GetString()
+        self.parameter = settings["parameter"].GetDouble()
         self.strategy = strategy
         self.settings = {}
         self.functions = {}
@@ -42,6 +44,11 @@ class FrequencyDependentMaterialProcess(KratosMultiphysics.Process):
             self._SetUpOutput()
         elif self.contribution_type == "pml":
             self._SetUpPML()
+        elif self.contribution_type == "structural_damping":
+            factor = self.parameter
+            if factor < 1e-12:
+                raise Exception('Please define a valid factor > 0 for structural damping')
+            self._SetUpStructuralDamping(factor)
         else:
             err_msg  = 'Unknown contribution type "{}". '.format(self.contribution_type)
             err_msg += 'Possible choices are "acoustic_load", "biot", "output", "pml".'
@@ -154,6 +161,12 @@ class FrequencyDependentMaterialProcess(KratosMultiphysics.Process):
         self.settings['m'] = MOR.FrequencyDependentMaterialSettings(self.model_part, 291, True, False)
         self.functions['m'] = lambda omega: (0-1.j) * omega**2
         self.strategy.SetFrequencyDependentMaterial(self.settings['m'])
+
+
+    def _SetUpStructuralDamping(self, factor):
+        self.settings['k_imag'] = MOR.FrequencyDependentMaterialSettings(self.model_part, 1, True, False)
+        self.functions['k_imag'] = lambda omega: 1.j*factor
+        self.strategy.SetFrequencyDependentMaterial(self.settings['k_imag'])
 
     def _RetrieveProperty(self, property_type):
         for prop in self.model_part.GetProperties():
