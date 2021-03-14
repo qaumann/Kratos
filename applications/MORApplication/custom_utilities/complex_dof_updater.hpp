@@ -66,9 +66,9 @@ namespace ComplexDofUpdater
         {
             auto it_node = std::begin(rModelPart.Nodes()) + i;
 
-            KRATOS_MOR_ASSIGN_COMPLEX_DOF(DISPLACEMENT_X, it_node, true);
-            KRATOS_MOR_ASSIGN_COMPLEX_DOF(DISPLACEMENT_Y, it_node, true);
-            KRATOS_MOR_ASSIGN_COMPLEX_DOF(DISPLACEMENT_Z, it_node, true);
+            KRATOS_MOR_ASSIGN_COMPLEX_DOF(DISPLACEMENT_X, it_node, false);
+            KRATOS_MOR_ASSIGN_COMPLEX_DOF(DISPLACEMENT_Y, it_node, false);
+            KRATOS_MOR_ASSIGN_COMPLEX_DOF(DISPLACEMENT_Z, it_node, false);
             KRATOS_MOR_ASSIGN_COMPLEX_DOF(PRESSURE, it_node, false);
         }
     }
