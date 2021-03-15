@@ -275,6 +275,7 @@ void  AddCustomStrategiesToPython(pybind11::module& m)
         .def("GetMassMatrix", &FrequencyResponseAnalysisStrategyType::GetMassMatrix)
         .def("GetDampingMatrix", &FrequencyResponseAnalysisStrategyType::GetDampingMatrix)
         .def("GetSystemVector", &FrequencyResponseAnalysisStrategyType::GetAssembledSystemVector)
+        .def("GetFixedDofs", &FrequencyResponseAnalysisStrategyType::GetFixedDofs)
         ;
 
     //********************************************************************

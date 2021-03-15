@@ -813,6 +813,15 @@ class FrequencyResponseAnalysisStrategy
         }
     }
 
+    std::vector<unsigned int> GetFixedDofs()
+    {
+        typename TBuilderAndSolverType::Pointer p_builder_and_solver = GetBuilderAndSolver();
+        std::vector<unsigned int> fixed_dofs;
+        DirichletUtility::GetDirichletConstraints<typename TBuilderAndSolverType::DofsArrayType>(p_builder_and_solver->GetDofSet(), fixed_dofs);
+
+        return fixed_dofs;
+    }
+
     ///@}
     ///@name Friends
     ///@{
