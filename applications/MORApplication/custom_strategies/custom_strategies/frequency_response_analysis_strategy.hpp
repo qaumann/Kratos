@@ -939,15 +939,6 @@ class FrequencyResponseAnalysisStrategy
         std::vector<unsigned int> fixed_dofs;
         DirichletUtility::GetDirichletConstraints<typename TBuilderAndSolverType::DofsArrayType>(p_builder_and_solver->GetDofSet(), fixed_dofs);
 
-        if( BaseType::GetEchoLevel() > 4 ) {
-            Vector fixed = Vector(fixed_dofs.size());
-            #pragma omp parallel for
-            for( int i=0; i<static_cast<int>(fixed.size()); ++i ) {
-                fixed(i) = fixed_dofs[i];
-            }
-            VectorOutput<TSparseSpace>(fixed, "fixed_dofs");
-        }
-
         // this should not be hard coded
         DirichletUtility::SetComplexDirichletConditions<TSolutionSpace>(
             BaseType::GetModelPart(),

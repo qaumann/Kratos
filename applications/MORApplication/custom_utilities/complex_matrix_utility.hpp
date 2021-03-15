@@ -123,19 +123,6 @@ namespace ComplexMatrixUtility
         Timer::Stop("MatrixStructure");
     }
 
-    // template<typename MatrixType, typename OtherMatrixType>
-    // void axpy(MatrixType& rX, OtherMatrixType& rY, const typename MatrixType::value_type A)
-    // {
-    //     std::cout << "template version" << std::endl;
-    //     const std::size_t size = rX.value_data().size();
-    //     KRATOS_ERROR_IF_NOT(size == rY.value_data().size()) << "wrong size!" << std::endl;
-
-    //     #pragma omp parallel for schedule(static)
-    //     for( int i=0; i<static_cast<int>(size); ++i ) {
-    //         rY.value_data()[i] += A * rX.value_data()[i];
-    //     }
-    // }
-
     /**
      * @brief Compute y += a*x (axpy) for different matrix types
      * @details A must be double
@@ -151,7 +138,7 @@ namespace ComplexMatrixUtility
             for( int i=0; i<static_cast<int>(size); ++i ) {
                 rY.value_data()[i] += rX.value_data()[i];
             }
-        } else  if(A == -1.0 ) {
+        } else if(A == -1.0 ) {
             #pragma omp parallel for// schedule(static)
             for( int i=0; i<static_cast<int>(size); ++i ) {
                 rY.value_data()[i] -= rX.value_data()[i];
