@@ -28,6 +28,7 @@
 #include "custom_constitutive/hyper_elastic_isotropic_neo_hookean_3d.h"
 #include "custom_constitutive/hyper_elastic_isotropic_neo_hookean_plane_strain_2d.h"
 #include "custom_constitutive/linear_elastic_orthotropic_2D_law.h"
+#include "custom_constitutive/linear_elastic_orthotropic_3D_law.h"
 #include "custom_constitutive/small_strain_j2_plasticity_3d.h"
 #include "custom_constitutive/small_strain_j2_plasticity_plane_strain_2d.h"
 #include "custom_constitutive/small_strain_isotropic_damage_3d.h"
@@ -146,6 +147,10 @@ void AddCustomConstitutiveLawsToPython(pybind11::module& m)
 
     py::class_< LinearElasticOrthotropic2DLaw, typename LinearElasticOrthotropic2DLaw::Pointer, ConstitutiveLaw >
     (m,"LinearElasticOrthotropic2DLaw").def(py::init<>())
+    ;
+
+    py::class_< LinearElasticOrthotropic3DLaw, typename LinearElasticOrthotropic3DLaw::Pointer, ConstitutiveLaw >
+    (m,"LinearElasticOrthotropic3DLaw").def(py::init<>())
     ;
 
     py::class_< SmallStrainJ2PlasticityPlaneStrain2D, typename SmallStrainJ2PlasticityPlaneStrain2D::Pointer,  ConstitutiveLaw >

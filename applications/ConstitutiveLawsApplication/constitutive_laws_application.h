@@ -36,6 +36,7 @@
 #include "custom_constitutive/hyper_elastic_isotropic_neo_hookean_3d.h"
 #include "custom_constitutive/hyper_elastic_isotropic_neo_hookean_plane_strain_2d.h"
 #include "custom_constitutive/linear_elastic_orthotropic_2D_law.h"
+#include "custom_constitutive/linear_elastic_orthotropic_3D_law.h"
 #include "custom_constitutive/small_strain_j2_plasticity_plane_strain_2d.h"
 #include "custom_constitutive/small_strain_j2_plasticity_3d.h"
 #include "custom_constitutive/small_strain_isotropic_damage_3d.h"
@@ -255,6 +256,7 @@ private:
     const HyperElasticIsotropicNeoHookean3D  mHyperElasticIsotropicNeoHookean3D;
     const HyperElasticIsotropicNeoHookeanPlaneStrain2D  mHyperElasticIsotropicNeoHookeanPlaneStrain2D;
     const LinearElasticOrthotropic2DLaw mLinearElasticOrthotropic2DLaw;
+    const LinearElasticOrthotropic3DLaw mLinearElasticOrthotropic3DLaw;
 
     const SmallStrainJ2Plasticity3D mSmallStrainJ2Plasticity3D;
     const SmallStrainJ2PlasticityPlaneStrain2D mSmallStrainJ2PlasticityPlaneStrain2D;
