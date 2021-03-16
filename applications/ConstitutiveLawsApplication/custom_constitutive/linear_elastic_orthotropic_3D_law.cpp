@@ -63,93 +63,91 @@ namespace Kratos
 
 	void  LinearElasticOrthotropic3DLaw::CalculateMaterialResponsePK2(ConstitutiveLaw::Parameters& rValues)
 	{
-        KRATOS_TRY;
-        // // 1.- Lame constants
-        // // const double& YoungModulus = MaterialProperties[YOUNG_MODULUS];
-        // // const double& PoissonCoefficient = MaterialProperties[POISSON_RATIO];
+        // KRATOS_TRY;
+        // 1.- Lame constants
+        // const double& YoungModulus = MaterialProperties[YOUNG_MODULUS];
+        // const double& PoissonCoefficient = MaterialProperties[POISSON_RATIO];
 
-        // //a.-Check if the constitutive parameters are passed correctly to the law calculation
-		// //CheckParameters(rValues);
+        //a.-Check if the constitutive parameters are passed correctly to the law calculation
+		//CheckParameters(rValues);
 
-		// //b.- Get Values to compute the constitutive law:
-		// Flags &Options = rValues.GetOptions();
+		//b.- Get Values to compute the constitutive law:
+		Flags &Options = rValues.GetOptions();
 
-		// const Properties& MaterialProperties = rValues.GetMaterialProperties();
+		const Properties& MaterialProperties = rValues.GetMaterialProperties();
 
-		// Vector& StrainVector = rValues.GetStrainVector();
-		// // Options.Set(COMPUTE_STRESS, false);
+		Vector& StrainVector = rValues.GetStrainVector();
+		// Options.Set(COMPUTE_STRESS, false);
 
-		// // KRATOS_WATCH(Options.IsNot(ConstitutiveLaw::USE_ELEMENT_PROVIDED_STRAIN))
-		// // KRATOS_WATCH(Options.Is(ConstitutiveLaw::COMPUTE_STRESS))
-		// // KRATOS_WATCH(Options.Is(ConstitutiveLaw::COMPUTE_CONSTITUTIVE_TENSOR))
+		// KRATOS_WATCH(Options.IsNot(ConstitutiveLaw::USE_ELEMENT_PROVIDED_STRAIN))
+		// KRATOS_WATCH(Options.Is(ConstitutiveLaw::COMPUTE_STRESS))
+		// KRATOS_WATCH(Options.Is(ConstitutiveLaw::COMPUTE_CONSTITUTIVE_TENSOR))
 
-		// //-----------------------------//
+		//-----------------------------//
 
-		// if (Options.IsNot(ConstitutiveLaw::USE_ELEMENT_PROVIDED_STRAIN))
-		// {
-		// 	//only needed
-		// 	const Matrix& DeformationGradientF = rValues.GetDeformationGradientF();
-		// 	KRATOS_WATCH(DeformationGradientF)
+		if (Options.IsNot(ConstitutiveLaw::USE_ELEMENT_PROVIDED_STRAIN))
+		{
+			//only needed
+			const Matrix& DeformationGradientF = rValues.GetDeformationGradientF();
+			KRATOS_WATCH(DeformationGradientF)
 
-		// 	//4.-Right Cauchy Green
-		// 	Matrix RightCauchyGreen = prod(trans(DeformationGradientF), DeformationGradientF);
+			//4.-Right Cauchy Green
+			Matrix RightCauchyGreen = prod(trans(DeformationGradientF), DeformationGradientF);
 
-		// 	//5.-Green-Lagrange Strain:
+			//5.-Green-Lagrange Strain:
 
-		// 	//E= 0.5*(FT*F-1)
-		// 	this->CalculateGreenLagrangeStrain(RightCauchyGreen, StrainVector);
-		// }
-		// // std::cout << "end" << std::endl;
-
-		// //7.-Calculate Total PK2 stress
-
-		// if (Options.Is(ConstitutiveLaw::COMPUTE_STRESS))
-		// {
-		// 	Vector& StressVector = rValues.GetStressVector();
-		// 	if (Options.Is(ConstitutiveLaw::COMPUTE_CONSTITUTIVE_TENSOR))
-		// 	{
-		// 		Matrix& ConstitutiveMatrix = rValues.GetConstitutiveMatrix();
-		// 		this->CalculateLinearElasticMatrix(ConstitutiveMatrix, MaterialProperties);
-		// 		this->CalculateStress(StrainVector, ConstitutiveMatrix, StressVector);
-		// 	}
-		// 	else {
-		// 		Matrix ConstitutiveMatrix(StrainVector.size(), StrainVector.size());
-		// 		noalias(ConstitutiveMatrix) = ZeroMatrix(StrainVector.size(), StrainVector.size());
-
-		// 		this->CalculateLinearElasticMatrix(ConstitutiveMatrix, MaterialProperties);
-		// 		this->CalculateStress(StrainVector, ConstitutiveMatrix, StressVector);
-		// 	}
-		// }
-		// else if (Options.IsNot(ConstitutiveLaw::COMPUTE_STRESS) && Options.Is(ConstitutiveLaw::COMPUTE_CONSTITUTIVE_TENSOR))
-		// {
-		// 	// std::cout << "hier?" << std::endl;
-		// 	Matrix& ConstitutiveMatrix = rValues.GetConstitutiveMatrix();
-		// 	// KRATOS_WATCH(ConstitutiveMatrix)
-		// 	this->CalculateLinearElasticMatrix(ConstitutiveMatrix, MaterialProperties);
-		// }
-
-		// Get the constitutive law options
-		Flags & r_constitutive_law_options = rValues.GetOptions();
-
-		Vector& r_strain_vector = rValues.GetStrainVector();
-
-		//NOTE: SINCE THE ELEMENT IS IN SMALL STRAINS WE CAN USE ANY STRAIN MEASURE. HERE EMPLOYING THE CAUCHY_GREEN
-		if(r_constitutive_law_options.IsNot(ConstitutiveLaw::USE_ELEMENT_PROVIDED_STRAIN)) {
-			CalculateGreenLagrangeStrainVector(rValues, r_strain_vector);
+			//E= 0.5*(FT*F-1)
+			this->CalculateGreenLagrangeStrain(RightCauchyGreen, StrainVector);
 		}
 
-		if( r_constitutive_law_options.Is(ConstitutiveLaw::COMPUTE_STRESS)) {
-			Vector& r_stress_vector = rValues.GetStressVector();
-			CalculatePK2Stress(r_strain_vector, r_stress_vector, rValues);
+		//7.-Calculate Total PK2 stress
+
+		if (Options.Is(ConstitutiveLaw::COMPUTE_STRESS))
+		{
+			Vector& StressVector = rValues.GetStressVector();
+			if (Options.Is(ConstitutiveLaw::COMPUTE_CONSTITUTIVE_TENSOR))
+			{
+				Matrix& ConstitutiveMatrix = rValues.GetConstitutiveMatrix();
+				this->CalculateLinearElasticMatrix(ConstitutiveMatrix, MaterialProperties);
+				this->CalculateStress(StrainVector, ConstitutiveMatrix, StressVector);
+			}
+			else {
+				Matrix ConstitutiveMatrix(StrainVector.size(), StrainVector.size());
+				noalias(ConstitutiveMatrix) = ZeroMatrix(StrainVector.size(), StrainVector.size());
+
+				this->CalculateLinearElasticMatrix(ConstitutiveMatrix, MaterialProperties);
+				this->CalculateStress(StrainVector, ConstitutiveMatrix, StressVector);
+			}
+		}
+		else if (Options.IsNot(ConstitutiveLaw::COMPUTE_STRESS) && Options.Is(ConstitutiveLaw::COMPUTE_CONSTITUTIVE_TENSOR))
+		{
+			Matrix& ConstitutiveMatrix = rValues.GetConstitutiveMatrix();
+			this->CalculateLinearElasticMatrix(ConstitutiveMatrix, MaterialProperties);
 		}
 
-		if( r_constitutive_law_options.Is( ConstitutiveLaw::COMPUTE_CONSTITUTIVE_TENSOR )) {
-			Matrix& r_constitutive_matrix = rValues.GetConstitutiveMatrix();
-			CalculateLinearElasticMatrix(r_constitutive_matrix, rValues.GetMaterialProperties());
-		}
+		// // Get the constitutive law options
+		// Flags & r_constitutive_law_options = rValues.GetOptions();
+		// KRATOS_WATCH(r_constitutive_law_options)
+
+		// Vector& r_strain_vector = rValues.GetStrainVector();
+
+		// //NOTE: SINCE THE ELEMENT IS IN SMALL STRAINS WE CAN USE ANY STRAIN MEASURE. HERE EMPLOYING THE CAUCHY_GREEN
+		// if(r_constitutive_law_options.IsNot(ConstitutiveLaw::USE_ELEMENT_PROVIDED_STRAIN)) {
+		// 	CalculateGreenLagrangeStrainVector(rValues, r_strain_vector);
+		// }
+
+		// if( r_constitutive_law_options.Is(ConstitutiveLaw::COMPUTE_STRESS)) {
+		// 	Vector& r_stress_vector = rValues.GetStressVector();
+		// 	CalculatePK2Stress(r_strain_vector, r_stress_vector, rValues);
+		// }
+
+		// if( r_constitutive_law_options.Is( ConstitutiveLaw::COMPUTE_CONSTITUTIVE_TENSOR )) {
+		// 	Matrix& r_constitutive_matrix = rValues.GetConstitutiveMatrix();
+		// 	CalculateLinearElasticMatrix(r_constitutive_matrix, rValues.GetMaterialProperties());
+		// }
 
 
-        KRATOS_CATCH("");
+        // KRATOS_CATCH("");
     }
 
 	/***********************************************************************************/
@@ -163,6 +161,10 @@ namespace Kratos
 	{
 		const Properties& r_material_properties = rValues.GetMaterialProperties();
 		const Matrix C = r_material_properties[ELASTICITY_TENSOR];
+		KRATOS_WATCH(r_material_properties)
+		KRATOS_WATCH(C)
+		KRATOS_WATCH(rStrainVector)
+		KRATOS_WATCH(rStressVector)
 		noalias(rStressVector) = prod(C, rStrainVector);
 	}
 
@@ -309,7 +311,7 @@ namespace Kratos
 		const double D3333 = youngs_modulus_z * (1.0 - v12*v21) * Y;
 		const double D1122 = youngs_modulus_x * (v21 + v31*v23) * Y;
 		const double D1133 = youngs_modulus_x * (v31 + v21*v32) * Y;
-		const double D2233 = youngs_modulus_z * (v32 + v12*v31) * Y;
+		const double D2233 = youngs_modulus_y * (v32 + v12*v31) * Y;
 		const double D1212 = shear_modulus_xy;
 		const double D1313 = shear_modulus_xz;
 		const double D2323 = shear_modulus_yz;
