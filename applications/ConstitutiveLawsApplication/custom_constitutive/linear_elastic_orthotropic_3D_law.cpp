@@ -6,12 +6,10 @@
 //  License:		 BSD License
 //					 license: structural_mechanics_application/license.txt
 //
-//  Main authors:    Peter Wilson
-//       Contact:    A.Winterstein [at] tum.de
+//  Main authors:    Quirin Aumann
 //
 
 // System includes
-#include <iostream>
 
 // External includes
 // #include<cmath>
@@ -63,27 +61,14 @@ namespace Kratos
 
 	void  LinearElasticOrthotropic3DLaw::CalculateMaterialResponsePK2(ConstitutiveLaw::Parameters& rValues)
 	{
-        // KRATOS_TRY;
-        // 1.- Lame constants
-        // const double& YoungModulus = MaterialProperties[YOUNG_MODULUS];
-        // const double& PoissonCoefficient = MaterialProperties[POISSON_RATIO];
-
-        //a.-Check if the constitutive parameters are passed correctly to the law calculation
-		//CheckParameters(rValues);
-
-		//b.- Get Values to compute the constitutive law:
+        
+		// Get Values to compute the constitutive law:
 		Flags &Options = rValues.GetOptions();
 
 		const Properties& MaterialProperties = rValues.GetMaterialProperties();
 
 		Vector& StrainVector = rValues.GetStrainVector();
-		// Options.Set(COMPUTE_STRESS, false);
-
-		// KRATOS_WATCH(Options.IsNot(ConstitutiveLaw::USE_ELEMENT_PROVIDED_STRAIN))
-		// KRATOS_WATCH(Options.Is(ConstitutiveLaw::COMPUTE_STRESS))
-		// KRATOS_WATCH(Options.Is(ConstitutiveLaw::COMPUTE_CONSTITUTIVE_TENSOR))
-
-		//-----------------------------//
+		
 
 		if (Options.IsNot(ConstitutiveLaw::USE_ELEMENT_PROVIDED_STRAIN))
 		{
@@ -91,16 +76,16 @@ namespace Kratos
 			const Matrix& DeformationGradientF = rValues.GetDeformationGradientF();
 			KRATOS_WATCH(DeformationGradientF)
 
-			//4.-Right Cauchy Green
+			// Right Cauchy Green
 			Matrix RightCauchyGreen = prod(trans(DeformationGradientF), DeformationGradientF);
 
-			//5.-Green-Lagrange Strain:
+			// Green-Lagrange Strain:
 
 			//E= 0.5*(FT*F-1)
 			this->CalculateGreenLagrangeStrain(RightCauchyGreen, StrainVector);
 		}
 
-		//7.-Calculate Total PK2 stress
+		// Calculate Total PK2 stress
 
 		if (Options.Is(ConstitutiveLaw::COMPUTE_STRESS))
 		{
@@ -125,29 +110,7 @@ namespace Kratos
 			this->CalculateLinearElasticMatrix(ConstitutiveMatrix, MaterialProperties);
 		}
 
-		// // Get the constitutive law options
-		// Flags & r_constitutive_law_options = rValues.GetOptions();
-		// KRATOS_WATCH(r_constitutive_law_options)
-
-		// Vector& r_strain_vector = rValues.GetStrainVector();
-
-		// //NOTE: SINCE THE ELEMENT IS IN SMALL STRAINS WE CAN USE ANY STRAIN MEASURE. HERE EMPLOYING THE CAUCHY_GREEN
-		// if(r_constitutive_law_options.IsNot(ConstitutiveLaw::USE_ELEMENT_PROVIDED_STRAIN)) {
-		// 	CalculateGreenLagrangeStrainVector(rValues, r_strain_vector);
-		// }
-
-		// if( r_constitutive_law_options.Is(ConstitutiveLaw::COMPUTE_STRESS)) {
-		// 	Vector& r_stress_vector = rValues.GetStressVector();
-		// 	CalculatePK2Stress(r_strain_vector, r_stress_vector, rValues);
-		// }
-
-		// if( r_constitutive_law_options.Is( ConstitutiveLaw::COMPUTE_CONSTITUTIVE_TENSOR )) {
-		// 	Matrix& r_constitutive_matrix = rValues.GetConstitutiveMatrix();
-		// 	CalculateLinearElasticMatrix(r_constitutive_matrix, rValues.GetMaterialProperties());
-		// }
-
-
-        // KRATOS_CATCH("");
+		
     }
 
 	/***********************************************************************************/
@@ -159,6 +122,8 @@ namespace Kratos
 		ConstitutiveLaw::Parameters& rValues
 		)
 	{
+
+
 		const Properties& r_material_properties = rValues.GetMaterialProperties();
 		const Matrix C = r_material_properties[ELASTICITY_TENSOR];
 		KRATOS_WATCH(r_material_properties)
@@ -227,6 +192,8 @@ namespace Kratos
 	void LinearElasticOrthotropic3DLaw::CalculateGreenLagrangeStrain(const Matrix & rRightCauchyGreen,
 		Vector& rStrainVector)
 	{
+
+
 		// TAKEN FROM LinearElasticPlasticPlaneStrain2DLaw
 		//E= 0.5*(FT*F-1)
 		rStrainVector[0] = 0.5 * (rRightCauchyGreen(0, 0) - 1.00);
@@ -241,6 +208,8 @@ namespace Kratos
 		const Matrix & rConstitutiveMatrix,
 		Vector& rStressVector)
 	{
+
+
 		//1.-2nd Piola Kirchhoff StressVector increment
 		if (rStressVector.size() != rStrainVector.size())
 			rStressVector.resize(rStrainVector.size(), false);
@@ -254,55 +223,29 @@ namespace Kratos
 	void LinearElasticOrthotropic3DLaw::CalculateLinearElasticMatrix(Matrix& rConstitutiveMatrix,
 		const Properties& rMaterialProperties)
 	{
-		//double G13 = G12;	// currently handled through "shell_cross_section.cpp"
-		//double G23 = G12;	// currently handled through "shell_cross_section.cpp"
+		// implemented according to https://abaqus-docs.mit.edu/2017/English/SIMACAEMATRefMap/simamat-c-linearelastic.htm#simamat-c-linearelastic-planestress
 
-        double youngs_modulus_x, youngs_modulus_y, youngs_modulus_z;
+		double youngs_modulus_x, youngs_modulus_y, youngs_modulus_z;
 		double poisson_ratio_xy, poisson_ratio_xz, poisson_ratio_yz;
 		double shear_modulus_xy, shear_modulus_xz, shear_modulus_yz;
-        if (rMaterialProperties.Has(SHELL_ORTHOTROPIC_LAYERS))
-        {
-            // Using the Values directly from the ply-definition
-            youngs_modulus_x = rMaterialProperties[SHELL_ORTHOTROPIC_LAYERS](0,1);
-            youngs_modulus_y = youngs_modulus_x;
-			youngs_modulus_z = rMaterialProperties[SHELL_ORTHOTROPIC_LAYERS](0,2);
-            poisson_ratio_xy = rMaterialProperties[SHELL_ORTHOTROPIC_LAYERS](0,3);
-            poisson_ratio_xz = 0.0;
-            poisson_ratio_yz = 0.0;
-            shear_modulus_xy = rMaterialProperties[SHELL_ORTHOTROPIC_LAYERS](0,4);
-            shear_modulus_xz = rMaterialProperties[SHELL_ORTHOTROPIC_LAYERS](0,5);
-            shear_modulus_yz = rMaterialProperties[SHELL_ORTHOTROPIC_LAYERS](0,6);
-        }
-        else
-        {
-            youngs_modulus_x = rMaterialProperties[YOUNG_MODULUS_X];
-            youngs_modulus_y = rMaterialProperties[YOUNG_MODULUS_Y];
-            youngs_modulus_z = rMaterialProperties[YOUNG_MODULUS_Z];
-            poisson_ratio_xy = rMaterialProperties[POISSON_RATIO_XY];
-            poisson_ratio_xz = rMaterialProperties[POISSON_RATIO_XZ];
-            poisson_ratio_yz = rMaterialProperties[POISSON_RATIO_YZ];
-            shear_modulus_xy = rMaterialProperties[SHEAR_MODULUS_XY];
-            shear_modulus_xz = rMaterialProperties[SHEAR_MODULUS_XZ];
-            shear_modulus_yz = rMaterialProperties[SHEAR_MODULUS_YZ];
-        }
 
-		// KRATOS_WATCH(youngs_modulus_x)
-		// KRATOS_WATCH(youngs_modulus_y)
-		// KRATOS_WATCH(youngs_modulus_z)
-		// KRATOS_WATCH(poisson_ratio_xy)
-		// KRATOS_WATCH(poisson_ratio_xz)
-		// KRATOS_WATCH(poisson_ratio_yz)
-		// KRATOS_WATCH(shear_modulus_xy)
-		// KRATOS_WATCH(shear_modulus_xz)
-		// KRATOS_WATCH(shear_modulus_yz)
+		youngs_modulus_x = rMaterialProperties[YOUNG_MODULUS_X];
+        youngs_modulus_y = rMaterialProperties[YOUNG_MODULUS_Y];
+        youngs_modulus_z = rMaterialProperties[YOUNG_MODULUS_Z];
+        poisson_ratio_xy = rMaterialProperties[POISSON_RATIO_XY];
+        poisson_ratio_xz = rMaterialProperties[POISSON_RATIO_XZ];
+        poisson_ratio_yz = rMaterialProperties[POISSON_RATIO_YZ];
+        shear_modulus_xy = rMaterialProperties[SHEAR_MODULUS_XY];
+        shear_modulus_xz = rMaterialProperties[SHEAR_MODULUS_XZ];
+        shear_modulus_yz = rMaterialProperties[SHEAR_MODULUS_YZ];
 
 		const double v12 = poisson_ratio_xy;
 		const double v13 = poisson_ratio_xz;
 		const double v23 = poisson_ratio_yz;
 
-		const double v21 = v12*youngs_modulus_y / youngs_modulus_x;
-		const double v31 = 0.35;
-		const double v32 = 0.35;
+		const double v21 = v12 * youngs_modulus_y / youngs_modulus_x;
+		const double v31 = v13 * youngs_modulus_z / youngs_modulus_x;
+		const double v32 = v23 * youngs_modulus_z / youngs_modulus_y;
 
 		const double Y = 1.0/(1.0 - v12*v21 - v23*v32 - v31*v13 - 2.0*v21*v32*v13);
 
@@ -331,36 +274,6 @@ namespace Kratos
 		rConstitutiveMatrix(1,2) = D2233;
 		rConstitutiveMatrix(2,1) = D2233;
 
-		// const double Q11 = youngs_modulus_x / (1.0 - v12*v21);
-		// const double Q12 = v12*youngs_modulus_y / (1.0 - v12*v21);
-		// const double Q22 = youngs_modulus_y / (1.0 - v12*v21);
-		// const double Q66 = shear_modulus_xy;
-		// //double Q44 = G23;
-		// //double Q55 = G13;
-
-		// const double theta = 0.0;	// rotation currently handled through
-		// // "shell_cross_section.cpp" variable iPlyAngle. Left in for clarity.
-
-		// const double c = std::cos(theta);
-		// const double c2 = c*c;
-		// const double c4 = c2 * c2;
-		// const double s = std::sin(theta);
-		// const double s2 = s*s;
-		// const double s4 = s2*s2;
-
-		// rConstitutiveMatrix.clear();
-
-		// rConstitutiveMatrix(0, 0) = Q11*c4 + 2.0*(Q12 + 2.0*Q66)*s2*c2 + Q22*s4;				// Q11_hat
-		// rConstitutiveMatrix(0, 1) = (Q11 + Q22 - 4.0*Q66)*s2*c2 + Q12*(s4 + c4);				// Q12_hat
-		// rConstitutiveMatrix(0, 2) = (Q11 - Q12 - 2.0*Q66)*s*c2*c + (Q12 - Q22 + 2.0*Q66)*s*s2*c;// Q16_hat
-
-		// rConstitutiveMatrix(1, 0) = rConstitutiveMatrix(0, 1);
-		// rConstitutiveMatrix(1, 1) = Q11*s4 + 2.0 * (Q12 + 2.0*Q66)*s2*c2 + Q22*c4;				// Q22_hat
-		// rConstitutiveMatrix(1, 2) = (Q11 - Q12 - 2.0*Q66)*s2*s*c + (Q12 - Q22 + 2.0*Q66)*c2*c*s;// Q16_hat
-
-		// rConstitutiveMatrix(2, 0) = rConstitutiveMatrix(0, 2);
-		// rConstitutiveMatrix(2, 1) = rConstitutiveMatrix(1, 2);
-		// rConstitutiveMatrix(2, 2) = (Q11 + Q22 - 2.0*Q12 - 2.0*Q66)*s2*c2 + Q66*(s4 + c4);		//Q66_hat
 	}
 
 	//*************************CONSTITUTIVE LAW GENERAL FEATURES *************************
